@@ -455,7 +455,14 @@ function switchTab(name) {
   document.querySelectorAll('.tabview').forEach(v=>v.classList.toggle('active', v.id==='tv-'+name));
   if (name==='annotate') { loadAnnSessions(); }
   if (name==='record') { loadSessions(); loadSchedule(); }
-  if (name==='vision') { refreshCam(); refreshPc(); }
+  if (name==='vision') {
+    refreshCam(); refreshPc();
+    // TAB 由隐藏变为可见时，Three.js renderer 需要重新计算尺寸（隐藏时 clientWidth=0）
+    if(renderer){
+      const el=$('pointcloud3d');
+      if(el.clientWidth>0){ renderer.setSize(el.clientWidth, el.clientHeight); }
+    }
+  }
 }
 
 // ================= ECharts 图表 =================
@@ -611,14 +618,27 @@ function initPc3D() {
   // 网格参考
   const grid = new THREE.GridHelper(6, 12, 0x00d4ff, 0x1a2a3a);
   scene.add(grid);
-  // 点云几何体（预分配）
+  // 点云几何体（预分配，超出时自动扩容）
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(3000*3), 3));
   geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(3000*3), 3));
   const mat = new THREE.PointsMaterial({ size: 0.02, vertexColors: true, transparent: true, opacity: 0.9 });
   pointsMesh = new THREE.Points(geo, mat);
   scene.add(pointsMesh);
+  // 记录当前容量，供 refreshPc 按需扩容
+  pcCapacity = 3000;
   animate();
+}
+let pcCapacity = 3000;
+function ensurePcCapacity(n) {
+  // 点数量超过预分配容量时动态扩容，避免越界写入
+  if (n > pcCapacity) {
+    const cap = Math.max(n, pcCapacity * 2);
+    const geo = pointsMesh.geometry;
+    geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(cap*3), 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(cap*3), 3));
+    pcCapacity = cap;
+  }
 }
 function animate() {
   requestAnimationFrame(animate);
@@ -635,6 +655,7 @@ async function refreshPc() {
     const d = await fetchJSON('/api/lidar/cloud?max_points='+pcMaxPoints);
     if(d && d.online && d.points && d.points.length){
       const pts = d.points;
+      ensurePcCapacity(pts.length);
       // 更新几何体
       const pos = pointsMesh.geometry.attributes.position.array;
       const col = pointsMesh.geometry.attributes.color.array;
