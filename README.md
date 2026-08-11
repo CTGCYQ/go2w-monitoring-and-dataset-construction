@@ -12,11 +12,13 @@
 |------|------|
 | 📡 **实时监控** | 500Hz 状态流实时可视化：IMU 姿态、电压/电流、电池电量、12 关节电机、足底力、运动模式，带实时曲线图 |
 | 🎥 **相机同步** | 前置相机以 ~15FPS 采集 JPEG 帧，与状态帧按时间对齐（`image_path` 引用） |
+| 📷 **深度相机** | Intel RealSense D435I 深度相机（扩展坞计算板），RGB 彩色图 + 伪彩色深度图实时展示，独立采集程序绕过有 bug 的 ROS 节点 |
+| 🛰 **激光点云** | 激光雷达点云 3D 实时查看（Three.js），可旋转缩放，点数/刷新频率可调 |
 | 🎬 **数据录制** | Web 一键开始/停止录制，流式写盘（任意时长不占内存），自动崩溃恢复 |
 | ⏰ **定时采集** | 按星期 + 时间段自动开始/停止录制，无人值守持续积累数据，支持跨天时段 |
 | 🏷 **标签标注** | 会话级标签 + **帧级自然语言标注**（选择单帧/多帧 → 写详细语言描述） |
 | 🚀 **数据集导出** | 一键导出 **HuggingFace** 或 **LeRobot v2** 标准训练格式（含视频 MP4） |
-| 🖥 **现代化 Web UI** | 深空科技风界面，玻璃态卡片 + 霓虹点缀，三大工作台 TAB |
+| 🖥 **现代化 Web UI** | 深空科技风界面，玻璃态卡片 + 霓虹点缀，ECharts 图表 + 四大工作台 TAB |
 
 ---
 
@@ -55,10 +57,36 @@
                                 ▼
                     ┌───────────────────────────┐
                     │  Web UI (index.html)       │
-                    │  实时监控 / 数据录制 / 标注  │
-                    │  工作台  (深空科技风)        │
+                    │  实时监控 / 数据录制 / 视觉与 │
+                    │  点云 / 标注 工作台          │
                     └───────────────────────────┘
 ```
+
+### 深度相机架构（RealSense D435I）
+
+Go2-W 扩展坞计算板（192.168.123.18，aarch64）上运行独立的 `rs_capture` 采集程序：
+
+```
+机器狗扩展坞计算板 (192.168.123.18, ARM64)
+├── Intel RealSense D435I  (USB, /dev/video0-5)
+├── librealsense2 2.57.7    (驱动库)
+├── rs_capture             (独立采集程序, C++/librealsense API)
+│   ├── 彩色帧 → latest_color.jpg  (640x480 JPEG)
+│   └── 深度帧 → latest_depth.jpg  (伪彩色, 近红远蓝)
+└── 输出目录: /home/unitree/rs_out/
+
+80 服务器 (server.py)
+├── /api/depth/color  → 从扩展坞拉取最新彩色图
+├── /api/depth/image  → 从扩展坞拉取最新深度图
+└── /api/depth/status → 深度相机状态
+
+浏览器
+└── 视觉与点云 TAB → 深度相机 RGB + 深度图双屏实时展示
+```
+
+> **为什么不用 ROS 节点？** 官方 `realsense2_camera` ROS 节点在此环境有 `std::bad_alloc` bug
+> （ROS 包编译用的 LibreRealSense 2.51 与系统运行时 2.57 ABI 不兼容）。相机硬件本身完全正常，
+> 独立 C++ 采集程序（`dock/rs_capture.cpp`）绕过 ROS 直接用 librealsense API 采集，稳定可靠。
 
 ### 数据存储布局
 
@@ -192,14 +220,18 @@ d = Dataset.from_parquet("<export>/data/train/data-00000-of-00001.parquet")
 ```
 go2w_monitor/
 ├── collector.py          # 采集进程：DDS 订阅 + 状态解析 + InfluxDB + 录制调度
-├── server.py             # FastAPI 后端：REST API（状态/录制/定时/标注/导出）
+├── server.py             # FastAPI 后端：REST API（状态/录制/定时/标注/导出/深度/点云）
 ├── recorder.py           # 录制引擎：Arrow IPC 流式写盘 + 崩溃恢复
 ├── dataset_builder.py    # 数据集导出：HuggingFace + LeRobot 两种格式
 ├── scheduler.py          # 定时调度：自动录制规则管理
 ├── control_schema.py     # 控制文件协议：collector 与 server 的命令通道
 ├── video_worker.py       # 相机线程：VideoClient 轮询 + JPEG 落盘
+├── dock/
+│   ├── rs_capture.cpp    # 深度相机采集程序（运行于机器狗扩展坞，librealsense C++ API）
+│   └── build.sh          # 深度相机采集程序编译脚本（机器狗 aarch64）
 └── web/
-    └── index.html        # 前端：深空科技风单页应用（三大工作台 TAB）
+    ├── index.html        # 前端：深空科技风单页应用（四大工作台 TAB）
+    └── lib/              # 前端库：echarts / three.js(r128 UMD) / OrbitControls
 ```
 
 ---
@@ -213,6 +245,24 @@ tmux new-session -d -s go2wcol "python collector.py --interface enp0s31f6 --came
 tmux new-session -d -s go2wweb "python server.py"
 ```
 > 建议将上述命令写入 systemd 服务实现开机自启。
+
+### 深度相机（RealSense）采集程序
+深度相机在机器狗扩展坞计算板（192.168.123.18）上运行独立采集程序：
+```bash
+# SSH 到扩展坞
+ssh unitree@192.168.123.18   # 密码 123
+
+# 编译（源码见 dock/rs_capture.cpp）
+cd /home/unitree/rs_dock && bash build.sh
+
+# 启动采集（输出到 /home/unitree/rs_out，持续运行）
+nohup ./rs_capture /home/unitree/rs_out 640 480 15 < /dev/null > /tmp/rs_cap.log 2>&1 &
+```
+
+**常见问题**：
+- 深度相机不识别：重启机器狗让扩展坞重新枚举 USB（`/dev/video*` 会出现，`lsusb` 见 `8086:0b3a`）；
+- ROS 节点 `realsense2_camera` 有 `std::bad_alloc` bug（librealsense 版本 ABI 不匹配），**使用独立采集程序 rs_capture 绕过**；
+- 深度图伪彩色含义：近处偏红(暖)，远处偏蓝(冷)，显示范围 0.2m~4m。
 
 ### 采集进程崩溃
 - `collector.py` 崩溃后，录制中的 `_in_progress/` 残留会在下次启动时自动回收（`recover_crashed`），半成品会话被标记 `crashed=True`。

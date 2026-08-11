@@ -372,6 +372,41 @@
         <div id="pointcloud3d"></div>
         <p class="pc-status" id="pcInfo">鼠标拖动旋转 / 滚轮缩放（Drag to rotate, scroll to zoom）</p>
       </div>
+      <div class="card">
+        <h2>深度相机 RGB <span class="hint">RealSense D435I Color</span></h2>
+        <div class="ctrl-row">
+          <span style="font-size:12px;color:var(--muted);">刷新频率 Refresh:</span>
+          <select id="dcColorInterval" class="refresh" onchange="applyDepthColorInterval()">
+            <option value="0.5">0.5 秒 / s</option>
+            <option value="1" selected>1 秒 / s</option>
+            <option value="2">2 秒 / s</option>
+            <option value="5">5 秒 / s</option>
+          </select>
+          <span class="badge" id="dcColorStatus">加载中…</span>
+        </div>
+        <div class="cam-wrap">
+          <img id="dcColorImg" src="/api/depth/color?t=0" alt="深度相机彩色图" onerror="this.style.opacity='0.3'">
+          <div class="cam-overlay">DEPTH CAM · RGB</div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>深度图 <span class="hint">RealSense D435I Depth</span></h2>
+        <div class="ctrl-row">
+          <span style="font-size:12px;color:var(--muted);">刷新频率 Refresh:</span>
+          <select id="dcDepthInterval" class="refresh" onchange="applyDepthDepthInterval()">
+            <option value="0.5">0.5 秒 / s</option>
+            <option value="1" selected>1 秒 / s</option>
+            <option value="2">2 秒 / s</option>
+            <option value="5">5 秒 / s</option>
+          </select>
+          <span class="badge" id="dcDepthStatus">加载中…</span>
+        </div>
+        <div class="cam-wrap">
+          <img id="dcDepthImg" src="/api/depth/image?t=0" alt="深度图" onerror="this.style.opacity='0.3'">
+          <div class="cam-overlay">DEPTH · 近红远蓝</div>
+        </div>
+        <p class="pc-status" style="margin-top:6px;">深度图伪彩色：近处偏红(暖)，远处偏蓝(冷)。数据来自扩展坞 RealSense，独立采集程序 rs_capture。</p>
+      </div>
     </div>
   </div>
 
@@ -594,6 +629,55 @@ async function refreshCam() {
   } catch(e){
     $('camStatus').textContent = '加载失败 Error';
     $('camStatus').className = 'badge red';
+  }
+}
+
+// ================= 深度相机刷新（RealSense D435I）=================
+let dcColorTimer = null, dcDepthTimer = null;
+function applyDepthColorInterval() {
+  if(dcColorTimer) clearInterval(dcColorTimer);
+  refreshDepthColor();
+  dcColorTimer = setInterval(refreshDepthColor, parseFloat($('dcColorInterval').value)*1000);
+}
+function applyDepthDepthInterval() {
+  if(dcDepthTimer) clearInterval(dcDepthTimer);
+  refreshDepthDepth();
+  dcDepthTimer = setInterval(refreshDepthDepth, parseFloat($('dcDepthInterval').value)*1000);
+}
+async function refreshDepthColor() {
+  try {
+    const t = Date.now();
+    const resp = await fetch('/api/depth/color?t='+t);
+    if(resp.ok){
+      $('dcColorImg').src = '/api/depth/color?t='+t;
+      $('dcColorStatus').textContent = '● 已更新 ' + new Date().toTimeString().slice(0,8);
+      $('dcColorStatus').className = 'badge green';
+      $('dcColorImg').style.opacity = '1';
+    } else {
+      $('dcColorStatus').textContent = '深度相机离线 Offline';
+      $('dcColorStatus').className = 'badge red';
+    }
+  } catch(e){
+    $('dcColorStatus').textContent = '加载失败 Error';
+    $('dcColorStatus').className = 'badge red';
+  }
+}
+async function refreshDepthDepth() {
+  try {
+    const t = Date.now();
+    const resp = await fetch('/api/depth/image?t='+t);
+    if(resp.ok){
+      $('dcDepthImg').src = '/api/depth/image?t='+t;
+      $('dcDepthStatus').textContent = '● 已更新 ' + new Date().toTimeString().slice(0,8);
+      $('dcDepthStatus').className = 'badge green';
+      $('dcDepthImg').style.opacity = '1';
+    } else {
+      $('dcDepthStatus').textContent = '深度相机离线 Offline';
+      $('dcDepthStatus').className = 'badge red';
+    }
+  } catch(e){
+    $('dcDepthStatus').textContent = '加载失败 Error';
+    $('dcDepthStatus').className = 'badge red';
   }
 }
 
@@ -823,6 +907,8 @@ poll(); setInterval(poll, 1000);
 pollRecording(); setInterval(pollRecording, 2000);
 applyCamInterval();
 applyPcInterval();
+applyDepthColorInterval();
+applyDepthDepthInterval();
 // 窗口尺寸变化时重算图表
 window.addEventListener('resize', ()=>{
   Object.values(charts).forEach(c=>c.ch.resize());

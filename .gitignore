@@ -16,6 +16,8 @@ sessions/
 _in_progress/
 exports/
 images/
+*.jpg
+*.png
 
 # IDE / 系统
 .vscode/

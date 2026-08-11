@@ -507,6 +507,66 @@ def api_session_image(session_id: str, filename: str):
 # 实时相机帧 + 激光点云
 # ---------------------------------------------------------------------------
 
+# 机器狗扩展坞 RealSense 深度相机配置（独立采集程序 rs_capture 运行于机器狗）
+DOCK_HOST = "192.168.123.18"      # 扩展坞计算板 IP
+DOCK_USER = "unitree"
+DOCK_PASS = "123"
+DOCK_RS_DIR = "/home/unitree/rs_out"   # rs_capture 输出目录
+# 本地缓存目录：80服务器定时从机器狗拉取最新深度/彩色帧
+DOCK_CACHE_DIR = BASE_DIR / "rs_cache"
+
+
+def _pull_dock_image(filename: str) -> Optional[bytes]:
+    """从机器狗扩展坞拉取一张最新的 RealSense 图像（SFTP）。
+
+    失败返回 None（机器人离线或采集程序未运行）。
+    """
+    import paramiko
+    try:
+        cli = paramiko.SSHClient()
+        cli.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        cli.connect(DOCK_HOST, username=DOCK_USER, password=DOCK_PASS, timeout=8)
+        sftp = cli.open_sftp()
+        with sftp.open(f"{DOCK_RS_DIR}/{filename}", "rb") as f:
+            data = f.read()
+        sftp.close()
+        cli.close()
+        return data
+    except Exception:
+        return None
+
+
+@app.get("/api/depth/color")
+def api_depth_color():
+    """返回 RealSense 深度相机的彩色(RGB)图。"""
+    data = _pull_dock_image("latest_color.jpg")
+    if data is None:
+        raise HTTPException(404, "depth camera color unavailable")
+    return Response(data, media_type="image/jpeg")
+
+
+@app.get("/api/depth/image")
+def api_depth_image():
+    """返回 RealSense 深度相机的伪彩色深度图。"""
+    data = _pull_dock_image("latest_depth.jpg")
+    if data is None:
+        raise HTTPException(404, "depth camera depth unavailable")
+    return Response(data, media_type="image/jpeg")
+
+
+@app.get("/api/depth/status")
+def api_depth_status():
+    """返回深度相机状态（是否在线 + 最近帧时间）。"""
+    color = _pull_dock_image("latest_color.jpg")
+    return {
+        "camera": "Intel RealSense D435I",
+        "online": color is not None,
+        "resolution": "640x480",
+        "fps": 15,
+        "mode": "rs_capture (librealsense)",
+    }
+
+
 @app.get("/api/image/latest")
 def api_image_latest():
     """返回最近一帧相机 JPEG（供相机展示区域刷新）。
