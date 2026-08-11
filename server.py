@@ -503,6 +503,120 @@ def api_session_image(session_id: str, filename: str):
     return Response(img.read_bytes(), media_type="image/jpeg")
 
 
+# ---------------------------------------------------------------------------
+# 实时相机帧 + 激光点云
+# ---------------------------------------------------------------------------
+
+@app.get("/api/image/latest")
+def api_image_latest():
+    """返回最近一帧相机 JPEG（供相机展示区域刷新）。
+
+    优先取当前录制会话的最新帧；否则扫描最近的会话 images/ 目录。
+    """
+    import glob
+    # 1) 优先：当前录制中的最新帧
+    st = read_state()
+    rec = st.get("recording") or {}
+    if rec.get("active") and rec.get("session_id"):
+        img_dir = Path(DATASET_ROOT) / "sessions" / rec["session_id"] / "images"
+        if img_dir.exists():
+            frames = sorted(img_dir.glob("frame_*.jpg"))
+            if frames:
+                return Response(frames[-1].read_bytes(), media_type="image/jpeg")
+    # 2) 回退：最近一个会话的最新帧
+    sessions_dir = Path(DATASET_ROOT) / "sessions"
+    if sessions_dir.exists():
+        latest = None
+        for d in sorted(sessions_dir.iterdir(), reverse=True):
+            if not d.is_dir():
+                continue
+            img_dir = d / "images"
+            if img_dir.exists():
+                frames = sorted(img_dir.glob("frame_*.jpg"))
+                if frames:
+                    latest = frames[-1]
+                    break
+        if latest:
+            return Response(latest.read_bytes(), media_type="image/jpeg")
+    raise HTTPException(404, "no camera image available")
+
+
+@app.get("/api/lidar/cloud")
+def api_lidar_cloud(max_points: int = 3000):
+    """采集一次最新激光点云并返回为 xyz 坐标数组。
+
+    数据源为 ROS2 话题 /utlidar/cloud（sensor_msgs/PointCloud2）。
+    通过一个短暂的 ROS2 节点订阅获取最新一帧，解析 XYZ 字段并降采样。
+
+    Args:
+        max_points: 返回的最大点数（默认 3000，控制浏览器渲染压力）
+
+    Returns:
+        {"points": [[x,y,z], ...], "count": N, "hz": 采集频率, "online": bool}
+    """
+    max_points = max(100, min(max_points, 20000))
+    try:
+        import rclpy
+        from sensor_msgs.msg import PointCloud2
+    except ImportError:
+        return JSONResponse({"online": False, "reason": "no rclpy on server",
+                             "points": [], "count": 0})
+    try:
+        if not rclpy.ok():
+            rclpy.init()
+        node = rclpy.create_node("go2w_lidar_probe")
+        latest = {}
+
+        def cb(msg):
+            latest["msg"] = msg
+
+        sub = node.create_subscription(PointCloud2, "/utlidar/cloud", cb, 10)
+        executor = rclpy.executors.SingleThreadedExecutor()
+        executor.add_node(node)
+        import time
+        start = time.time()
+        while "msg" not in latest and time.time() - start < 4.0:
+            executor.spin_once(timeout_sec=0.5)
+        node.destroy_node()
+        if "msg" not in latest:
+            return JSONResponse({"online": False, "reason": "no point cloud in 4s",
+                                 "points": [], "count": 0, "hz": 0})
+        msg = latest["msg"]
+        # 解析 PointCloud2：找到 x/y/z 字段的偏移
+        offsets = {}
+        for f in msg.fields:
+            if f.name in ("x", "y", "z"):
+                offsets[f.name] = f.offset
+        if len(offsets) != 3:
+            return JSONResponse({"online": False, "reason": "cloud lacks xyz fields",
+                                 "points": [], "count": 0})
+        data = msg.data
+        point_step = msg.point_step or 16
+        n_points = msg.width
+        step = max(1, n_points // max_points)   # 降采样步长
+        import struct
+        pts = []
+        for i in range(0, n_points, step):
+            base = i * point_step
+            try:
+                x = struct.unpack_from("<f", data, base + offsets["x"])[0]
+                y = struct.unpack_from("<f", data, base + offsets["y"])[0]
+                z = struct.unpack_from("<f", data, base + offsets["z"])[0]
+                pts.append([round(x, 3), round(y, 3), round(z, 3)])
+            except struct.error:
+                break
+        return JSONResponse({
+            "online": True,
+            "points": pts,
+            "count": len(pts),
+            "total": n_points,
+            "hz": round(1.0 / (time.time() - start), 1),
+        })
+    except Exception as e:
+        return JSONResponse({"online": False, "reason": str(e)[:120],
+                             "points": [], "count": 0})
+
+
 @app.get("/favicon.ico")
 def favicon():
     return FileResponse(WEB_DIR / "favicon.ico")

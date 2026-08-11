@@ -3,7 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Go2-W 机器人遥测中心</title>
+<title>GO2-W 机器人遥测中心</title>
+<!-- ECharts 图表库 -->
+<script src="/static/lib/echarts.min.js"></script>
+<!-- Three.js 3D 渲染库 + 轨道控制器 -->
+<script src="/static/lib/three.min.js"></script>
+<script src="/static/lib/OrbitControls.js"></script>
 <style>
   :root {
     --bg0: #05070d; --bg1: #0a0e17; --bg2: #0e1420;
@@ -19,6 +24,7 @@
     --mono: "JetBrains Mono","Consolas","Menlo",monospace;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
   body {
     background:
       radial-gradient(1200px 600px at 80% -10%, rgba(167,139,250,0.08), transparent 60%),
@@ -26,27 +32,28 @@
       var(--bg1);
     color: var(--text);
     font-family: var(--font);
-    min-height: 100vh;
+    display: flex; flex-direction: column; min-height: 100vh;
   }
-  /* ---------- nav ---------- */
+  /* ---------- 顶部导航 ---------- */
   .nav {
     position: sticky; top: 0; z-index: 100;
     display: flex; align-items: center; gap: 24px;
-    padding: 14px 28px;
-    background: rgba(5,7,13,0.75);
+    padding: 12px 24px;
+    background: rgba(5,7,13,0.85);
     backdrop-filter: blur(18px);
     border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
   }
   .nav .logo {
-    font-size: 17px; font-weight: 700; letter-spacing: .3px;
+    font-size: 16px; font-weight: 700; letter-spacing: .3px;
     background: linear-gradient(90deg, var(--cyan), var(--violet));
     -webkit-background-clip: text; background-clip: text; color: transparent;
     white-space: nowrap;
   }
-  .nav .tabs { display: flex; gap: 6px; }
+  .nav .tabs { display: flex; gap: 4px; flex-wrap: wrap; }
   .nav .tab {
-    padding: 8px 18px; border-radius: 8px; cursor: pointer;
-    color: var(--muted); font-size: 14px; font-weight: 500;
+    padding: 7px 14px; border-radius: 8px; cursor: pointer;
+    color: var(--muted); font-size: 13px; font-weight: 500;
     border: 1px solid transparent; transition: all .2s;
     user-select: none;
   }
@@ -56,124 +63,152 @@
     background: rgba(0,212,255,0.08); box-shadow: var(--glow);
   }
   .nav .spacer { flex: 1; }
-  .nav .conn { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+  .nav .conn { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); flex-wrap: wrap; }
   .conn .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--red); }
   .conn .dot.online { background: var(--green); box-shadow: 0 0 10px var(--green); animation: pulse 2s infinite; }
   .conn .dot.recording { background: var(--amber); box-shadow: 0 0 10px var(--amber); animation: pulse 1s infinite; }
   @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
-  /* ---------- main ---------- */
-  .main { padding: 24px 28px; max-width: 1500px; margin: 0 auto; }
+  /* ---------- 主体 ---------- */
+  .main { padding: 16px 24px; max-width: 1600px; width: 100%; margin: 0 auto; flex: 1; }
   .tabview { display: none; }
   .tabview.active { display: block; animation: fadein .3s ease; }
   @keyframes fadein { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-  /* ---------- glass cards ---------- */
+  /* ---------- 卡片 ---------- */
   .card {
     background: var(--card);
     border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 18px;
+    border-radius: 12px;
+    padding: 14px;
     backdrop-filter: blur(14px);
-    transition: border-color .25s, transform .25s, box-shadow .25s;
+    transition: border-color .25s, box-shadow .25s;
   }
   .card:hover { border-color: var(--border-hi); box-shadow: var(--glow); }
   .card h2 {
-    font-size: 12px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase;
-    color: var(--muted); margin-bottom: 14px;
+    font-size: 11px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 10px;
+    display: flex; justify-content: space-between; align-items: center; gap: 8px;
   }
-  .grid { display: grid; gap: 16px; }
-  .g2 { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
-  .g4 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .card h2 .hint { font-size: 10px; color: var(--muted); text-transform: none; letter-spacing: 0; font-weight: 400; }
+  .grid { display: grid; gap: 12px; }
+  .g2 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+  .g3 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .g4 { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
   /* ---------- KPI ---------- */
   .kpi {
     position: relative; overflow: hidden;
-    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
-    padding: 16px; text-align: center; transition: all .25s;
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 12px; text-align: center; transition: all .25s;
   }
-  .kpi:hover { border-color: var(--border-hi); transform: translateY(-2px); box-shadow: var(--glow); }
+  .kpi:hover { border-color: var(--border-hi); box-shadow: var(--glow); }
   .kpi::before {
     content: ""; position: absolute; inset: 0 0 auto 0; height: 2px;
     background: linear-gradient(90deg, transparent, var(--cyan), transparent);
     opacity: .6;
   }
-  .kpi .label { font-size: 11px; color: var(--muted); letter-spacing: 1px; }
+  .kpi .label { font-size: 10px; color: var(--muted); letter-spacing: 1px; }
   .kpi .val {
-    font-family: var(--mono); font-size: 26px; font-weight: 700; margin-top: 6px;
+    font-family: var(--mono); font-size: 22px; font-weight: 700; margin-top: 4px;
     text-shadow: 0 0 18px rgba(0,212,255,0.25);
   }
-  .kpi .sub { font-size: 11px; color: var(--muted); margin-top: 2px; font-family: var(--mono); }
-  /* ---------- badges ---------- */
+  .kpi .sub { font-size: 10px; color: var(--muted); margin-top: 2px; font-family: var(--mono); }
+  /* ---------- 徽章 ---------- */
   .badge {
-    display: inline-block; padding: 5px 12px; border-radius: 999px;
-    font-size: 12.5px; border: 1px solid var(--border); color: var(--muted);
+    display: inline-block; padding: 4px 10px; border-radius: 999px;
+    font-size: 12px; border: 1px solid var(--border); color: var(--muted);
     background: rgba(255,255,255,0.02);
   }
   .badge.accent { color: var(--cyan); border-color: var(--border-hi); }
   .badge.green { color: var(--green); border-color: rgba(52,211,153,0.35); }
   .badge.amber { color: var(--amber); border-color: rgba(251,191,36,0.35); }
   .badge.red { color: var(--red); border-color: rgba(248,113,113,0.35); }
-  .badgebar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
-  /* ---------- buttons ---------- */
+  .badgebar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  /* ---------- 按钮 / 输入 ---------- */
   button {
     background: rgba(0,212,255,0.06); color: var(--text);
-    border: 1px solid var(--border); border-radius: 9px;
-    padding: 8px 16px; font-size: 13.5px; cursor: pointer; font-family: var(--font);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 6px 14px; font-size: 12.5px; cursor: pointer; font-family: var(--font);
     transition: all .2s;
   }
   button:hover:not(:disabled) { border-color: var(--border-hi); box-shadow: var(--glow); transform: translateY(-1px); }
   button:disabled { opacity: .35; cursor: not-allowed; }
   button.green { color: var(--green); border-color: rgba(52,211,153,0.35); }
-  button.green:hover:not(:disabled) { border-color: var(--green); box-shadow: 0 0 16px rgba(52,211,153,0.2); }
   button.red { color: var(--red); border-color: rgba(248,113,113,0.35); }
-  button.red:hover:not(:disabled) { border-color: var(--red); box-shadow: 0 0 16px rgba(248,113,113,0.2); }
   button.violet { color: var(--violet); border-color: rgba(167,139,250,0.35); }
-  button.violet:hover:not(:disabled) { border-color: var(--violet); box-shadow: 0 0 16px rgba(167,139,250,0.2); }
+  button.sm { padding: 3px 9px; font-size: 11px; }
   input, select, textarea {
     background: rgba(255,255,255,0.03); color: var(--text);
-    border: 1px solid var(--border); border-radius: 8px;
-    padding: 7px 11px; font-size: 13px; font-family: var(--font);
+    border: 1px solid var(--border); border-radius: 7px;
+    padding: 6px 10px; font-size: 12.5px; font-family: var(--font);
     outline: none; transition: border-color .2s;
   }
   input:focus, select:focus, textarea:focus { border-color: var(--border-hi); box-shadow: var(--glow); }
-  textarea { resize: vertical; min-height: 70px; }
-  /* ---------- tables ---------- */
-  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-  th, td { padding: 7px 9px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05); }
-  th { color: var(--muted); font-weight: 600; font-size: 11px; letter-spacing: .8px; text-transform: uppercase; }
+  textarea { resize: vertical; min-height: 60px; }
+  select.refresh { font-family: var(--mono); }
+  /* ---------- 表格 ---------- */
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th, td { padding: 5px 8px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  th { color: var(--muted); font-weight: 600; font-size: 10px; letter-spacing: .6px; text-transform: uppercase; cursor: pointer; user-select: none; }
+  th:hover { color: var(--cyan); }
   .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
-  .scroll { max-height: 260px; overflow-y: auto; }
-  /* ---------- canvas ---------- */
-  canvas { width: 100%; height: 170px; display: block; }
-  .legend { display: flex; gap: 14px; margin-bottom: 8px; font-size: 11px; color: var(--muted); }
+  .scroll { max-height: 200px; overflow-y: auto; }
+  /* ---------- ECharts ---------- */
+  .chart { width: 100%; height: 190px; }
+  .legend { display: flex; gap: 12px; margin-bottom: 6px; font-size: 11px; color: var(--muted); flex-wrap: wrap; }
   .legend span::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 5px; vertical-align: middle; }
-  .msg { font-size: 12.5px; color: var(--amber); align-self: center; }
-  .footer { margin-top: 30px; color: var(--muted); font-size: 11.5px; text-align: center; letter-spacing: .5px; }
-  /* ---------- annotation workbench ---------- */
-  .workbench { display: grid; grid-template-columns: 260px 1fr; gap: 16px; align-items: start; }
-  .frames-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); gap: 10px; max-height: 480px; overflow-y: auto; padding-right: 4px; }
+  .msg { font-size: 12px; color: var(--amber); align-self: center; }
+  /* ---------- 相机 / 点云 ---------- */
+  .cam-wrap { position: relative; }
+  .cam-wrap img {
+    width: 100%; max-height: 300px; object-fit: contain;
+    background: #000; border-radius: 8px; border: 1px solid var(--border);
+  }
+  .cam-wrap .cam-overlay {
+    position: absolute; top: 8px; left: 8px; font-size: 11px; color: var(--cyan);
+    background: rgba(0,0,0,0.6); padding: 3px 8px; border-radius: 6px; font-family: var(--mono);
+  }
+  #pointcloud3d { width: 100%; height: 380px; border-radius: 8px; background: radial-gradient(circle at 30% 20%, #0d1424, #05070d); }
+  .pc-status { font-size: 11px; color: var(--muted); margin-top: 6px; font-family: var(--mono); }
+  .ctrl-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+  /* ---------- 标注工作台 ---------- */
+  .workbench { display: grid; grid-template-columns: 240px 1fr; gap: 12px; align-items: start; }
+  .frames-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px,1fr)); gap: 8px; max-height: 440px; overflow-y: auto; padding-right: 4px; }
   .frame-card {
-    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
-    padding: 8px; cursor: pointer; transition: all .18s; text-align: left; color: var(--text);
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 7px; cursor: pointer; transition: all .18s; text-align: left; color: var(--text);
   }
   .frame-card:hover { border-color: var(--border-hi); transform: translateY(-2px); }
   .frame-card.sel { border-color: var(--cyan); box-shadow: 0 0 14px rgba(0,212,255,0.25); background: rgba(0,212,255,0.07); }
-  .frame-card img { width: 100%; height: 70px; object-fit: cover; border-radius: 6px; background: #000; }
-  .frame-card .fidx { font-family: var(--mono); font-size: 11px; color: var(--cyan); margin-top: 5px; }
-  .frame-card .fmeta { font-size: 10px; color: var(--muted); margin-top: 2px; font-family: var(--mono); }
-  .noimg { width: 100%; height: 70px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.03); border-radius: 6px; color: var(--muted); font-size: 10px; }
-  .ann-list { margin-top: 14px; }
-  .ann-item { padding: 9px 11px; border: 1px solid var(--border); border-radius: 9px; margin-bottom: 8px; background: rgba(255,255,255,0.02); }
-  .ann-item .txt { font-size: 13px; color: var(--text); }
-  .ann-item .meta { font-size: 11px; color: var(--muted); margin-top: 4px; font-family: var(--mono); }
-  .ann-item button { padding: 3px 10px; font-size: 11px; float: right; }
+  .frame-card img { width: 100%; height: 60px; object-fit: cover; border-radius: 5px; background: #000; }
+  .frame-card .fidx { font-family: var(--mono); font-size: 10px; color: var(--cyan); margin-top: 4px; }
+  .frame-card .fmeta { font-size: 9px; color: var(--muted); margin-top: 2px; font-family: var(--mono); }
+  .noimg { width: 100%; height: 60px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.03); border-radius: 5px; color: var(--muted); font-size: 9px; }
+  .ann-list { margin-top: 12px; }
+  .ann-item { padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; background: rgba(255,255,255,0.02); }
+  .ann-item .txt { font-size: 12px; color: var(--text); }
+  .ann-item .meta { font-size: 10px; color: var(--muted); margin-top: 3px; font-family: var(--mono); }
+  .ann-item button { padding: 2px 8px; font-size: 10px; float: right; }
+  /* ---------- 底部固定信息栏 ---------- */
+  .footerbar {
+    border-top: 1px solid var(--border);
+    background: rgba(5,7,13,0.85);
+    backdrop-filter: blur(12px);
+    padding: 8px 24px;
+    display: flex; gap: 18px; align-items: center; flex-wrap: wrap;
+    font-size: 11px; color: var(--muted); font-family: var(--mono);
+  }
+  .footerbar .item { display: flex; gap: 5px; align-items: center; white-space: nowrap; }
+  .footerbar .item b { color: var(--cyan); font-weight: 600; }
 </style>
 </head>
 <body>
 
+<!-- ============ 顶部导航 ============ -->
 <nav class="nav">
   <div class="logo">◈ GO2-W 遥测中心</div>
   <div class="tabs">
     <div class="tab active" data-tab="monitor" onclick="switchTab('monitor')">实时监控</div>
     <div class="tab" data-tab="record" onclick="switchTab('record')">数据录制</div>
+    <div class="tab" data-tab="vision" onclick="switchTab('vision')">视觉与点云</div>
     <div class="tab" data-tab="annotate" onclick="switchTab('annotate')">标注工作台</div>
   </div>
   <div class="spacer"></div>
@@ -187,92 +222,92 @@
 
 <div class="main">
 
-  <!-- ============ TAB 1: MONITOR ============ -->
+  <!-- ============ TAB1 实时监控 ============ -->
   <div class="tabview active" id="tv-monitor">
     <div class="badgebar">
       <span class="badge" id="connBadge">连接中</span>
       <span class="badge">tick <span id="tick" class="num">-</span></span>
       <span class="badge">最后更新 <span id="lastSeen" class="num">-</span></span>
-      <span class="badge">电池电量 <span id="battSoc" class="num">-</span></span>
+      <span class="badge">电池电量 <span id="battSoc" class="num">-</span>%</span>
     </div>
-    <div class="grid g4" style="margin-bottom:16px;">
-      <div class="kpi"><div class="label">电压</div><div class="val" id="powerV">-</div><div class="sub" id="powerA">电流 -</div></div>
-      <div class="kpi"><div class="label">横滚 Roll</div><div class="val" id="rpyRoll">-</div><div class="sub">deg</div></div>
-      <div class="kpi"><div class="label">俯仰 Pitch</div><div class="val" id="rpyPitch">-</div><div class="sub">deg</div></div>
-      <div class="kpi"><div class="label">偏航 Yaw</div><div class="val" id="rpyYaw">-</div><div class="sub">deg</div></div>
+    <div class="grid g4" style="margin-bottom:12px;">
+      <div class="kpi"><div class="label">电压 / Voltage</div><div class="val" id="powerV">-</div><div class="sub" id="powerA">电流 -</div></div>
+      <div class="kpi"><div class="label">横滚 Roll</div><div class="val" id="rpyRoll">-</div><div class="sub">度 deg</div></div>
+      <div class="kpi"><div class="label">俯仰 Pitch</div><div class="val" id="rpyPitch">-</div><div class="sub">度 deg</div></div>
+      <div class="kpi"><div class="label">偏航 Yaw</div><div class="val" id="rpyYaw">-</div><div class="sub">度 deg</div></div>
     </div>
     <div class="grid g2">
       <div class="card">
-        <h2>IMU 姿态</h2>
-        <div class="legend"><span style="color:#f87171">Roll</span><span style="color:#34d399">Pitch</span><span style="color:#00d4ff">Yaw</span></div>
-        <canvas id="chartRPY"></canvas>
+        <h2>IMU 姿态 <span class="hint">Angle (deg)</span></h2>
+        <div class="legend"><span style="color:#f87171">横滚 Roll</span><span style="color:#34d399">俯仰 Pitch</span><span style="color:#00d4ff">偏航 Yaw</span></div>
+        <div class="chart" id="chartRPY"></div>
       </div>
       <div class="card">
-        <h2>电池电量 %</h2>
-        <canvas id="chartSoc"></canvas>
+        <h2>电池电量 <span class="hint">Battery %</span></h2>
+        <div class="chart" id="chartSoc"></div>
       </div>
       <div class="card">
-        <h2>电压 V</h2>
-        <canvas id="chartVoltage"></canvas>
+        <h2>电压 <span class="hint">Voltage (V)</span></h2>
+        <div class="chart" id="chartVoltage"></div>
       </div>
       <div class="card">
-        <h2>足底力 N</h2>
-        <div class="legend"><span style="color:#00d4ff">FL</span><span style="color:#34d399">FR</span><span style="color:#fbbf24">RL</span><span style="color:#f87171">RR</span></div>
-        <canvas id="chartFoot"></canvas>
+        <h2>足底力 <span class="hint">Foot Force (N)</span></h2>
+        <div class="legend"><span style="color:#00d4ff">左前 FL</span><span style="color:#34d399">右前 FR</span><span style="color:#fbbf24">左后 RL</span><span style="color:#f87171">右后 RR</span></div>
+        <div class="chart" id="chartFoot"></div>
       </div>
     </div>
-    <div class="grid g2" style="margin-top:16px;">
+    <div class="grid g2" style="margin-top:12px;">
       <div class="card">
-        <h2>关节电机</h2>
+        <h2>关节电机 <span class="hint">Joint Motors（点击表头排序）</span></h2>
         <div class="scroll">
           <table>
-            <thead><tr><th>#</th><th>q (rad)</th><th>dq</th><th>τ</th></tr></thead>
+            <thead><tr><th onclick="sortMotors('index')">#</th><th onclick="sortMotors('q')">角度 q(rad)</th><th onclick="sortMotors('dq')">速度 dq</th><th onclick="sortMotors('tau_est')">力矩 τ</th><th onclick="sortMotors('temperature')">温度 ℃</th></tr></thead>
             <tbody id="motorTable"></tbody>
           </table>
         </div>
       </div>
       <div class="card">
-        <h2>运动模式</h2>
+        <h2>运动模式 <span class="hint">Sport Mode</span></h2>
         <table>
           <tbody id="sportTable">
-            <tr><td>mode</td><td id="spMode" class="num">-</td></tr>
-            <tr><td>gait</td><td id="spGait" class="num">-</td></tr>
-            <tr><td>position</td><td id="spPos" class="num">-</td></tr>
-            <tr><td>velocity</td><td id="spVel" class="num">-</td></tr>
-            <tr><td>body_height</td><td id="spBodyH" class="num">-</td></tr>
+            <tr><td>模式 / mode</td><td id="spMode" class="num">-</td></tr>
+            <tr><td>步态 / gait</td><td id="spGait" class="num">-</td></tr>
+            <tr><td>位置 / position</td><td id="spPos" class="num">-</td></tr>
+            <tr><td>速度 / velocity</td><td id="spVel" class="num">-</td></tr>
+            <tr><td>机身高度 / height</td><td id="spBodyH" class="num">-</td></tr>
           </tbody>
         </table>
       </div>
     </div>
   </div>
 
-  <!-- ============ TAB 2: RECORD ============ -->
+  <!-- ============ TAB2 数据录制 ============ -->
   <div class="tabview" id="tv-record">
     <div class="grid g2">
       <div class="card">
-        <h2>数据录制</h2>
-        <div class="badgebar" style="margin-bottom:12px;">
+        <h2>数据录制 <span class="hint">Data Recording</span></h2>
+        <div class="badgebar" style="margin-bottom:10px;">
           <span class="badge" id="recBadge">未录制</span>
           <span class="badge" id="recSamples">样本 -</span>
           <span class="badge" id="recSize">大小 -</span>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <div class="ctrl-row">
           <button id="btnStartRec" class="green" onclick="startRecording()">▶ 开始录制</button>
           <button id="btnStopRec" class="red" onclick="stopRecording()" disabled>■ 停止录制</button>
-          <input type="text" id="recLabel" placeholder="标签 (选填)" style="width:150px">
+          <input type="text" id="recLabel" placeholder="标签 Label（选填）" style="width:150px">
           <span class="msg" id="recMsg"></span>
         </div>
-        <div class="scroll" style="margin-top:16px;">
+        <div class="scroll" style="margin-top:12px;">
           <table>
-            <thead><tr><th>会话ID</th><th>标签</th><th>时长</th><th>样本</th><th>导出</th></tr></thead>
+            <thead><tr><th>会话ID</th><th>标签</th><th>时长</th><th>样本</th><th>导出 Export</th></tr></thead>
             <tbody id="sessionsBody"></tbody>
           </table>
         </div>
-        <div style="margin-top:12px;"><button onclick="loadSessions()">刷新会话</button></div>
+        <div style="margin-top:10px;"><button onclick="loadSessions()">刷新会话</button></div>
       </div>
       <div class="card">
-        <h2>定时录制</h2>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">
+        <h2>定时录制 <span class="hint">Scheduled Recording</span></h2>
+        <div class="ctrl-row" style="margin-bottom:10px;">
           <select id="schedDay">
             <option value="0">周一</option><option value="1">周二</option><option value="2">周三</option>
             <option value="3">周四</option><option value="4">周五</option><option value="5">周六</option><option value="6">周日</option>
@@ -280,8 +315,8 @@
           <input type="time" id="schedStart" value="09:00">
           <span>→</span>
           <input type="time" id="schedStop" value="09:30">
-          <input type="text" id="schedLabel" placeholder="标签" style="width:110px">
-          <button class="green" onclick="addScheduleRule()">+ 规则</button>
+          <input type="text" id="schedLabel" placeholder="标签" style="width:100px">
+          <button class="green" onclick="addScheduleRule()">+ 添加</button>
         </div>
         <div class="scroll">
           <table>
@@ -289,17 +324,63 @@
             <tbody id="scheduleBody"></tbody>
           </table>
         </div>
-        <div style="margin-top:12px;"><button onclick="loadSchedule()">刷新定时</button></div>
+        <div style="margin-top:10px;"><button onclick="loadSchedule()">刷新定时</button></div>
       </div>
     </div>
   </div>
 
-  <!-- ============ TAB 3: ANNOTATE ============ -->
+  <!-- ============ TAB3 视觉与点云 ============ -->
+  <div class="tabview" id="tv-vision">
+    <div class="grid g2">
+      <div class="card">
+        <h2>前置相机 <span class="hint">Front Camera (RGB)</span></h2>
+        <div class="ctrl-row">
+          <span style="font-size:12px;color:var(--muted);">刷新频率 Refresh:</span>
+          <select id="camInterval" class="refresh" onchange="applyCamInterval()">
+            <option value="0.5">0.5 秒 / s</option>
+            <option value="1" selected>1 秒 / s</option>
+            <option value="2">2 秒 / s</option>
+            <option value="5">5 秒 / s</option>
+            <option value="10">10 秒 / s</option>
+          </select>
+          <span class="badge" id="camStatus">加载中…</span>
+        </div>
+        <div class="cam-wrap">
+          <img id="camImg" src="/api/image/latest?t=0" alt="相机画面" onerror="this.style.opacity='0.3'">
+          <div class="cam-overlay" id="camOverlay">CAMERA · 前置</div>
+        </div>
+        <p class="pc-status" style="margin-top:6px;">说明：图像来自前置相机 /api/image/latest，机器人离线或未录制时显示历史帧。</p>
+      </div>
+      <div class="card">
+        <h2>激光雷达点云 <span class="hint">LiDAR Point Cloud (3D)</span></h2>
+        <div class="ctrl-row">
+          <span style="font-size:12px;color:var(--muted);">刷新频率 Refresh:</span>
+          <select id="pcInterval" class="refresh" onchange="applyPcInterval()">
+            <option value="2">2 秒 / s</option>
+            <option value="5" selected>5 秒 / s</option>
+            <option value="10">10 秒 / s</option>
+            <option value="20">20 秒 / s</option>
+          </select>
+          <span style="font-size:12px;color:var(--muted);">点数 Points:</span>
+          <select id="pcPoints" class="refresh" onchange="applyPcInterval()">
+            <option value="1000">1000</option>
+            <option value="3000" selected>3000</option>
+            <option value="8000">8000</option>
+          </select>
+          <span class="badge" id="pcStatus">加载中…</span>
+        </div>
+        <div id="pointcloud3d"></div>
+        <p class="pc-status" id="pcInfo">鼠标拖动旋转 / 滚轮缩放（Drag to rotate, scroll to zoom）</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TAB4 标注工作台 ============ -->
   <div class="tabview" id="tv-annotate">
     <div class="workbench">
       <div class="card">
-        <h2>选择会话</h2>
-        <div class="scroll" style="max-height:520px;">
+        <h2>选择会话 <span class="hint">Select Session</span></h2>
+        <div class="scroll" style="max-height:460px;">
           <table>
             <thead><tr><th>会话</th><th>标签</th></tr></thead>
             <tbody id="annSessionBody"></tbody>
@@ -309,16 +390,16 @@
       <div>
         <div class="card" id="annFramesCard">
           <h2>帧浏览 <span id="annFrameInfo" style="text-transform:none;letter-spacing:0;"></span></h2>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
-            <button onclick="loadFramePage(prev)">‹ 上一页</button>
-            <button onclick="loadFramePage(next)">下一页 ›</button>
+          <div class="ctrl-row">
+            <button onclick="loadFramePage(-1)">‹ 上一页</button>
+            <button onclick="loadFramePage(1)">下一页 ›</button>
             <span class="badge" id="annSelCount">已选 0 帧</span>
             <span class="msg" id="annMsg"></span>
           </div>
           <div class="frames-grid" id="framesGrid"></div>
-          <div style="margin-top:14px;display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;">
-            <textarea id="annText" placeholder="输入自然语言描述，例如：机器人以稳定步态向前行走，速度约0.3m/s"></textarea>
-            <div style="display:flex;flex-direction:column;gap:8px;">
+          <div class="ctrl-row" style="margin-top:12px;align-items:flex-start;">
+            <textarea id="annText" placeholder="输入自然语言描述 Natural Language Description，例如：机器人以稳定步态向前行走，速度约0.3m/s"></textarea>
+            <div style="display:flex;flex-direction:column;gap:6px;">
               <button class="violet" onclick="saveAnnotation()">💾 保存标注</button>
               <button onclick="clearSelection()">清除选择</button>
             </div>
@@ -331,15 +412,21 @@
 
 </div>
 
-<div class="footer">GO2-W TELEMETRY · data source rt/lowstate@500Hz · storage InfluxDB + Arrow + LeRobot</div>
+<!-- ============ 底部固定信息栏 ============ -->
+<div class="footerbar">
+  <div class="item">服务器 Server：<b id="fServer">192.168.1.80</b></div>
+  <div class="item">机器人 Robot：<b id="fRobot">Go2-W</b></div>
+  <div class="item">连接状态：<b id="fConn">-</b></div>
+  <div class="item">采集频率：<b id="fHz">-</b> Hz</div>
+  <div class="item">数据源：<b>rt/lowstate @ 500Hz</b></div>
+  <div class="item">存储 Storage：<b>InfluxDB + Arrow + LeRobot</b></div>
+  <div class="spacer"></div>
+  <div class="item">GO2-W TELEMETRY · v2.1</div>
+</div>
 
 <script>
+// ================= 工具函数 =================
 const $ = id => document.getElementById(id);
-const charts = {};
-const MAX_POINTS = 200;
-const history = { rpy: [], soc: [], volt: [], foot: [] };
-
-// ---------- utils ----------
 function fmt(v, d=2) { return v===null||v===undefined||isNaN(v) ? '-' : Number(v).toFixed(d); }
 function fmtTime(ts) { return ts ? new Date(ts*1000).toTimeString().slice(0,8) : '-'; }
 function fmtBytes(n) {
@@ -348,7 +435,7 @@ function fmtBytes(n) {
   while (v>=1024 && i<u.length-1) { v/=1024; i++; }
   return v.toFixed(1)+' '+u[i];
 }
-function fmtDur(s) { if(!s) return '-'; return s>=60 ? (s/60).toFixed(1)+' min' : s.toFixed(1)+' s'; }
+function fmtDur(s) { if(!s) return '-'; return s>=60 ? (s/60).toFixed(1)+' 分钟 min' : s.toFixed(1)+' 秒 s'; }
 async function fetchJSON(url) {
   try { const r=await fetch(url); if(!r.ok) throw new Error(r.status); return await r.json(); }
   catch(e){ return null; }
@@ -362,112 +449,247 @@ async function postJSON(url, body) {
   } catch(e){ return {error:e.message}; }
 }
 
-// ---------- tab switch ----------
+// ================= TAB 切换 =================
 function switchTab(name) {
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
   document.querySelectorAll('.tabview').forEach(v=>v.classList.toggle('active', v.id==='tv-'+name));
   if (name==='annotate') { loadAnnSessions(); }
   if (name==='record') { loadSessions(); loadSchedule(); }
+  if (name==='vision') { refreshCam(); refreshPc(); }
 }
 
-// ---------- charts ----------
-function mkChart(id) {
-  const canvas=$(id); const ctx=canvas.getContext('2d');
-  const dpr=window.devicePixelRatio||1;
-  const setSize=()=>{ const w=canvas.clientWidth||300,h=canvas.clientHeight||170; canvas.width=w*dpr; canvas.height=h*dpr; };
-  setSize(); window.addEventListener('resize',setSize);
-  return {ctx,dpr,w:()=>canvas.width/dpr,h:()=>canvas.height/dpr};
-}
-function drawLine(chart, series, colors, minV, maxV) {
-  const {ctx,dpr}=chart; ctx.setTransform(dpr,0,0,dpr,0,0);
-  const W=chart.w(), H=chart.h(); ctx.clearRect(0,0,W,H);
-  ctx.strokeStyle='rgba(255,255,255,0.06)'; ctx.lineWidth=1;
-  for(let i=1;i<4;i++){ ctx.beginPath(); ctx.moveTo(0,H*i/4); ctx.lineTo(W,H*i/4); ctx.stroke(); }
-  if(!series.length || series[0].length<2) return;
-  const n=Math.max(...series.map(s=>s.length)); const range=(maxV-minV)||1;
-  series.forEach((s,si)=>{
-    if(s.length<2) return;
-    const grad=ctx.createLinearGradient(0,0,0,H);
-    grad.addColorStop(0, colors[si%colors.length]); grad.addColorStop(1, colors[si%colors.length]+'33');
-    ctx.strokeStyle=colors[si%colors.length]; ctx.lineWidth=1.8; ctx.shadowColor=colors[si%colors.length]; ctx.shadowBlur=6;
-    ctx.beginPath();
-    s.forEach((v,i)=>{ const x=i/Math.max(n-1,1)*W; const y=H-((v-minV)/range)*(H-12)-6; i?ctx.lineTo(x,y):ctx.moveTo(x,y); });
-    ctx.stroke(); ctx.shadowBlur=0;
+// ================= ECharts 图表 =================
+// 用 ECharts 替代手写 canvas，支持数值标注 / 悬停提示 / 缩放 / 数据交互
+const charts = {};
+function initChart(id, color) {
+  const el = $(id);
+  const ch = echarts.init(el);
+  ch.setOption({
+    grid: { left: 42, right: 12, top: 24, bottom: 24 },
+    tooltip: { trigger: 'axis', backgroundColor: 'rgba(10,14,23,0.9)', borderColor: 'rgba(0,212,255,0.3)', textStyle: { color: '#e8f1ff', fontSize: 11 } },
+    xAxis: { type: 'category', show: false },
+    yAxis: { type: 'value', splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } }, axisLabel: { color: '#7a8ba6', fontSize: 10 } },
+    series: [],
   });
+  charts[id] = { ch, color, data: {} };
+  return charts[id];
+}
+function pushChart(id, key, value) {
+  const c = charts[id];
+  if (!c) return;
+  const arr = c.data[key] || [];
+  arr.push(value);
+  if (arr.length > 120) arr.shift();
+  c.data[key] = arr;
+}
+function updateCharts() {
+  for (const id of Object.keys(charts)) {
+    const c = charts[id];
+    const series = [];
+    for (const key of Object.keys(c.data)) {
+      series.push({
+        name: key,
+        type: 'line',
+        smooth: true,
+        showSymbol: false,
+        lineStyle: { width: 1.6, color: c.color[key] || '#00d4ff' },
+        itemStyle: { color: c.color[key] || '#00d4ff' },
+        areaStyle: { opacity: 0.06, color: c.color[key] || '#00d4ff' },
+        data: c.data[key],
+      });
+    }
+    c.ch.setOption({
+      series,
+      legend: { show: false },
+      animation: false,
+    }, { notMerge: true });
+  }
 }
 
-// ---------- poll state ----------
-let lastState=null;
+// ================= 状态轮询 =================
+let lastState = null;
 async function poll() {
-  const st=await fetchJSON('/api/state');
-  if(!st) return; lastState=st;
-  const online=st.online;
-  $('navDot').className='dot '+(online?'online':'');
-  $('navStatus').textContent=online?'机器人在线':'机器人离线';
-  $('navHz').textContent=fmt(st.hz,0)+' Hz';
-  $('connBadge').textContent=online?'● 机器人在线':'● 机器人离线';
-  $('connBadge').className='badge '+(online?'green':'red');
-  $('tick').textContent=fmt(st.tick,0);
-  $('lastSeen').textContent=fmtTime(st.last_seen_s);
-  const bms=st.battery||{};
-  $('battSoc').textContent=(bms.soc??'-')+'%';
-  $('powerV').textContent=fmt(st.power?.voltage,1);
-  $('powerA').textContent='电流 '+fmt(st.power?.current,2);
-  const rpy=st.imu?.rpy_deg;
-  if(rpy){ $('rpyRoll').textContent=fmt(rpy[0],1); $('rpyPitch').textContent=fmt(rpy[1],1); $('rpyYaw').textContent=fmt(rpy[2],1); }
-  // motor table
-  const motors=st.motor||[];
-  $('motorTable').innerHTML = motors.length ? motors.map(m=>`<tr><td>${m.index}</td><td class="num">${fmt(m.q,3)}</td><td class="num">${fmt(m.dq,2)}</td><td class="num">${fmt(m.tau_est,2)}</td></tr>`).join('') : '<tr><td colspan="4" style="color:var(--muted)">等待数据</td></tr>';
-  const sp=st.sport_mode||{};
-  $('spMode').textContent=sp.mode??'-';
-  $('spGait').textContent=sp.gait_type??'-';
-  $('spPos').textContent=sp.position?sp.position.map(x=>fmt(x)).join(', '):'-';
-  $('spVel').textContent=sp.velocity?sp.velocity.map(x=>fmt(x)).join(', '):'-';
-  $('spBodyH').textContent=fmt(sp.body_height);
-  // recording badge in nav
-  const rec=st.recording;
-  if(rec&&rec.active){ $('navRec').textContent='● 录制中'; $('navRec').className='badge amber'; $('navDot').className='dot recording'; }
+  const st = await fetchJSON('/api/state');
+  if(!st) return; lastState = st;
+  const online = st.online;
+  $('navDot').className = 'dot ' + (online ? 'online' : '');
+  $('navStatus').textContent = online ? '机器人在线' : '机器人离线';
+  $('navHz').textContent = fmt(st.hz,0) + ' Hz';
+  $('connBadge').textContent = online ? '● 机器人在线' : '● 机器人离线';
+  $('connBadge').className = 'badge ' + (online ? 'green' : 'red');
+  $('tick').textContent = fmt(st.tick,0);
+  $('lastSeen').textContent = fmtTime(st.last_seen_s);
+  $('fConn').textContent = online ? '在线 Online' : '离线 Offline';
+  $('fHz').textContent = fmt(st.hz,0);
+  const bms = st.battery||{};
+  $('battSoc').textContent = bms.soc ?? '-';
+  $('powerV').textContent = fmt(st.power?.voltage,1);
+  $('powerA').textContent = '电流 ' + fmt(st.power?.current,2) + ' A';
+  const rpy = st.imu?.rpy_deg;
+  if(rpy){ $('rpyRoll').textContent = fmt(rpy[0],1); $('rpyPitch').textContent = fmt(rpy[1],1); $('rpyYaw').textContent = fmt(rpy[2],1); }
+  // 电机表格
+  const motors = st.motor||[];
+  window._motors = motors;
+  renderMotors(motors);
+  const sp = st.sport_mode||{};
+  $('spMode').textContent = sp.mode??'-';
+  $('spGait').textContent = sp.gait_type??'-';
+  $('spPos').textContent = sp.position?sp.position.map(x=>fmt(x)).join(', '):'-';
+  $('spVel').textContent = sp.velocity?sp.velocity.map(x=>fmt(x)).join(', '):'-';
+  $('spBodyH').textContent = fmt(sp.body_height);
+  // 录制状态
+  const rec = st.recording;
+  if(rec && rec.active){ $('navRec').textContent='● 录制中'; $('navRec').className='badge amber'; }
   else { $('navRec').textContent='未录制'; $('navRec').className='badge'; }
-  // push history
-  const now=Date.now();
-  if(rpy){ history.rpy.push({v:rpy}); if(history.rpy.length>MAX_POINTS)history.rpy.shift();
-    drawLine(charts.cRPY,[history.rpy.map(p=>p.v[0]),history.rpy.map(p=>p.v[1]),history.rpy.map(p=>p.v[2])],['#f87171','#34d399','#00d4ff'],-60,60); }
-  if(bms.soc!==undefined){ history.soc.push({v:Number(bms.soc)}); if(history.soc.length>MAX_POINTS)history.soc.shift();
-    drawLine(charts.cSoc,[history.soc.map(p=>p.v)],['#34d399'],0,100); }
-  const pv=st.power?.voltage;
-  if(pv!==undefined){ history.volt.push({v:Number(pv)}); if(history.volt.length>MAX_POINTS)history.volt.shift();
-    drawLine(charts.cVolt,[history.volt.map(p=>p.v)],['#fbbf24'],0,60); }
-  const ff=st.foot_force||[];
-  if(ff.length>=4){ history.foot.push({v:ff.slice(0,4)}); if(history.foot.length>MAX_POINTS)history.foot.shift();
-    drawLine(charts.cFoot,[history.foot.map(p=>p.v[0]),history.foot.map(p=>p.v[1]),history.foot.map(p=>p.v[2]),history.foot.map(p=>p.v[3])],['#00d4ff','#34d399','#fbbf24','#f87171'],0,500); }
+  // 推入 ECharts 数据
+  if(rpy){ pushChart('chartRPY','横滚Roll',+rpy[0].toFixed(1)); pushChart('chartRPY','俯仰Pitch',+rpy[1].toFixed(1)); pushChart('chartRPY','偏航Yaw',+rpy[2].toFixed(1)); }
+  if(bms.soc!==undefined){ pushChart('chartSoc','电量SOC',+Number(bms.soc).toFixed(0)); }
+  const pv = st.power?.voltage;
+  if(pv!==undefined){ pushChart('chartVoltage','电压V',+Number(pv).toFixed(1)); }
+  const ff = st.foot_force||[];
+  if(ff.length>=4){ pushChart('chartFoot','FL左前',+ff[0].toFixed(0)); pushChart('chartFoot','FR右前',+ff[1].toFixed(0)); pushChart('chartFoot','RL左后',+ff[2].toFixed(0)); pushChart('chartFoot','RR右后',+ff[3].toFixed(0)); }
+  updateCharts();
+}
+// 电机表排序
+let motorSortKey = 'index', motorSortAsc = true;
+function renderMotors(motors) {
+  if(!motors.length){ $('motorTable').innerHTML='<tr><td colspan="5" style="color:var(--muted)">等待数据 Waiting…</td></tr>'; return; }
+  const sorted = [...motors].sort((a,b)=> (a[motorSortKey]??0) - (b[motorSortKey]??0) * (motorSortAsc?1:-1));
+  $('motorTable').innerHTML = sorted.map(m=>`<tr>
+    <td class="num">${m.index}</td><td class="num">${fmt(m.q,3)}</td><td class="num">${fmt(m.dq,2)}</td>
+    <td class="num">${fmt(m.tau_est,2)}</td><td class="num">${fmt(m.temperature,0)}</td></tr>`).join('');
+}
+function sortMotors(key) {
+  if(motorSortKey===key) motorSortAsc=!motorSortAsc; else { motorSortKey=key; motorSortAsc=true; }
+  renderMotors(window._motors||[]);
 }
 
-// ---------- recording ----------
-let lastRec=null;
+// ================= 相机刷新 =================
+let camTimer = null;
+function applyCamInterval() {
+  if(camTimer) clearInterval(camTimer);
+  refreshCam();
+  camTimer = setInterval(refreshCam, parseFloat($('camInterval').value)*1000);
+}
+async function refreshCam() {
+  try {
+    const t = Date.now();
+    const resp = await fetch('/api/image/latest?t='+t);
+    if(resp.ok){
+      $('camImg').src = '/api/image/latest?t='+t;
+      $('camStatus').textContent = '● 已更新 ' + new Date().toTimeString().slice(0,8);
+      $('camStatus').className = 'badge green';
+      $('camImg').style.opacity = '1';
+    } else {
+      $('camStatus').textContent = '无图像 No image';
+      $('camStatus').className = 'badge red';
+    }
+  } catch(e){
+    $('camStatus').textContent = '加载失败 Error';
+    $('camStatus').className = 'badge red';
+  }
+}
+
+// ================= 激光点云 3D（Three.js）=================
+let pcTimer = null;
+let scene, camera, renderer, pointsMesh, controls;
+function initPc3D() {
+  const el = $('pointcloud3d');
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(60, el.clientWidth/el.clientHeight, 0.1, 100);
+  camera.position.set(2, 2, 4);
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setSize(el.clientWidth, el.clientHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // 限制像素比防卡顿
+  el.appendChild(renderer.domElement);
+  controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.1;
+  // 坐标轴辅助
+  const axes = new THREE.AxesHelper(2);
+  scene.add(axes);
+  // 网格参考
+  const grid = new THREE.GridHelper(6, 12, 0x00d4ff, 0x1a2a3a);
+  scene.add(grid);
+  // 点云几何体（预分配）
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(3000*3), 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(3000*3), 3));
+  const mat = new THREE.PointsMaterial({ size: 0.02, vertexColors: true, transparent: true, opacity: 0.9 });
+  pointsMesh = new THREE.Points(geo, mat);
+  scene.add(pointsMesh);
+  animate();
+}
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+}
+let pcMaxPoints = 3000;
+async function refreshPc() {
+  pcMaxPoints = parseInt($('pcPoints').value);
+  const st = $('pcStatus');
+  st.textContent = '采集点云…';
+  st.className = 'badge amber';
+  try {
+    const d = await fetchJSON('/api/lidar/cloud?max_points='+pcMaxPoints);
+    if(d && d.online && d.points && d.points.length){
+      const pts = d.points;
+      // 更新几何体
+      const pos = pointsMesh.geometry.attributes.position.array;
+      const col = pointsMesh.geometry.attributes.color.array;
+      // 按高度 z 着色（蓝→绿→红）
+      const zs = pts.map(p=>p[2]);
+      const zmin = Math.min(...zs), zmax = Math.max(...zs);
+      for(let i=0;i<pts.length;i++){
+        pos[i*3]=pts[i][0]; pos[i*3+1]=pts[i][1]; pos[i*3+2]=pts[i][2];
+        const t = zmax>zmin ? (pts[i][2]-zmin)/(zmax-zmin) : 0.5;
+        col[i*3]=0.3+0.7*t; col[i*3+1]=0.5+0.5*(1-Math.abs(t-0.5)*2); col[i*3+2]=1-t;
+      }
+      pointsMesh.geometry.setDrawRange(0, pts.length);
+      pointsMesh.geometry.attributes.position.needsUpdate = true;
+      pointsMesh.geometry.attributes.color.needsUpdate = true;
+      st.textContent = `● ${pts.length.toLocaleString()} 点 / 共 ${(d.total||0).toLocaleString()} · ${fmt(d.hz,1)}Hz`;
+      st.className = 'badge green';
+      $('pcInfo').textContent = `当前点数 ${pts.length.toLocaleString()} · 鼠标拖动旋转 / 滚轮缩放`;
+    } else {
+      st.textContent = '点云离线或暂无数据（机器人离线）';
+      st.className = 'badge red';
+      pointsMesh.geometry.setDrawRange(0, 0);
+    }
+  } catch(e){
+    st.textContent = '点云加载失败 ' + (e.message||'');
+    st.className = 'badge red';
+  }
+}
+function applyPcInterval() {
+  if(pcTimer) clearInterval(pcTimer);
+  refreshPc();
+  pcTimer = setInterval(refreshPc, parseFloat($('pcInterval').value)*1000);
+}
+
+// ================= 录制控制 =================
 async function pollRecording() {
-  const st=await fetchJSON('/api/record/status');
-  if(!st)return; lastRec=st;
-  const badge=$('recBadge');
+  const st = await fetchJSON('/api/record/status');
+  if(!st)return;
+  const badge = $('recBadge');
   if(st.active){ badge.textContent='● 录制中 '+(st.session_id||'').slice(0,6); badge.className='badge amber';
     $('btnStartRec').disabled=true; $('btnStopRec').disabled=false; }
   else { badge.textContent='● 未录制'; badge.className='badge';
     $('btnStartRec').disabled=false; $('btnStopRec').disabled=true; }
   $('recSamples').textContent='样本 '+fmt(st.sample_count,0);
   $('recSize').textContent='大小 '+fmtBytes(st.size_bytes);
-  if(!st.robot_online && st.active) $('recMsg').textContent='⚠ 机器人离线';
-  else if(st.pending_command) $('recMsg').textContent='⏳ '+st.pending_command;
-  else $('recMsg').textContent='';
 }
 async function startRecording(){
   const label=($('recLabel').value||'').trim();
-  $('recMsg').textContent='⏳ 开始...';
+  $('recMsg').textContent='⏳ 开始中…';
   const r=await postJSON('/api/record/start?label='+encodeURIComponent(label));
   if(r.error){$('recMsg').textContent='❌ '+r.error;return;}
   $('recMsg').textContent='✅ 已开始 '+(r.session_id||'');
   await pollRecording();
 }
 async function stopRecording(){
-  $('recMsg').textContent='⏳ 保存中...';
+  $('recMsg').textContent='⏳ 保存中…';
   const r=await postJSON('/api/record/stop');
   if(r.error){$('recMsg').textContent='❌ '+r.error;return;}
   $('recMsg').textContent='✅ 已保存 '+(r.sample_count||0).toLocaleString()+' 样本';
@@ -475,28 +697,28 @@ async function stopRecording(){
 }
 async function loadSessions(){
   const d=await fetchJSON('/api/sessions'); const tb=$('sessionsBody');
-  if(!d||!d.sessions||!d.sessions.length){ tb.innerHTML='<tr><td colspan="5" style="color:var(--muted)">暂无会话</td></tr>'; return; }
+  if(!d||!d.sessions||!d.sessions.length){ tb.innerHTML='<tr><td colspan="5" style="color:var(--muted)">暂无会话 No sessions</td></tr>'; return; }
   tb.innerHTML=d.sessions.map(s=>`<tr>
     <td class="num" title="${s.session_id}">${(s.session_id||'').slice(0,10)}</td>
     <td>${s.label||'-'}</td>
     <td class="num">${fmtDur(s.duration_s)}</td>
     <td class="num">${(s.sample_count||0).toLocaleString()}</td>
-    <td><button onclick="exportSession('${s.session_id}')">HF</button> <button class="violet" onclick="exportLerobot('${s.session_id}')">LeRobot</button></td>
+    <td><button class="sm" onclick="exportSession('${s.session_id}')">HF</button> <button class="sm violet" onclick="exportLerobot('${s.session_id}')">LeRobot</button></td>
   </tr>`).join('');
 }
-async function exportSession(id){ $('recMsg').textContent='⏳ 导出 HF...'; const r=await postJSON('/api/dataset/export/'+id);
+async function exportSession(id){ $('recMsg').textContent='⏳ 导出 HF…'; const r=await postJSON('/api/dataset/export/'+id);
   if(r.error){$('recMsg').textContent='❌ '+r.error;return;} $('recMsg').textContent='✅ '+r.num_rows.toLocaleString()+' 行'; }
-async function exportLerobot(id){ $('recMsg').textContent='⏳ 导出 LeRobot...'; const r=await postJSON('/api/dataset/export/lerobot/'+id);
+async function exportLerobot(id){ $('recMsg').textContent='⏳ 导出 LeRobot…'; const r=await postJSON('/api/dataset/export/lerobot/'+id);
   if(r.error){$('recMsg').textContent='❌ '+r.error;return;} $('recMsg').textContent='✅ '+r.num_frames.toLocaleString()+' 帧'; }
 
-// ---------- schedule ----------
+// ================= 定时规则 =================
 const DOW=['一','二','三','四','五','六','日'];
 async function loadSchedule(){
   const d=await fetchJSON('/api/schedule'); const tb=$('scheduleBody');
-  if(!d||!d.rules||!d.rules.length){ tb.innerHTML='<tr><td colspan="6" style="color:var(--muted)">暂无规则</td></tr>'; return; }
+  if(!d||!d.rules||!d.rules.length){ tb.innerHTML='<tr><td colspan="6" style="color:var(--muted)">暂无规则 No rules</td></tr>'; return; }
   tb.innerHTML=d.rules.map(r=>`<tr><td class="num">${r.rule_id}</td><td>周${DOW[r.day_of_week]}</td>
     <td>${r.start_time}</td><td>${r.stop_time}</td><td>${r.label||'-'}</td>
-    <td><button onclick="delScheduleRule('${r.rule_id}')">删除</button></td></tr>`).join('');
+    <td><button class="sm red" onclick="delScheduleRule('${r.rule_id}')">删除</button></td></tr>`).join('');
 }
 async function addScheduleRule(){
   const rule={day_of_week:parseInt($('schedDay').value),start_time:$('schedStart').value,stop_time:$('schedStop').value,label:$('schedLabel').value.trim(),enabled:true};
@@ -505,33 +727,33 @@ async function addScheduleRule(){
 }
 async function delScheduleRule(id){ await postJSON('/api/schedule/'+id,null); await loadSchedule(); }
 
-// ---------- annotation workbench ----------
+// ================= 标注工作台 =================
 let annSession=null, annFrames=[], annSel=new Set(), annPage=0, annTotal=0;
 const ANN_PAGE=30;
 async function loadAnnSessions(){
   const d=await fetchJSON('/api/sessions'); const tb=$('annSessionBody');
   if(!d||!d.sessions||!d.sessions.length){ tb.innerHTML='<tr><td colspan="2" style="color:var(--muted)">暂无会话</td></tr>'; return; }
-  tb.innerHTML=d.sessions.map(s=>`<tr><td><button class="violet" onclick="openAnnSession('${s.session_id}')">${(s.session_id||'').slice(0,10)}</button></td><td>${s.label||'-'}</td></tr>`).join('');
+  tb.innerHTML=d.sessions.map(s=>`<tr><td><button class="sm violet" onclick="openAnnSession('${s.session_id}')">${(s.session_id||'').slice(0,10)}</button></td><td>${s.label||'-'}</td></tr>`).join('');
 }
 async function openAnnSession(id){
-  annSession=id; annPage=0; annSel.clear(); annMsgClear();
-  $('annFrameInfo').textContent='· session '+id.slice(0,8);
+  annSession=id; annPage=0; annSel.clear();
+  $('annFrameInfo').textContent=' · session '+id.slice(0,8);
   await loadFramePage(0); await loadAnnList();
 }
 async function loadFramePage(dir){
   if(!annSession)return;
-  annPage=Math.max(0, annPage+(dir===1?1:dir===-1?-1:0));
+  annPage=Math.max(0, annPage+dir);
   const d=await fetchJSON(`/api/session/${annSession}/frames?start=${annPage*ANN_PAGE}&count=${ANN_PAGE}`);
   if(!d)return;
   annFrames=d.frames||[]; annTotal=d.total||0;
-  $('annFrameInfo').textContent='· '+annSession.slice(0,8)+' · 帧 '+((annPage*ANN_PAGE)+1)+'-'+(annPage*ANN_PAGE+annFrames.length)+' / '+annTotal;
+  $('annFrameInfo').textContent=' · '+annSession.slice(0,8)+' · 帧 '+(annPage*ANN_PAGE+1)+'-'+(annPage*ANN_PAGE+annFrames.length)+' / '+annTotal;
   const grid=$('framesGrid');
   grid.innerHTML=annFrames.map(f=>{
     const img=f.image?`<img src="/api/session/${annSession}/image/${f.image}" loading="lazy">`
       :`<div class="noimg">无图像</div>`;
     const rpy=f.imu_rpy?`R${fmt(f.imu_rpy[0],1)} P${fmt(f.imu_rpy[1],1)} Y${fmt(f.imu_rpy[2],1)}`:'';
     return `<div class="frame-card ${annSel.has(f.index)?'sel':''}" data-idx="${f.index}" onclick="toggleFrame(${f.index})">
-      ${img}<div class="fidx">帧 ${f.index}</div><div class="fmeta">tick ${f.tick||'-'} ${rpy}</div>
+      ${img}<div class="fidx">帧 Frame ${f.index}</div><div class="fmeta">tick ${f.tick||'-'} ${rpy}</div>
     </div>`;
   }).join('');
   updateSelCount();
@@ -545,7 +767,6 @@ function toggleFrame(i){
 function clearSelection(){ annSel.clear();
   document.querySelectorAll('.frame-card').forEach(c=>c.classList.remove('sel')); updateSelCount(); }
 function updateSelCount(){ $('annSelCount').textContent='已选 '+annSel.size+' 帧'; }
-function annMsgClear(){ $('annMsg').textContent=''; }
 async function saveAnnotation(){
   if(!annSession){ $('annMsg').textContent='请先选择会话'; return; }
   if(annSel.size===0){ $('annMsg').textContent='请先选择帧'; return; }
@@ -559,11 +780,11 @@ async function loadAnnList(){
   if(!annSession)return;
   const d=await fetchJSON(`/api/session/${annSession}/annotations`);
   const list=$('annList');
-  if(!d||!d.entries||!d.entries.length){ list.innerHTML='<div style="color:var(--muted);font-size:12px;">暂无标注</div>'; return; }
+  if(!d||!d.entries||!d.entries.length){ list.innerHTML='<div style="color:var(--muted);font-size:11px;">暂无标注 No annotations</div>'; return; }
   list.innerHTML=d.entries.map(e=>`<div class="ann-item">
-    <button class="red" onclick="delAnnotation('${e.id}')">删除</button>
+    <button class="sm red" onclick="delAnnotation('${e.id}')">删除</button>
     <div class="txt">${e.text}</div>
-    <div class="meta">帧 ${e.frame_indices.join(', ')} · ${new Date(e.created_at*1000).toLocaleString('zh-CN')}</div>
+    <div class="meta">帧 Frame ${e.frame_indices.join(', ')} · ${new Date(e.created_at*1000).toLocaleString('zh-CN')}</div>
   </div>`).join('');
 }
 async function delAnnotation(id){
@@ -571,12 +792,21 @@ async function delAnnotation(id){
   await loadAnnList();
 }
 
-// ---------- init ----------
-charts.cRPY=mkChart('chartRPY'); charts.cSoc=mkChart('chartSoc');
-charts.cVolt=mkChart('chartVoltage'); charts.cFoot=mkChart('chartFoot');
-poll(); setInterval(poll,1000);
-pollRecording(); setInterval(pollRecording,2000);
+// ================= 初始化 =================
+initChart('chartRPY', {'横滚Roll':'#f87171','俯仰Pitch':'#34d399','偏航Yaw':'#00d4ff'});
+initChart('chartSoc', {'电量SOC':'#34d399'});
+initChart('chartVoltage', {'电压V':'#fbbf24'});
+initChart('chartFoot', {'FL左前':'#00d4ff','FR右前':'#34d399','RL左后':'#fbbf24','RR右后':'#f87171'});
+initPc3D();
+poll(); setInterval(poll, 1000);
+pollRecording(); setInterval(pollRecording, 2000);
+applyCamInterval();
+applyPcInterval();
+// 窗口尺寸变化时重算图表
+window.addEventListener('resize', ()=>{
+  Object.values(charts).forEach(c=>c.ch.resize());
+  if(renderer){ renderer.setSize($('pointcloud3d').clientWidth, $('pointcloud3d').clientHeight); }
+});
 </script>
 </body>
 </html>
-
