@@ -1,0 +1,7 @@
+fastapi>=0.100
+uvicorn>=0.23
+requests>=2.31
+pyarrow>=14.0
+numpy>=1.24
+# 可选：导出视频（无 ffmpeg 时回退）
+opencv-python-headless>=4.8

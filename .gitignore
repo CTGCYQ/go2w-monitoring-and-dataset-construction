@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# 运行时状态文件（collector/server 动态生成）
+state.json
+control.json
+schedule.json
+*.log
+
+# 数据集与录制产物
+sessions/
+_in_progress/
+exports/
+images/
+
+# IDE / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# pytest
+.pytest_cache/
