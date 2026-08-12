@@ -142,7 +142,8 @@
     outline: none; transition: border-color .2s;
   }
   input:focus, select:focus, textarea:focus { border-color: var(--border-hi); box-shadow: var(--glow); }
-  textarea { resize: vertical; min-height: 60px; }
+  textarea { resize: vertical; min-height: 90px; }
+  textarea#annText { min-height: 120px; font-size: 13px; flex: 1; }
   select.refresh { font-family: var(--mono); }
   /* ---------- 表格 ---------- */
   table { width: 100%; border-collapse: collapse; font-size: 12px; }
@@ -170,7 +171,7 @@
   .pc-status { font-size: 11px; color: var(--muted); margin-top: 6px; font-family: var(--mono); }
   .ctrl-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
   /* ---------- 标注工作台 ---------- */
-  .workbench { display: grid; grid-template-columns: 240px 1fr; gap: 12px; align-items: start; }
+  .workbench { display: grid; grid-template-columns: 260px 1fr; gap: 14px; align-items: start; }
   .frames-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px,1fr)); gap: 8px; max-height: 440px; overflow-y: auto; padding-right: 4px; }
   .frame-card {
     background: var(--card); border: 1px solid var(--border); border-radius: 8px;
@@ -286,24 +287,25 @@
     <div class="grid g2">
       <div class="card">
         <h2>数据录制 <span class="hint">Data Recording</span></h2>
-        <div class="badgebar" style="margin-bottom:10px;">
+        <div class="badgebar" style="margin-bottom:12px;gap:12px;">
           <span class="badge" id="recBadge">未录制</span>
           <span class="badge" id="recSamples">样本 -</span>
           <span class="badge" id="recSize">大小 -</span>
         </div>
-        <div class="ctrl-row">
+        <div class="ctrl-row" style="margin-bottom:6px;">
           <button id="btnStartRec" class="green" onclick="startRecording()">▶ 开始录制</button>
           <button id="btnStopRec" class="red" onclick="stopRecording()" disabled>■ 停止录制</button>
-          <input type="text" id="recLabel" placeholder="标签 Label（选填）" style="width:150px">
-          <span class="msg" id="recMsg"></span>
+          <input type="text" id="recLabel" placeholder="标签 Label（选填）" style="width:160px">
         </div>
-        <div class="scroll" style="margin-top:12px;">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:12px;" id="recMsg">录制期间机器人状态（含相机帧）将流式写入数据集，停止后自动保存为会话。</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">📁 已录会话 Sessions</div>
+        <div class="scroll" style="max-height:240px;">
           <table>
             <thead><tr><th>会话ID</th><th>标签</th><th>时长</th><th>样本</th><th>导出 Export</th></tr></thead>
             <tbody id="sessionsBody"></tbody>
           </table>
         </div>
-        <div style="margin-top:10px;"><button onclick="loadSessions()">刷新会话</button></div>
+        <div style="margin-top:10px;"><button onclick="loadSessions()">🔄 刷新会话</button></div>
       </div>
       <div class="card">
         <h2>定时录制 <span class="hint">Scheduled Recording</span></h2>
@@ -315,16 +317,17 @@
           <input type="time" id="schedStart" value="09:00">
           <span>→</span>
           <input type="time" id="schedStop" value="09:30">
-          <input type="text" id="schedLabel" placeholder="标签" style="width:100px">
+          <input type="text" id="schedLabel" placeholder="标签" style="width:110px">
           <button class="green" onclick="addScheduleRule()">+ 添加</button>
         </div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">到点自动开始/停止录制，无人值守采集。支持跨天时段（如 23:30 → 00:30）与多条规则并存。</div>
         <div class="scroll">
           <table>
             <thead><tr><th>ID</th><th>星期</th><th>开始</th><th>停止</th><th>标签</th><th></th></tr></thead>
             <tbody id="scheduleBody"></tbody>
           </table>
         </div>
-        <div style="margin-top:10px;"><button onclick="loadSchedule()">刷新定时</button></div>
+        <div style="margin-top:10px;"><button onclick="loadSchedule()">🔄 刷新定时</button></div>
       </div>
     </div>
   </div>
@@ -432,12 +435,16 @@
             <span class="msg" id="annMsg"></span>
           </div>
           <div class="frames-grid" id="framesGrid"></div>
-          <div class="ctrl-row" style="margin-top:12px;align-items:flex-start;">
-            <textarea id="annText" placeholder="输入自然语言描述 Natural Language Description，例如：机器人以稳定步态向前行走，速度约0.3m/s"></textarea>
-            <div style="display:flex;flex-direction:column;gap:6px;">
-              <button class="violet" onclick="saveAnnotation()">💾 保存标注</button>
-              <button onclick="clearSelection()">清除选择</button>
+          <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px;">
+            <div style="font-size:12px;color:var(--cyan);margin-bottom:6px;">📝 自然语言标注 Annotation</div>
+            <div class="ctrl-row" style="align-items:flex-start;">
+              <textarea id="annText" placeholder="输入自然语言描述，例如：机器人以稳定步态向前行走，右前腿支撑，速度约0.3m/s，地面平坦"></textarea>
+              <div style="display:flex;flex-direction:column;gap:8px;min-width:110px;">
+                <button class="violet" onclick="saveAnnotation()">💾 保存标注</button>
+                <button onclick="clearSelection()">清除选择</button>
+              </div>
             </div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px;">已选中的帧会以青色高亮显示，可跨页累计选择。标注随会话保存在 annotations.json，导出时写入 LeRobot tasks.jsonl。</div>
           </div>
           <div class="ann-list" id="annList"></div>
         </div>
@@ -491,12 +498,16 @@ function switchTab(name) {
   if (name==='annotate') { loadAnnSessions(); }
   if (name==='record') { loadSessions(); loadSchedule(); }
   if (name==='vision') {
-    refreshCam(); refreshPc();
-    // TAB 由隐藏变为可见时，Three.js renderer 需要重新计算尺寸（隐藏时 clientWidth=0）
+    // 先确保 renderer 有正确尺寸（TAB 隐藏时 clientWidth=0），再刷新数据
     if(renderer){
       const el=$('pointcloud3d');
-      if(el.clientWidth>0){ renderer.setSize(el.clientWidth, el.clientHeight); }
+      if(el.clientWidth>0){
+        renderer.setSize(el.clientWidth, el.clientHeight);
+        camera.aspect = el.clientWidth/el.clientHeight;
+        camera.updateProjectionMatrix();
+      }
     }
+    refreshCam(); refreshPc();
   }
 }
 
@@ -741,19 +752,22 @@ function animate() {
 function autoFitCamera(pts) {
   // 根据点云实际范围自适应相机位置、朝向和点大小
   if(!pts.length) return;
-  const xs=pts.map(p=>p[0]), ys=pts.map(p=>p[1]), zs=pts.map(p=>p[2]);
-  const cx=(Math.min(...xs)+Math.max(...xs))/2;
-  const cy=(Math.min(...ys)+Math.max(...ys))/2;
-  const cz=(Math.min(...zs)+Math.max(...zs))/2;
-  const extent = Math.max(Math.max(...xs)-Math.min(...xs),
-                          Math.max(...ys)-Math.min(...ys),
-                          Math.max(...zs)-Math.min(...zs), 0.5);
+  // 用循环求极值，避免对大数组用展开运算符（...）可能超出调用栈
+  let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity,minZ=Infinity,maxZ=-Infinity;
+  for(let i=0;i<pts.length;i++){
+    const p=pts[i];
+    if(p[0]<minX)minX=p[0]; if(p[0]>maxX)maxX=p[0];
+    if(p[1]<minY)minY=p[1]; if(p[1]>maxY)maxY=p[1];
+    if(p[2]<minZ)minZ=p[2]; if(p[2]>maxZ)maxZ=p[2];
+  }
+  const cx=(minX+maxX)/2, cy=(minY+maxY)/2, cz=(minZ+maxZ)/2;
+  const extent = Math.max(maxX-minX, maxY-minY, maxZ-minZ, 0.5);
   pcExtent = extent;
   controls.target.set(cx, cy, cz);
   // 相机放在中心斜上方，距离约 2.2 * extent
   const dist = extent * 2.2;
   camera.position.set(cx + dist*0.5, cy + dist*0.6, cz + dist);
-  camera.near = extent/50;
+  camera.near = Math.max(0.01, extent/50);
   camera.far = extent*20;
   camera.updateProjectionMatrix();
   controls.update();
@@ -942,10 +956,15 @@ applyCamInterval();
 applyPcInterval();
 applyDepthColorInterval();
 applyDepthDepthInterval();
-// 窗口尺寸变化时重算图表
+// 窗口尺寸变化时重算图表与点云
 window.addEventListener('resize', ()=>{
   Object.values(charts).forEach(c=>c.ch.resize());
-  if(renderer){ renderer.setSize($('pointcloud3d').clientWidth, $('pointcloud3d').clientHeight); }
+  if(renderer){
+    const el=$('pointcloud3d');
+    renderer.setSize(el.clientWidth, el.clientHeight);
+    camera.aspect = el.clientWidth/el.clientHeight;
+    camera.updateProjectionMatrix();
+  }
 });
 </script>
 </body>

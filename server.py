@@ -630,16 +630,26 @@ def api_lidar_cloud(max_points: int = 3000):
         def cb(msg):
             latest["msg"] = msg
 
-        sub = node.create_subscription(PointCloud2, "/utlidar/cloud", cb, 10)
+        # 发布端是裸 DDS 应用（RELIABLE + History UNKNOWN），用 KEEP_ALL + RELIABLE
+        # 匹配其 QoS，避免默认 KEEP_LAST 导致的订阅不稳定/收不到数据
+        from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
+        qos = QoSProfile(
+            depth=100,
+            reliability=ReliabilityPolicy.RELIABLE,
+            history=HistoryPolicy.KEEP_ALL,
+            durability=DurabilityPolicy.VOLATILE,
+        )
+        sub = node.create_subscription(PointCloud2, "/utlidar/cloud", cb, qos)
         executor = rclpy.executors.SingleThreadedExecutor()
         executor.add_node(node)
         import time
         start = time.time()
-        while "msg" not in latest and time.time() - start < 4.0:
+        # 增加等待时间并多次重试，容忍桥接的不稳定
+        while "msg" not in latest and time.time() - start < 8.0:
             executor.spin_once(timeout_sec=0.5)
         node.destroy_node()
         if "msg" not in latest:
-            return JSONResponse({"online": False, "reason": "no point cloud in 4s",
+            return JSONResponse({"online": False, "reason": "no point cloud in 8s",
                                  "points": [], "count": 0, "hz": 0})
         msg = latest["msg"]
         # 解析 PointCloud2：找到 x/y/z 字段的偏移
