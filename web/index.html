@@ -188,6 +188,32 @@
   .ann-item .txt { font-size: 12px; color: var(--text); }
   .ann-item .meta { font-size: 10px; color: var(--muted); margin-top: 3px; font-family: var(--mono); }
   .ann-item button { padding: 2px 8px; font-size: 10px; float: right; }
+  /* ---------- 帧详情弹窗 ---------- */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(0,0,0,0.75); backdrop-filter: blur(6px);
+    display: none; align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--bg1); border: 1px solid var(--border-hi); border-radius: 14px;
+    max-width: 1200px; width: 100%; max-height: 92vh; overflow-y: auto;
+    padding: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  }
+  .modal .mhead { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .modal .mhead h3 { font-size: 15px; color: var(--cyan); }
+  .modal .mclose { cursor: pointer; font-size: 20px; color: var(--muted); }
+  .modal .mclose:hover { color: var(--red); }
+  .modal .mgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .modal .mcard { border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
+  .modal .mcard h4 { font-size: 11px; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: .5px; }
+  .modal .mcard img { width: 100%; max-height: 220px; object-fit: contain; background: #000; border-radius: 6px; }
+  .modal table { font-size: 11px; }
+  .modal .motor-mini { display: grid; grid-template-columns: repeat(4,1fr); gap: 4px; }
+  .modal .motor-mini .m { background: rgba(255,255,255,0.03); border-radius: 4px; padding: 3px 5px; font-size: 10px; font-family: var(--mono); }
+  @media (max-width: 900px) {
+    .modal .mgrid { grid-template-columns: 1fr; }
+  }
   /* ---------- 底部固定信息栏 ---------- */
   .footerbar {
     border-top: 1px solid var(--border);
@@ -381,13 +407,15 @@
         <span style="font-size:12px;color:var(--muted);">着色模式 Color:</span>
         <select id="pcColorMode" class="refresh" onchange="applyPcAccum()">
           <option value="height" selected>高度伪彩色</option>
+          <option value="intensity">强度 Intensity</option>
           <option value="time">时间渐变</option>
           <option value="camera">相机RGB</option>
         </select>
         <button class="sm" onclick="clearPcBuffer()">🗑 清空</button>
         <span class="badge" id="pcStatus">加载中…</span>
+        <span class="badge" id="pcCountdown" style="font-family:var(--mono);">刷新倒计时 -s</span>
       </div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;" id="pcAccumInfo">累积时间窗口内的多帧点云会叠加显示，让你看清机器狗周围完整环境。可自由输入任意秒数。</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;" id="pcAccumInfo">累积时间窗口内的多帧点云会叠加显示，让你看清机器狗周围完整环境。可自由输入任意秒数。累积时间不能超过刷新间隔（会自动调整）。</div>
       <div id="pointcloud3d"></div>
       <p class="pc-status" id="pcInfo">鼠标拖动旋转 / 滚轮缩放（Drag to rotate, scroll to zoom）</p>
     </div>
@@ -480,7 +508,7 @@
                 <button onclick="clearSelection()">清除选择</button>
               </div>
             </div>
-            <div style="font-size:11px;color:var(--muted);margin-top:4px;">已选中的帧会以青色高亮显示，可跨页累计选择。标注随会话保存在 annotations.json，导出时写入 LeRobot tasks.jsonl。</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px;">💡 单击选中单帧，可跨页累计选择多帧 → 写一次标签，所有选中帧同时打上相同标注。双击任意帧可放大查看该帧全部数据（图像/IMU/电机/足底力等）。标注随会话保存在 annotations.json，导出时写入 LeRobot tasks.jsonl。</div>
           </div>
           <div class="ann-list" id="annList"></div>
         </div>
@@ -488,6 +516,48 @@
     </div>
   </div>
 
+</div>
+
+
+<!-- ============ 帧详情弹窗（标注工作台双击帧触发） ============ -->
+<div class="modal-overlay" id="frameModal">
+  <div class="modal">
+    <div class="mhead">
+      <h3 id="fmTitle">帧详情 Frame Detail</h3>
+      <span class="mclose" onclick="closeFrameModal()">✕</span>
+    </div>
+    <div class="mgrid">
+      <div>
+        <div class="mcard">
+          <h4>相机图像 Camera Image</h4>
+          <img id="fmImg" src="" alt="帧图像" onerror="this.style.display='none'">
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;" id="fmImgHint">无相机图像</div>
+        </div>
+        <div class="mcard" style="margin-top:10px;">
+          <h4>运动模式 Sport Mode</h4>
+          <table id="fmSport"><tr><td style="color:var(--muted)">加载中…</td></tr></table>
+        </div>
+      </div>
+      <div>
+        <div class="mcard">
+          <h4>IMU 姿态 IMU</h4>
+          <table id="fmImu"></table>
+        </div>
+        <div class="mcard" style="margin-top:10px;">
+          <h4>电源 / 电池 Power / Battery</h4>
+          <table id="fmPower"></table>
+        </div>
+      </div>
+    </div>
+    <div class="mcard" style="margin-top:14px;">
+      <h4>12 关节电机 Joint Motors <span style="text-transform:none">(q / dq / tau / temp)</span></h4>
+      <div class="motor-mini" id="fmMotors"></div>
+    </div>
+    <div class="mcard" style="margin-top:14px;">
+      <h4>足底力 Foot Force <span style="text-transform:none">(N)</span></h4>
+      <div id="fmFoot" style="font-family:var(--mono);font-size:12px;"></div>
+    </div>
+  </div>
 </div>
 
 <!-- ============ 底部固定信息栏 ============ -->
@@ -828,8 +898,15 @@ function terrainColor(t) {
   return [c0[0]+(c1[0]-c0[0])*frac, c0[1]+(c1[1]-c0[1])*frac, c0[2]+(c1[2]-c0[2])*frac];
 }
 function applyPcAccum() {
-  pcAccumSecs = parseInt($('pcAccum').value);
-  $('pcAccumInfo').textContent = `累积时间窗口 ${pcAccumSecs} 秒：多帧点云叠加显示，可看清完整环境。切换「着色模式」选择不同配色。`;
+  // 约束：累积时间不能超过刷新间隔（否则点云还没累积完页面就刷新了）
+  const interval = parseFloat($('pcInterval').value) || 5;
+  let acc = parseInt($('pcAccum').value) || 10;
+  if(acc > interval){
+    acc = Math.max(1, Math.floor(interval));
+    $('pcAccum').value = acc;
+  }
+  pcAccumSecs = acc;
+  $('pcAccumInfo').textContent = `累积时间窗口 ${pcAccumSecs} 秒（≤ 刷新间隔 ${interval}s）：多帧点云叠加显示。切换「着色模式」选择不同配色。`;
   // 切换着色模式或窗口时立即重绘
   if(pcBuffer.length) renderPcBuffer();
 }
@@ -841,7 +918,7 @@ function clearPcBuffer() {
   st.className = 'badge';
 }
 function renderPcBuffer() {
-  // 把缓冲中所有帧的点云合并渲染，支持三种着色模式
+  // 把缓冲中所有帧的点云合并渲染，支持多种着色模式
   const mode = $('pcColorMode').value;
   const now = Date.now();
   // 丢弃超出时间窗口的旧帧
@@ -850,14 +927,22 @@ function renderPcBuffer() {
   // 合并所有点
   const allPts = [];
   const allTs = [];
-  for(const f of pcBuffer){ for(const p of f.points){ allPts.push(p); allTs.push(f.ts); } }
+  const allInt = [];
+  for(const f of pcBuffer){ for(const p of f.points){ allPts.push(p); allTs.push(f.ts); allInt.push(p[3]!==undefined ? p[3] : NaN); } }
   ensurePcCapacity(allPts.length);
   const pos = pointsMesh.geometry.attributes.position.array;
   const col = pointsMesh.geometry.attributes.color.array;
   // 计算全局高度范围（用于 terrain/camera 着色）
   let zmin=Infinity, zmax=-Infinity;
-  if(mode!=='time'){
+  if(mode!=='time' && mode!=='intensity'){
     for(const p of allPts){ if(p[2]<zmin)zmin=p[2]; if(p[2]>zmax)zmax=p[2]; }
+  }
+  // 强度范围（用于 intensity 着色）
+  let imin=Infinity, imax=-Infinity;
+  if(mode==='intensity'){
+    for(const it of allInt){ if(!isNaN(it)){ if(it<imin)imin=it; if(it>imax)imax=it; } }
+    if(!isFinite(imin)){ imin=0; imax=1; }
+    if(imax<=imin) imax=imin+1;
   }
   // 时间范围（用于 time 渐变）
   const tMin = now - pcAccumSecs*1000, tMax = now;
@@ -867,6 +952,10 @@ function renderPcBuffer() {
       const t = (zmax>zmin) ? (allPts[i][2]-zmin)/(zmax-zmin) : 0.5;
       const c = terrainColor(t);
       col[i*3]=c[0]; col[i*3+1]=c[1]; col[i*3+2]=c[2];
+    } else if(mode==='intensity'){
+      // 强度映射热力色：弱=蓝紫，强=亮黄
+      const t = isNaN(allInt[i]) ? 0 : (allInt[i]-imin)/(imax-imin);
+      col[i*3]=0.2+0.8*t; col[i*3+1]=0.1+0.8*t; col[i*3+2]=1-0.9*t;
     } else if(mode==='time'){
       const t = (tMax>tMin) ? (allTs[i]-tMin)/(tMax-tMin) : 0.5;
       // 旧→蓝，新→红
@@ -894,8 +983,13 @@ async function refreshPc() {
       const maxFrames = Math.ceil(pcAccumSecs * 5) + 5;
       if(pcBuffer.length > maxFrames) pcBuffer.shift();
       renderPcBuffer();
-      st.textContent = `● 在线 · ${d.total||0}点/帧`;
+      const hasInt = d.has_intensity ? ' +强度' : '';
+      st.textContent = `● 在线 · ${d.total||0}点/帧${hasInt}`;
       st.className = 'badge green';
+      // 有强度数据且当前没选强度模式时提示
+      if(d.has_intensity && $('pcColorMode').value!=='intensity'){
+        $('pcAccumInfo').textContent += '（雷达含强度数据，可选「强度」着色）';
+      }
     } else {
       st.textContent = '点云离线或暂无数据（机器人离线）';
       st.className = 'badge red';
@@ -907,9 +1001,23 @@ async function refreshPc() {
   }
 }
 function applyPcInterval() {
+  // 重新约束累积时间（刷新间隔可能变了）
+  applyPcAccum();
   if(pcTimer) clearInterval(pcTimer);
+  pcCountdownRemaining = parseFloat($('pcInterval').value) || 5;
   refreshPc();
-  pcTimer = setInterval(refreshPc, parseFloat($('pcInterval').value)*1000);
+  pcTimer = setInterval(refreshPc, (parseFloat($('pcInterval').value)||5)*1000);
+}
+// 刷新倒计时显示（每 100ms 更新）
+let pcCountdownRemaining = 5;
+let pcCountdownTimer = null;
+function startPcCountdown() {
+  if(pcCountdownTimer) clearInterval(pcCountdownTimer);
+  pcCountdownTimer = setInterval(()=>{
+    pcCountdownRemaining -= 0.1;
+    if(pcCountdownRemaining <= 0) pcCountdownRemaining = parseFloat($('pcInterval').value) || 5;
+    $('pcCountdown').textContent = `刷新倒计时 ${pcCountdownRemaining.toFixed(1)}s`;
+  }, 100);
 }
 
 // ================= 录制控制 =================
@@ -996,7 +1104,7 @@ async function loadFramePage(dir){
     const img=f.image?`<img src="/api/session/${annSession}/image/${f.image}" loading="lazy">`
       :`<div class="noimg">无图像</div>`;
     const rpy=f.imu_rpy?`R${fmt(f.imu_rpy[0],1)} P${fmt(f.imu_rpy[1],1)} Y${fmt(f.imu_rpy[2],1)}`:'';
-    return `<div class="frame-card ${annSel.has(f.index)?'sel':''}" data-idx="${f.index}" onclick="toggleFrame(${f.index})">
+    return `<div class="frame-card ${annSel.has(f.index)?'sel':''}" data-idx="${f.index}" onclick="toggleFrame(${f.index})" ondblclick="openFrameModal(${f.index})" title="单击选中 · 双击放大查看全部数据">
       ${img}<div class="fidx">帧 Frame ${f.index}</div><div class="fmeta">tick ${f.tick||'-'} ${rpy}</div>
     </div>`;
   }).join('');
@@ -1011,6 +1119,69 @@ function toggleFrame(i){
 function clearSelection(){ annSel.clear();
   document.querySelectorAll('.frame-card').forEach(c=>c.classList.remove('sel')); updateSelCount(); }
 function updateSelCount(){ $('annSelCount').textContent='已选 '+annSel.size+' 帧'; }
+
+// ================= 帧详情弹窗（双击帧放大查看） =================
+async function openFrameModal(index){
+  if(!annSession) return;
+  $('fmTitle').textContent=`帧详情 Frame ${index} · Session ${annSession.slice(0,8)}`;
+  // 清空旧内容
+  $('fmImg').style.display='none'; $('fmImgHint').textContent='加载中…';
+  $('fmImu').innerHTML=''; $('fmPower').innerHTML=''; $('fmMotors').innerHTML='';
+  $('fmFoot').textContent=''; $('fmSport').innerHTML='';
+  document.getElementById('frameModal').classList.add('show');
+  const d = await fetchJSON(`/api/session/${annSession}/frame/${index}/detail`);
+  if(!d){ $('fmImgHint').textContent='加载失败'; return; }
+  // 图像
+  const imgName = d.image || d.nearest_image;
+  if(imgName){
+    $('fmImg').src=`/api/session/${annSession}/image/${imgName}`;
+    $('fmImg').style.display='block';
+    $('fmImgHint').textContent=`图像文件: ${imgName}`;
+  } else {
+    $('fmImgHint').textContent='该帧无相机图像';
+  }
+  // IMU
+  if(d.imu){
+    const imu=d.imu;
+    $('fmImu').innerHTML=[
+      ['四元数 w/x/y/z', `[${fmt(imu.quat_w,3)}, ${fmt(imu.quat_x,3)}, ${fmt(imu.quat_y,3)}, ${fmt(imu.quat_z,3)}]`],
+      ['陀螺仪 gyro', `[${fmt(imu.gyro_x,3)}, ${fmt(imu.gyro_y,3)}, ${fmt(imu.gyro_z,3)}] rad/s`],
+      ['加速度 acc', `[${fmt(imu.acc_x,2)}, ${fmt(imu.acc_y,2)}, ${fmt(imu.acc_z,2)}] m/s²`],
+      ['欧拉角 rpy', `[${fmt(imu.roll_deg,2)}, ${fmt(imu.pitch_deg,2)}, ${fmt(imu.yaw_deg,2)}]°`],
+      ['温度 temp', `${fmt(imu.temp,1)} ℃`],
+    ].map(r=>`<tr><td style="color:var(--muted)">${r[0]}</td><td class="num">${r[1]}</td></tr>`).join('');
+  } else { $('fmImu').innerHTML='<tr><td style="color:var(--muted)">无 IMU 数据</td></tr>'; }
+  // 电源/电池
+  $('fmPower').innerHTML=[
+    ['电压 voltage', `${fmt(d.power_voltage,2)} V`],
+    ['电流 current', `${fmt(d.power_current,2)} A`],
+    ['电量 soc', `${fmt(d.batt_soc,0)} %`],
+    ['电池电流', `${fmt(d.batt_current,0)} mA`],
+    ['循环 cycle', `${fmt(d.batt_cycle,0)}`],
+  ].map(r=>`<tr><td style="color:var(--muted)">${r[0]}</td><td class="num">${r[1]}</td></tr>`).join('');
+  // 运动模式
+  if(d.sport){
+    const sp=d.sport;
+    $('fmSport').innerHTML=[
+      ['mode', fmt(sp.mode,0)], ['gait', fmt(sp.gait_type,0)],
+      ['位置 pos', `[${fmt(sp.pos_x,2)}, ${fmt(sp.pos_y,2)}, ${fmt(sp.pos_z,2)}]`],
+      ['速度 vel', `[${fmt(sp.vel_x,2)}, ${fmt(sp.vel_y,2)}, ${fmt(sp.vel_z,2)}]`],
+      ['偏航速度', `${fmt(sp.yaw_speed,2)}`], ['机身高度', `${fmt(sp.body_height,2)} m`],
+    ].map(r=>`<tr><td style="color:var(--muted)">${r[0]}</td><td class="num">${r[1]}</td></tr>`).join('');
+  } else { $('fmSport').innerHTML='<tr><td style="color:var(--muted)">无运动模式数据</td></tr>'; }
+  // 电机
+  if(d.motors && d.motors.length){
+    $('fmMotors').innerHTML=d.motors.map(m=>
+      `<div class="m" title="关节 ${m.index}">J${m.index} q=${fmt(m.q,3)}<br>dq=${fmt(m.dq,2)} τ=${fmt(m.tau,2)}<br>${fmt(m.temp,0)}℃</div>`
+    ).join('');
+  } else { $('fmMotors').innerHTML='<div style="color:var(--muted);font-size:11px;">无电机数据</div>'; }
+  // 足底力
+  if(d.foot_force && d.foot_force.length){
+    $('fmFoot').textContent=`FL ${fmt(d.foot_force[0],1)} N · FR ${fmt(d.foot_force[1],1)} N · RL ${fmt(d.foot_force[2],1)} N · RR ${fmt(d.foot_force[3],1)} N`;
+  } else { $('fmFoot').textContent='无足底力数据'; }
+}
+function closeFrameModal(){ document.getElementById('frameModal').classList.remove('show'); }
+
 async function saveAnnotation(){
   if(!annSession){ $('annMsg').textContent='请先选择会话'; return; }
   if(annSel.size===0){ $('annMsg').textContent='请先选择帧'; return; }
@@ -1046,6 +1217,7 @@ poll(); setInterval(poll, 1000);
 pollRecording(); setInterval(pollRecording, 2000);
 applyCamInterval();
 applyPcInterval();
+startPcCountdown();
 applyDepthColorInterval();
 applyDepthDepthInterval();
 // 窗口尺寸变化时重算图表与点云

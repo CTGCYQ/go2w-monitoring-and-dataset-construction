@@ -453,6 +453,93 @@ def api_session_frame(session_id: str, index: int):
     return JSONResponse(_frame_summary(table, index))
 
 
+@app.get("/api/session/{session_id}/frame/{index}/detail")
+def api_session_frame_detail(session_id: str, index: int):
+    """返回单帧的完整传感器数据（供标注工作台双击放大查看）。
+
+    包含：时间戳、tick、图像、IMU 全量、12 电机全量、足底力、电池、电源、运动模式。
+    """
+    table = _load_table(session_id)
+    if not (0 <= index < table.num_rows):
+        raise HTTPException(404, "frame index out of range")
+    cols = table.column_names
+    row = table.slice(index, 1)
+    out = {"index": index}
+
+    # 基础字段
+    if "timestamp" in cols:
+        out["timestamp"] = float(row.column("timestamp")[0].as_py() or 0)
+    if "tick" in cols:
+        out["tick"] = int(row.column("tick")[0].as_py() or 0)
+    if "image_path" in cols:
+        p = row.column("image_path")[0].as_py()
+        if p:
+            out["image"] = Path(p).name
+
+    # IMU 全量
+    imu = {}
+    for c in ("imu_quat_w","imu_quat_x","imu_quat_y","imu_quat_z",
+              "imu_gyro_x","imu_gyro_y","imu_gyro_z",
+              "imu_acc_x","imu_acc_y","imu_acc_z",
+              "imu_roll_deg","imu_pitch_deg","imu_yaw_deg","imu_temp"):
+        if c in cols:
+            imu[c.replace("imu_","")] = round(float(row.column(c)[0].as_py() or 0), 4)
+    if imu:
+        out["imu"] = imu
+
+    # 电源/电池
+    for c in ("power_voltage","power_current","batt_soc","batt_current","batt_cycle"):
+        if c in cols:
+            out[c] = round(float(row.column(c)[0].as_py() or 0), 3)
+
+    # 12 电机全量
+    motors = []
+    for i in range(12):
+        qc, dc, tc, mc = f"motor_{i}_q", f"motor_{i}_dq", f"motor_{i}_tau", f"motor_{i}_temp"
+        if all(x in cols for x in (qc,dc,tc,mc)):
+            motors.append({
+                "index": i,
+                "q": round(float(row.column(qc)[0].as_py() or 0), 4),
+                "dq": round(float(row.column(dc)[0].as_py() or 0), 4),
+                "tau": round(float(row.column(tc)[0].as_py() or 0), 4),
+                "temp": round(float(row.column(mc)[0].as_py() or 0), 2),
+            })
+    if motors:
+        out["motors"] = motors
+
+    # 足底力
+    ff = []
+    for i in range(4):
+        c = f"foot_force_{i}"
+        if c in cols:
+            ff.append(round(float(row.column(c)[0].as_py() or 0), 2))
+    if ff:
+        out["foot_force"] = ff
+
+    # 运动模式
+    sport = {}
+    for c in ("sport_mode","sport_gait_type","sport_yaw_speed","sport_body_height"):
+        if c in cols:
+            sport[c.replace("sport_","")] = round(float(row.column(c)[0].as_py() or 0), 3)
+    for c in ("sport_pos_x","sport_pos_y","sport_pos_z","sport_vel_x","sport_vel_y","sport_vel_z"):
+        if c in cols:
+            sport[c.replace("sport_","")] = round(float(row.column(c)[0].as_py() or 0), 3)
+    if sport:
+        out["sport"] = sport
+
+    # 该帧附近的相机图（前置，来自 session images 目录按帧序号对齐）
+    img_dir = _session_dir(session_id) / "images"
+    if img_dir.exists():
+        # 会话 images 是独立序号，无法精确对齐 raw.arrow 的 index，取最近的图
+        frames = sorted(img_dir.glob("frame_*.jpg"))
+        if frames:
+            # 粗略按比例映射（会话 images 帧数通常远小于 lowstate 帧数）
+            ratio = len(frames) / max(1, table.num_rows)
+            img_idx = min(len(frames)-1, int(index * ratio))
+            out["nearest_image"] = frames[img_idx].name
+    return JSONResponse(out)
+
+
 @app.get("/api/session/{session_id}/annotations")
 def api_session_annotations(session_id: str):
     """列出会话的全部自然语言标注。"""
@@ -601,90 +688,56 @@ def api_image_latest():
     raise HTTPException(404, "no camera image available")
 
 
+# ---------------------------------------------------------------------------
+# 激光点云：读取独立采集进程(pc_worker.py)写入的缓存文件
+# ---------------------------------------------------------------------------
+# pc_worker.py 是独立进程，常驻订阅 ROS2 /utlidar/cloud 并每 500ms 写最新点云
+# 到 pc_cache.json。这样避免 rclpy 与 uvicorn(asyncio) 在同一进程的冲突。
+PC_CACHE_FILE = BASE_DIR / "pc_cache.json"
+
+
+def _read_pc_cache() -> dict:
+    """读取点云采集进程写入的缓存文件。"""
+    if not PC_CACHE_FILE.exists():
+        return {}
+    try:
+        import json as _json
+        return _json.loads(PC_CACHE_FILE.read_text("utf-8"))
+    except Exception:
+        return {}
+
+
 @app.get("/api/lidar/cloud")
 def api_lidar_cloud(max_points: int = 3000):
-    """采集一次最新激光点云并返回为 xyz 坐标数组。
+    """返回最新一帧激光点云（由独立采集进程持续写入缓存）。
 
-    数据源为 ROS2 话题 /utlidar/cloud（sensor_msgs/PointCloud2）。
-    通过一个短暂的 ROS2 节点订阅获取最新一帧，解析 XYZ 字段并降采样。
+    数据源为 ROS2 话题 /utlidar/cloud（sensor_msgs/PointCloud2），由独立进程
+    pc_worker.py 常驻订阅并写缓存，API 直接读取，快且稳定。
 
     Args:
         max_points: 返回的最大点数（默认 3000，控制浏览器渲染压力）
 
     Returns:
-        {"points": [[x,y,z], ...], "count": N, "hz": 采集频率, "online": bool}
+        {"points": [[x,y,z,(intensity)], ...], "count": N, "total": 总数,
+         "online": bool, "has_intensity": 是否有反射强度}
     """
     max_points = max(100, min(max_points, 20000))
-    try:
-        import rclpy
-        from sensor_msgs.msg import PointCloud2
-    except ImportError:
-        return JSONResponse({"online": False, "reason": "no rclpy on server",
-                             "points": [], "count": 0})
-    try:
-        if not rclpy.ok():
-            rclpy.init()
-        node = rclpy.create_node("go2w_lidar_probe")
-        latest = {}
-
-        def cb(msg):
-            latest["msg"] = msg
-
-        # 发布端是裸 DDS 应用（RELIABLE + History UNKNOWN），用 KEEP_ALL + RELIABLE
-        # 匹配其 QoS，避免默认 KEEP_LAST 导致的订阅不稳定/收不到数据
-        from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
-        qos = QoSProfile(
-            depth=100,
-            reliability=ReliabilityPolicy.RELIABLE,
-            history=HistoryPolicy.KEEP_ALL,
-            durability=DurabilityPolicy.VOLATILE,
-        )
-        sub = node.create_subscription(PointCloud2, "/utlidar/cloud", cb, qos)
-        executor = rclpy.executors.SingleThreadedExecutor()
-        executor.add_node(node)
-        import time
-        start = time.time()
-        # 增加等待时间并多次重试，容忍桥接的不稳定
-        while "msg" not in latest and time.time() - start < 8.0:
-            executor.spin_once(timeout_sec=0.5)
-        node.destroy_node()
-        if "msg" not in latest:
-            return JSONResponse({"online": False, "reason": "no point cloud in 8s",
-                                 "points": [], "count": 0, "hz": 0})
-        msg = latest["msg"]
-        # 解析 PointCloud2：找到 x/y/z 字段的偏移
-        offsets = {}
-        for f in msg.fields:
-            if f.name in ("x", "y", "z"):
-                offsets[f.name] = f.offset
-        if len(offsets) != 3:
-            return JSONResponse({"online": False, "reason": "cloud lacks xyz fields",
-                                 "points": [], "count": 0})
-        data = msg.data
-        point_step = msg.point_step or 16
-        n_points = msg.width
-        step = max(1, n_points // max_points)   # 降采样步长
-        import struct
-        pts = []
-        for i in range(0, n_points, step):
-            base = i * point_step
-            try:
-                x = struct.unpack_from("<f", data, base + offsets["x"])[0]
-                y = struct.unpack_from("<f", data, base + offsets["y"])[0]
-                z = struct.unpack_from("<f", data, base + offsets["z"])[0]
-                pts.append([round(x, 3), round(y, 3), round(z, 3)])
-            except struct.error:
-                break
-        return JSONResponse({
-            "online": True,
-            "points": pts,
-            "count": len(pts),
-            "total": n_points,
-            "hz": round(1.0 / (time.time() - start), 1),
-        })
-    except Exception as e:
-        return JSONResponse({"online": False, "reason": str(e)[:120],
-                             "points": [], "count": 0})
+    cache = _read_pc_cache()
+    pts = cache.get("points") or []
+    if not cache.get("online") or not pts:
+        return JSONResponse({"online": False, "reason": "no point cloud yet",
+                             "points": [], "count": 0, "has_intensity": False})
+    # 从完整缓存降采样到请求点数
+    step = max(1, len(pts) // max_points)
+    sampled = pts[::step]
+    return JSONResponse({
+        "online": True,
+        "points": sampled,
+        "count": len(sampled),
+        "total": cache.get("total", len(pts)),
+        "has_intensity": cache.get("has_intensity", False),
+        "ts": cache.get("ts", 0),
+    })
 
 
 @app.get("/favicon.ico")

@@ -10,6 +10,7 @@ state.json
 control.json
 schedule.json
 *.log
+pc_cache.json
 
 # 数据集与录制产物
 sessions/
