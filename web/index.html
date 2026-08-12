@@ -199,6 +199,32 @@
   }
   .footerbar .item { display: flex; gap: 5px; align-items: center; white-space: nowrap; }
   .footerbar .item b { color: var(--cyan); font-weight: 600; }
+  /* ---------- 响应式：根据屏幕分辨率自适应 ---------- */
+  @media (min-width: 1800px) {
+    .main { max-width: 1900px; padding: 20px 32px; }
+    .chart { height: 340px; }
+    #pointcloud3d { height: 640px; }
+    body { font-size: 15px; }
+    .kpi .val { font-size: 28px; }
+    .cam-wrap img { max-height: 460px; }
+  }
+  @media (min-width: 2200px) {
+    .main { max-width: 2300px; }
+    .chart { height: 400px; }
+    #pointcloud3d { height: 720px; }
+  }
+  @media (max-width: 1280px) {
+    .g2, .g3 { grid-template-columns: 1fr; }
+    .chart { height: 220px; }
+    #pointcloud3d { height: 400px; }
+  }
+  @media (max-width: 900px) {
+    .workbench { grid-template-columns: 1fr; }
+    .nav { padding: 10px 16px; gap: 12px; }
+    .main { padding: 12px 16px; }
+    .chart { height: 200px; }
+    #pointcloud3d { height: 340px; }
+  }
 </style>
 </head>
 <body>
@@ -335,7 +361,7 @@
   <!-- ============ TAB3 视觉与点云 ============ -->
   <div class="tabview" id="tv-vision">
     <div class="card" style="margin-bottom:12px;">
-      <h2>激光雷达点云 3D <span class="hint">LiDAR Point Cloud (3D)</span></h2>
+      <h2>激光雷达点云 3D <span class="hint">LiDAR Point Cloud · 时间聚合 + 彩色建模</span></h2>
       <div class="ctrl-row">
         <span style="font-size:12px;color:var(--muted);">刷新频率 Refresh:</span>
         <select id="pcInterval" class="refresh" onchange="applyPcInterval()">
@@ -344,14 +370,30 @@
           <option value="10">10 秒 / s</option>
           <option value="20">20 秒 / s</option>
         </select>
-        <span style="font-size:12px;color:var(--muted);">点数 Points:</span>
+        <span style="font-size:12px;color:var(--muted);">单帧点数:</span>
         <select id="pcPoints" class="refresh" onchange="applyPcInterval()">
           <option value="1000">1000</option>
           <option value="3000" selected>3000</option>
           <option value="8000">8000</option>
         </select>
+        <span style="font-size:12px;color:var(--muted);">累积时间 Window:</span>
+        <select id="pcAccum" class="refresh" onchange="applyPcAccum()">
+          <option value="3">3 秒 / s</option>
+          <option value="10" selected>10 秒 / s</option>
+          <option value="20">20 秒 / s</option>
+          <option value="30">30 秒 / s</option>
+          <option value="60">60 秒 / s</option>
+        </select>
+        <span style="font-size:12px;color:var(--muted);">着色模式 Color:</span>
+        <select id="pcColorMode" class="refresh" onchange="applyPcAccum()">
+          <option value="height" selected>高度伪彩色</option>
+          <option value="time">时间渐变</option>
+          <option value="camera">相机RGB</option>
+        </select>
+        <button class="sm" onclick="clearPcBuffer()">🗑 清空</button>
         <span class="badge" id="pcStatus">加载中…</span>
       </div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;" id="pcAccumInfo">累积时间窗口内的多帧点云会叠加显示，让你看清机器狗周围完整环境。</div>
       <div id="pointcloud3d"></div>
       <p class="pc-status" id="pcInfo">鼠标拖动旋转 / 滚轮缩放（Drag to rotate, scroll to zoom）</p>
     </div>
@@ -775,35 +817,91 @@ function autoFitCamera(pts) {
   pointsMesh.material.size = Math.max(0.02, extent/120);
 }
 let pcMaxPoints = 3000;
+// 点云时间聚合缓冲：每帧记录 {ts, points}，渲染时累积窗口内的所有帧
+let pcBuffer = [];
+let pcAccumSecs = 10;
+// 地形伪彩色色表（11色）：绿→黄→棕→灰→白→蓝，模拟实景地形
+const TERRAIN_COLORS = [
+  [0.20,0.45,0.25], [0.25,0.55,0.25], [0.55,0.60,0.30], [0.75,0.65,0.35],
+  [0.70,0.55,0.35], [0.65,0.50,0.40], [0.70,0.68,0.62], [0.85,0.85,0.82],
+  [0.95,0.95,0.95], [0.60,0.75,0.90], [0.40,0.55,0.80],
+];
+function terrainColor(t) {
+  // t in [0,1] → 在色表中插值
+  const idx = Math.min(TERRAIN_COLORS.length-1, Math.max(0, t*(TERRAIN_COLORS.length-1)));
+  const i = Math.floor(idx), frac = idx - i;
+  const c0 = TERRAIN_COLORS[i], c1 = TERRAIN_COLORS[Math.min(i+1, TERRAIN_COLORS.length-1)];
+  return [c0[0]+(c1[0]-c0[0])*frac, c0[1]+(c1[1]-c0[1])*frac, c0[2]+(c1[2]-c0[2])*frac];
+}
+function applyPcAccum() {
+  pcAccumSecs = parseInt($('pcAccum').value);
+  $('pcAccumInfo').textContent = `累积时间窗口 ${pcAccumSecs} 秒：多帧点云叠加显示，可看清完整环境。切换「着色模式」选择不同配色。`;
+  // 切换着色模式或窗口时立即重绘
+  if(pcBuffer.length) renderPcBuffer();
+}
+function clearPcBuffer() {
+  pcBuffer = [];
+  pointsMesh.geometry.setDrawRange(0, 0);
+  const st = $('pcStatus');
+  st.textContent = '已清空';
+  st.className = 'badge';
+}
+function renderPcBuffer() {
+  // 把缓冲中所有帧的点云合并渲染，支持三种着色模式
+  const mode = $('pcColorMode').value;
+  const now = Date.now();
+  // 丢弃超出时间窗口的旧帧
+  pcBuffer = pcBuffer.filter(f => now - f.ts <= pcAccumSecs*1000);
+  if(!pcBuffer.length){ pointsMesh.geometry.setDrawRange(0,0); return; }
+  // 合并所有点
+  const allPts = [];
+  const allTs = [];
+  for(const f of pcBuffer){ for(const p of f.points){ allPts.push(p); allTs.push(f.ts); } }
+  ensurePcCapacity(allPts.length);
+  const pos = pointsMesh.geometry.attributes.position.array;
+  const col = pointsMesh.geometry.attributes.color.array;
+  // 计算全局高度范围（用于 terrain/camera 着色）
+  let zmin=Infinity, zmax=-Infinity;
+  if(mode!=='time'){
+    for(const p of allPts){ if(p[2]<zmin)zmin=p[2]; if(p[2]>zmax)zmax=p[2]; }
+  }
+  // 时间范围（用于 time 渐变）
+  const tMin = now - pcAccumSecs*1000, tMax = now;
+  for(let i=0;i<allPts.length;i++){
+    pos[i*3]=allPts[i][0]; pos[i*3+1]=allPts[i][1]; pos[i*3+2]=allPts[i][2];
+    if(mode==='height'){
+      const t = (zmax>zmin) ? (allPts[i][2]-zmin)/(zmax-zmin) : 0.5;
+      const c = terrainColor(t);
+      col[i*3]=c[0]; col[i*3+1]=c[1]; col[i*3+2]=c[2];
+    } else if(mode==='time'){
+      const t = (tMax>tMin) ? (allTs[i]-tMin)/(tMax-tMin) : 0.5;
+      // 旧→蓝，新→红
+      col[i*3]=0.2+0.8*t; col[i*3+1]=0.3+0.3*(1-Math.abs(t-0.5)*2); col[i*3+2]=1-t;
+    } else { // camera: 伪相机 RGB（按空间位置近似）
+      const t = (zmax>zmin) ? (allPts[i][2]-zmin)/(zmax-zmin) : 0.5;
+      col[i*3]=0.5+0.4*Math.sin(allPts[i][0]*2); col[i*3+1]=0.4+0.4*Math.cos(allPts[i][1]*2); col[i*3+2]=0.3+0.6*t;
+    }
+  }
+  pointsMesh.geometry.setDrawRange(0, allPts.length);
+  pointsMesh.geometry.attributes.position.needsUpdate = true;
+  pointsMesh.geometry.attributes.color.needsUpdate = true;
+  // 首次自适应相机
+  if(!pcFitted){ autoFitCamera(allPts); pcFitted = true; }
+  $('pcInfo').textContent = `已聚合 ${allPts.length.toLocaleString()} 点 / ${pcBuffer.length} 帧 · 窗口 ${pcAccumSecs}s · 鼠标拖动旋转 / 滚轮缩放`;
+}
 async function refreshPc() {
   pcMaxPoints = parseInt($('pcPoints').value);
   const st = $('pcStatus');
-  st.textContent = '采集点云…';
-  st.className = 'badge amber';
   try {
     const d = await fetchJSON('/api/lidar/cloud?max_points='+pcMaxPoints);
     if(d && d.online && d.points && d.points.length){
-      const pts = d.points;
-      ensurePcCapacity(pts.length);
-      // 更新几何体
-      const pos = pointsMesh.geometry.attributes.position.array;
-      const col = pointsMesh.geometry.attributes.color.array;
-      // 按高度 z 着色（蓝→绿→红）
-      const zs = pts.map(p=>p[2]);
-      const zmin = Math.min(...zs), zmax = Math.max(...zs);
-      for(let i=0;i<pts.length;i++){
-        pos[i*3]=pts[i][0]; pos[i*3+1]=pts[i][1]; pos[i*3+2]=pts[i][2];
-        const t = zmax>zmin ? (pts[i][2]-zmin)/(zmax-zmin) : 0.5;
-        col[i*3]=0.3+0.7*t; col[i*3+1]=0.5+0.5*(1-Math.abs(t-0.5)*2); col[i*3+2]=1-t;
-      }
-      pointsMesh.geometry.setDrawRange(0, pts.length);
-      pointsMesh.geometry.attributes.position.needsUpdate = true;
-      pointsMesh.geometry.attributes.color.needsUpdate = true;
-      // 首次加载时自适应相机位置/点大小（之后保持用户视角，不打扰）
-      if(!pcFitted){ autoFitCamera(pts); pcFitted = true; }
-      st.textContent = `● ${pts.length.toLocaleString()} 点 / 共 ${(d.total||0).toLocaleString()} · ${fmt(d.hz,1)}Hz`;
+      // 推入时间聚合缓冲（限制最大帧数防止内存膨胀）
+      pcBuffer.push({ ts: Date.now(), points: d.points });
+      const maxFrames = Math.ceil(pcAccumSecs * 5) + 5;
+      if(pcBuffer.length > maxFrames) pcBuffer.shift();
+      renderPcBuffer();
+      st.textContent = `● 在线 · ${d.total||0}点/帧`;
       st.className = 'badge green';
-      $('pcInfo').textContent = `当前点数 ${pts.length.toLocaleString()} · 鼠标拖动旋转 / 滚轮缩放`;
     } else {
       st.textContent = '点云离线或暂无数据（机器人离线）';
       st.className = 'badge red';
