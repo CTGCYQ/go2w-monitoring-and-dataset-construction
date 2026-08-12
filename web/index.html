@@ -152,21 +152,21 @@
   .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
   .scroll { max-height: 200px; overflow-y: auto; }
   /* ---------- ECharts ---------- */
-  .chart { width: 100%; height: 190px; }
+  .chart { width: 100%; height: 260px; }
   .legend { display: flex; gap: 12px; margin-bottom: 6px; font-size: 11px; color: var(--muted); flex-wrap: wrap; }
   .legend span::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 5px; vertical-align: middle; }
   .msg { font-size: 12px; color: var(--amber); align-self: center; }
   /* ---------- 相机 / 点云 ---------- */
   .cam-wrap { position: relative; }
   .cam-wrap img {
-    width: 100%; max-height: 300px; object-fit: contain;
+    width: 100%; max-height: 380px; object-fit: contain;
     background: #000; border-radius: 8px; border: 1px solid var(--border);
   }
   .cam-wrap .cam-overlay {
     position: absolute; top: 8px; left: 8px; font-size: 11px; color: var(--cyan);
     background: rgba(0,0,0,0.6); padding: 3px 8px; border-radius: 6px; font-family: var(--mono);
   }
-  #pointcloud3d { width: 100%; height: 380px; border-radius: 8px; background: radial-gradient(circle at 30% 20%, #0d1424, #05070d); }
+  #pointcloud3d { width: 100%; height: 480px; border-radius: 8px; background: radial-gradient(circle at 30% 20%, #0d1424, #05070d); }
   .pc-status { font-size: 11px; color: var(--muted); margin-top: 6px; font-family: var(--mono); }
   .ctrl-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
   /* ---------- 标注工作台 ---------- */
@@ -331,7 +331,28 @@
 
   <!-- ============ TAB3 视觉与点云 ============ -->
   <div class="tabview" id="tv-vision">
-    <div class="grid g2">
+    <div class="card" style="margin-bottom:12px;">
+      <h2>激光雷达点云 3D <span class="hint">LiDAR Point Cloud (3D)</span></h2>
+      <div class="ctrl-row">
+        <span style="font-size:12px;color:var(--muted);">刷新频率 Refresh:</span>
+        <select id="pcInterval" class="refresh" onchange="applyPcInterval()">
+          <option value="2">2 秒 / s</option>
+          <option value="5" selected>5 秒 / s</option>
+          <option value="10">10 秒 / s</option>
+          <option value="20">20 秒 / s</option>
+        </select>
+        <span style="font-size:12px;color:var(--muted);">点数 Points:</span>
+        <select id="pcPoints" class="refresh" onchange="applyPcInterval()">
+          <option value="1000">1000</option>
+          <option value="3000" selected>3000</option>
+          <option value="8000">8000</option>
+        </select>
+        <span class="badge" id="pcStatus">加载中…</span>
+      </div>
+      <div id="pointcloud3d"></div>
+      <p class="pc-status" id="pcInfo">鼠标拖动旋转 / 滚轮缩放（Drag to rotate, scroll to zoom）</p>
+    </div>
+    <div class="grid g3">
       <div class="card">
         <h2>前置相机 <span class="hint">Front Camera (RGB)</span></h2>
         <div class="ctrl-row">
@@ -349,28 +370,7 @@
           <img id="camImg" src="/api/image/latest?t=0" alt="相机画面" onerror="this.style.opacity='0.3'">
           <div class="cam-overlay" id="camOverlay">CAMERA · 前置</div>
         </div>
-        <p class="pc-status" style="margin-top:6px;">说明：图像来自前置相机 /api/image/latest，机器人离线或未录制时显示历史帧。</p>
-      </div>
-      <div class="card">
-        <h2>激光雷达点云 <span class="hint">LiDAR Point Cloud (3D)</span></h2>
-        <div class="ctrl-row">
-          <span style="font-size:12px;color:var(--muted);">刷新频率 Refresh:</span>
-          <select id="pcInterval" class="refresh" onchange="applyPcInterval()">
-            <option value="2">2 秒 / s</option>
-            <option value="5" selected>5 秒 / s</option>
-            <option value="10">10 秒 / s</option>
-            <option value="20">20 秒 / s</option>
-          </select>
-          <span style="font-size:12px;color:var(--muted);">点数 Points:</span>
-          <select id="pcPoints" class="refresh" onchange="applyPcInterval()">
-            <option value="1000">1000</option>
-            <option value="3000" selected>3000</option>
-            <option value="8000">8000</option>
-          </select>
-          <span class="badge" id="pcStatus">加载中…</span>
-        </div>
-        <div id="pointcloud3d"></div>
-        <p class="pc-status" id="pcInfo">鼠标拖动旋转 / 滚轮缩放（Drag to rotate, scroll to zoom）</p>
+        <p class="pc-status" style="margin-top:6px;">图像来自前置相机，机器人离线或未录制时显示历史帧。</p>
       </div>
       <div class="card">
         <h2>深度相机 RGB <span class="hint">RealSense D435I Color</span></h2>
@@ -690,12 +690,15 @@ async function refreshDepthDepth() {
 // ================= 激光点云 3D（Three.js）=================
 let pcTimer = null;
 let scene, camera, renderer, pointsMesh, controls;
+let pcExtent = 5;   // 点云当前范围（用于自适应相机和点大小）
+let pcFitted = false;  // 是否已完成首次相机自适应
 function initPc3D() {
   const el = $('pointcloud3d');
   scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(60, el.clientWidth/el.clientHeight, 0.1, 100);
-  camera.position.set(2, 2, 4);
-  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  scene.background = new THREE.Color(0x05070d);
+  camera = new THREE.PerspectiveCamera(60, el.clientWidth/el.clientHeight, 0.01, 200);
+  camera.position.set(0, 2, 8);
+  renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(el.clientWidth, el.clientHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // 限制像素比防卡顿
   el.appendChild(renderer.domElement);
@@ -705,21 +708,21 @@ function initPc3D() {
   // 坐标轴辅助
   const axes = new THREE.AxesHelper(2);
   scene.add(axes);
-  // 网格参考
-  const grid = new THREE.GridHelper(6, 12, 0x00d4ff, 0x1a2a3a);
+  // 网格参考（更大范围）
+  const grid = new THREE.GridHelper(10, 20, 0x00d4ff, 0x1a2a3a);
   scene.add(grid);
   // 点云几何体（预分配，超出时自动扩容）
   const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(3000*3), 3));
-  geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(3000*3), 3));
-  const mat = new THREE.PointsMaterial({ size: 0.02, vertexColors: true, transparent: true, opacity: 0.9 });
+  geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(8000*3), 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(8000*3), 3));
+  // 点大小用相对单位（sizeAttenuation 默认开启），初始 0.05
+  const mat = new THREE.PointsMaterial({ size: 0.05, vertexColors: true, transparent: true, opacity: 0.95 });
   pointsMesh = new THREE.Points(geo, mat);
   scene.add(pointsMesh);
-  // 记录当前容量，供 refreshPc 按需扩容
-  pcCapacity = 3000;
+  pcCapacity = 8000;
   animate();
 }
-let pcCapacity = 3000;
+let pcCapacity = 8000;
 function ensurePcCapacity(n) {
   // 点数量超过预分配容量时动态扩容，避免越界写入
   if (n > pcCapacity) {
@@ -734,6 +737,28 @@ function animate() {
   requestAnimationFrame(animate);
   controls.update();
   renderer.render(scene, camera);
+}
+function autoFitCamera(pts) {
+  // 根据点云实际范围自适应相机位置、朝向和点大小
+  if(!pts.length) return;
+  const xs=pts.map(p=>p[0]), ys=pts.map(p=>p[1]), zs=pts.map(p=>p[2]);
+  const cx=(Math.min(...xs)+Math.max(...xs))/2;
+  const cy=(Math.min(...ys)+Math.max(...ys))/2;
+  const cz=(Math.min(...zs)+Math.max(...zs))/2;
+  const extent = Math.max(Math.max(...xs)-Math.min(...xs),
+                          Math.max(...ys)-Math.min(...ys),
+                          Math.max(...zs)-Math.min(...zs), 0.5);
+  pcExtent = extent;
+  controls.target.set(cx, cy, cz);
+  // 相机放在中心斜上方，距离约 2.2 * extent
+  const dist = extent * 2.2;
+  camera.position.set(cx + dist*0.5, cy + dist*0.6, cz + dist);
+  camera.near = extent/50;
+  camera.far = extent*20;
+  camera.updateProjectionMatrix();
+  controls.update();
+  // 点大小随范围缩放
+  pointsMesh.material.size = Math.max(0.02, extent/120);
 }
 let pcMaxPoints = 3000;
 async function refreshPc() {
@@ -760,6 +785,8 @@ async function refreshPc() {
       pointsMesh.geometry.setDrawRange(0, pts.length);
       pointsMesh.geometry.attributes.position.needsUpdate = true;
       pointsMesh.geometry.attributes.color.needsUpdate = true;
+      // 首次加载时自适应相机位置/点大小（之后保持用户视角，不打扰）
+      if(!pcFitted){ autoFitCamera(pts); pcFitted = true; }
       st.textContent = `● ${pts.length.toLocaleString()} 点 / 共 ${(d.total||0).toLocaleString()} · ${fmt(d.hz,1)}Hz`;
       st.className = 'badge green';
       $('pcInfo').textContent = `当前点数 ${pts.length.toLocaleString()} · 鼠标拖动旋转 / 滚轮缩放`;
