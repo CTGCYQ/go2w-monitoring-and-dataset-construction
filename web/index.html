@@ -505,7 +505,7 @@ function switchTab(name) {
 const charts = {};
 function initChart(id, color) {
   const el = $(id);
-  const ch = echarts.init(el);
+  const ch = echarts.init(el, null, { renderer: 'canvas' });
   ch.setOption({
     grid: { left: 42, right: 12, top: 24, bottom: 24 },
     tooltip: { trigger: 'axis', backgroundColor: 'rgba(10,14,23,0.9)', borderColor: 'rgba(0,212,255,0.3)', textStyle: { color: '#e8f1ff', fontSize: 11 } },
@@ -514,6 +514,8 @@ function initChart(id, color) {
     series: [],
   });
   charts[id] = { ch, color, data: {} };
+  // 强制计算尺寸：ECharts 初始化时容器可能尺寸为 0，需在布局完成后 resize
+  setTimeout(() => { try { ch.resize(); } catch(e){} }, 100);
   return charts[id];
 }
 function pushChart(id, key, value) {
@@ -527,6 +529,8 @@ function pushChart(id, key, value) {
 function updateCharts() {
   for (const id of Object.keys(charts)) {
     const c = charts[id];
+    // 无数据时不更新（避免空 series 触发 cartesian2d 初始化崩溃）
+    if (!Object.keys(c.data).length) continue;
     const series = [];
     for (const key of Object.keys(c.data)) {
       series.push({
@@ -540,11 +544,13 @@ function updateCharts() {
         data: c.data[key],
       });
     }
+    // 注意：必须用默认 merge 模式（去掉 notMerge:true），否则会清空 xAxis/yAxis
+    // 导致 cartesian2d 坐标系无法初始化（Cannot read properties of undefined reading 'get'）
     c.ch.setOption({
       series,
       legend: { show: false },
       animation: false,
-    }, { notMerge: true });
+    });
   }
 }
 

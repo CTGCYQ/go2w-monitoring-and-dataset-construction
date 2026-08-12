@@ -679,7 +679,11 @@ def api_lidar_cloud(max_points: int = 3000):
 
 @app.get("/favicon.ico")
 def favicon():
-    return FileResponse(WEB_DIR / "favicon.ico")
+    """返回站点图标；文件不存在时返回 204 避免 500 报错。"""
+    icon = WEB_DIR / "favicon.ico"
+    if icon.exists():
+        return FileResponse(icon)
+    return Response(status_code=204)
 
 
 # serve static assets (css/js) from web dir
