@@ -311,16 +311,16 @@
     </div>
     <div class="grid g2" style="margin-top:12px;">
       <div class="card">
-        <h2>关节电机 <span class="hint">Joint Motors（点击表头排序）</span></h2>
-        <div class="scroll">
-          <table>
-            <thead><tr><th onclick="sortMotors('index')">#</th><th onclick="sortMotors('q')">角度 q(rad)</th><th onclick="sortMotors('dq')">速度 dq</th><th onclick="sortMotors('tau_est')">力矩 τ</th><th onclick="sortMotors('temperature')">温度 ℃</th></tr></thead>
+        <h2>关节电机 <span class="hint">Joint Motors · 12轴 4腿×3关节</span></h2>
+        <div style="overflow:visible;">
+          <table style="font-size:11.5px;">
+            <thead><tr><th>电机</th><th>位置 Position</th><th>角度 q</th><th>速度 dq</th><th>力矩 τ</th><th>温度℃</th></tr></thead>
             <tbody id="motorTable"></tbody>
           </table>
         </div>
       </div>
       <div class="card">
-        <h2>运动模式 <span class="hint">Sport Mode</span></h2>
+        <h2>运动模式 <span class="hint">Sport Mode · 更新于 <span id="spUpdate" class="num">-</span></span></h2>
         <table>
           <tbody id="sportTable">
             <tr><td>模式 / mode</td><td id="spMode" class="num">-</td></tr>
@@ -328,6 +328,8 @@
             <tr><td>位置 / position</td><td id="spPos" class="num">-</td></tr>
             <tr><td>速度 / velocity</td><td id="spVel" class="num">-</td></tr>
             <tr><td>机身高度 / height</td><td id="spBodyH" class="num">-</td></tr>
+            <tr><td>偏航角速度 / yaw</td><td id="spYaw" class="num">-</td></tr>
+            <tr><td>足部抬起 / foot</td><td id="spFootRaise" class="num">-</td></tr>
           </tbody>
         </table>
       </div>
@@ -533,6 +535,10 @@
       <h3 id="fmTitle">帧详情 Frame Detail</h3>
       <span class="mclose" onclick="closeFrameModal()">✕</span>
     </div>
+    <div class="mcard" style="margin-bottom:12px;border-color:rgba(167,139,250,0.35);">
+      <h4>语言标注 Annotation</h4>
+      <div id="fmAnn" style="font-size:13px;color:var(--violet);min-height:20px;">无标注</div>
+    </div>
     <div class="mgrid">
       <div>
         <div class="mcard">
@@ -709,6 +715,9 @@ async function poll() {
   $('spPos').textContent = sp.position?sp.position.map(x=>fmt(x)).join(', '):'-';
   $('spVel').textContent = sp.velocity?sp.velocity.map(x=>fmt(x)).join(', '):'-';
   $('spBodyH').textContent = fmt(sp.body_height);
+  $('spYaw').textContent = fmt(sp.yaw_speed);
+  $('spFootRaise').textContent = fmt(sp.foot_raise_height);
+  $('spUpdate').textContent = fmtTime(st.last_seen_s);
   // 录制状态
   const rec = st.recording;
   if(rec && rec.active){ $('navRec').textContent='● 录制中'; $('navRec').className='badge amber'; }
@@ -722,14 +731,28 @@ async function poll() {
   if(ff.length>=4){ pushChart('chartFoot','FL左前',+ff[0].toFixed(0)); pushChart('chartFoot','FR右前',+ff[1].toFixed(0)); pushChart('chartFoot','RL左后',+ff[2].toFixed(0)); pushChart('chartFoot','RR右后',+ff[3].toFixed(0)); }
   updateCharts();
 }
+// 电机位置映射（Go2 官方 12 轴：4腿×3关节，来自 unitree_legged_const.py）
+const MOTOR_NAMES = {
+  0:'FR_0 右前髋',1:'FR_1 右前大腿',2:'FR_2 右前小腿',
+  3:'FL_0 左前髋',4:'FL_1 左前大腿',5:'FL_2 左前小腿',
+  6:'RR_0 右后髋',7:'RR_1 右后大腿',8:'RR_2 右后小腿',
+  9:'RL_0 左后髋',10:'RL_1 左后大腿',11:'RL_2 左后小腿',
+};
 // 电机表排序
 let motorSortKey = 'index', motorSortAsc = true;
 function renderMotors(motors) {
-  if(!motors.length){ $('motorTable').innerHTML='<tr><td colspan="5" style="color:var(--muted)">等待数据 Waiting…</td></tr>'; return; }
+  if(!motors.length){ $('motorTable').innerHTML='<tr><td colspan="6" style="color:var(--muted)">等待数据 Waiting…</td></tr>'; return; }
   const sorted = [...motors].sort((a,b)=> (a[motorSortKey]??0) - (b[motorSortKey]??0) * (motorSortAsc?1:-1));
-  $('motorTable').innerHTML = sorted.map(m=>`<tr>
-    <td class="num">${m.index}</td><td class="num">${fmt(m.q,3)}</td><td class="num">${fmt(m.dq,2)}</td>
-    <td class="num">${fmt(m.tau_est,2)}</td><td class="num">${fmt(m.temperature,0)}</td></tr>`).join('');
+  $('motorTable').innerHTML = sorted.map(m=>{
+    const name = MOTOR_NAMES[m.index] || ('电机'+m.index);
+    const leg = ['右前','左前','右后','左后'][Math.floor(m.index/3)];
+    const cls = m.index%3===0 ? 'hip' : (m.index%3===1?'thigh':'calf');
+    return `<tr>
+      <td class="num">${m.index}</td>
+      <td title="${name}">${leg}·${cls=='hip'?'髋':cls=='thigh'?'大腿':'小腿'}</td>
+      <td class="num">${fmt(m.q,3)}</td><td class="num">${fmt(m.dq,2)}</td>
+      <td class="num">${fmt(m.tau_est,2)}</td><td class="num">${fmt(m.temperature,0)}</td></tr>`;
+  }).join('');
 }
 function sortMotors(key) {
   if(motorSortKey===key) motorSortAsc=!motorSortAsc; else { motorSortKey=key; motorSortAsc=true; }
@@ -962,56 +985,94 @@ function updatePcInfo() {
   $('pcPointsCount').textContent = total.toLocaleString() + ' 点';
 }
 function renderPcBuffer() {
-  // 合并窗口内所有帧的点云，用高斯软点渲染 + 多种着色
+  // 合并窗口内所有帧的点云 → 体素降采样去重 → 高斯软点渲染
   const mode = $('pcColorMode').value;
   const now = Date.now();
   pcBuffer = pcBuffer.filter(f => now - f.ts <= pcAccumSecs*1000);
   if(!pcBuffer.length){ pointsMesh.geometry.setDrawRange(0,0); updatePcInfo(); return; }
-  const allPts = [];
-  const allTs = [];
-  const allInt = [];
+  // 合并所有点
+  const allPts = [], allTs = [], allInt = [];
   for(const f of pcBuffer){ for(const p of f.points){ allPts.push(p); allTs.push(f.ts); allInt.push(p[3]!==undefined ? p[3] : NaN); } }
-  ensurePcCapacity(allPts.length);
+  // 体素降采样：按体素网格去重（保留每格一个代表点），避免重复点堆积成"糊"
+  const pts = voxelDownsample(allPts, allInt, allTs);
+  const dPts = pts.pts, dInt = pts.int, dTs = pts.ts;
+  ensurePcCapacity(dPts.length);
   const pos = pointsMesh.geometry.attributes.position.array;
   const col = pointsMesh.geometry.attributes.color.array;
   // 高度范围
   let zmin=Infinity, zmax=-Infinity;
   if(mode!=='time' && mode!=='intensity'){
-    for(const p of allPts){ if(p[2]<zmin)zmin=p[2]; if(p[2]>zmax)zmax=p[2]; }
+    for(const p of dPts){ if(p[2]<zmin)zmin=p[2]; if(p[2]>zmax)zmax=p[2]; }
   }
   // 强度范围
   let imin=Infinity, imax=-Infinity;
   if(mode==='intensity'){
-    for(const it of allInt){ if(!isNaN(it)){ if(it<imin)imin=it; if(it>imax)imax=it; } }
+    for(const it of dInt){ if(!isNaN(it)){ if(it<imin)imin=it; if(it>imax)imax=it; } }
     if(!isFinite(imin)){ imin=0; imax=1; }
     if(imax<=imin) imax=imin+1;
   }
   const tMin = now - pcAccumSecs*1000, tMax = now;
-  for(let i=0;i<allPts.length;i++){
-    pos[i*3]=allPts[i][0]; pos[i*3+1]=allPts[i][1]; pos[i*3+2]=allPts[i][2];
+  for(let i=0;i<dPts.length;i++){
+    pos[i*3]=dPts[i][0]; pos[i*3+1]=dPts[i][1]; pos[i*3+2]=dPts[i][2];
     if(mode==='height'){
-      const t = (zmax>zmin) ? (allPts[i][2]-zmin)/(zmax-zmin) : 0.5;
+      const t = (zmax>zmin) ? (dPts[i][2]-zmin)/(zmax-zmin) : 0.5;
       const c = terrainColor(t);
       col[i*3]=c[0]; col[i*3+1]=c[1]; col[i*3+2]=c[2];
     } else if(mode==='intensity'){
-      const t = isNaN(allInt[i]) ? 0 : (allInt[i]-imin)/(imax-imin);
+      const t = isNaN(dInt[i]) ? 0 : (dInt[i]-imin)/(imax-imin);
       col[i*3]=0.2+0.8*t; col[i*3+1]=0.1+0.8*t; col[i*3+2]=1-0.9*t;
     } else if(mode==='time'){
-      const t = (tMax>tMin) ? (allTs[i]-tMin)/(tMax-tMin) : 0.5;
+      const t = (tMax>tMin) ? (dTs[i]-tMin)/(tMax-tMin) : 0.5;
       col[i*3]=0.2+0.8*t; col[i*3+1]=0.3+0.3*(1-Math.abs(t-0.5)*2); col[i*3+2]=1-t;
     } else { // camera RGB
-      const t = (zmax>zmin) ? (allPts[i][2]-zmin)/(zmax-zmin) : 0.5;
-      col[i*3]=0.5+0.4*Math.sin(allPts[i][0]*2); col[i*3+1]=0.4+0.4*Math.cos(allPts[i][1]*2); col[i*3+2]=0.3+0.6*t;
+      const t = (zmax>zmin) ? (dPts[i][2]-zmin)/(zmax-zmin) : 0.5;
+      col[i*3]=0.5+0.4*Math.sin(dPts[i][0]*2); col[i*3+1]=0.4+0.4*Math.cos(dPts[i][1]*2); col[i*3+2]=0.3+0.6*t;
     }
   }
-  pointsMesh.geometry.setDrawRange(0, allPts.length);
+  pointsMesh.geometry.setDrawRange(0, dPts.length);
   pointsMesh.geometry.attributes.position.needsUpdate = true;
   pointsMesh.geometry.attributes.color.needsUpdate = true;
-  // 点大小随范围自适应（高斯软点）
-  if(!pcFitted){ autoFitCamera(allPts); pcFitted = true; }
-  pointsMesh.material.size = Math.max(0.03, pcExtent/100);
-  $('pcInfo').textContent = `已重构 ${allPts.length.toLocaleString()} 点 / ${pcBuffer.length} 帧 · 窗口 ${pcAccumSecs}s · 拖动旋转 / 滚轮缩放`;
+  // 相机自适应：首次或范围显著变化时重新 fit
+  const needFit = !pcFitted || rangeChanged(dPts);
+  if(needFit){ autoFitCamera(dPts); pcFitted = true; }
+  pointsMesh.material.size = Math.max(0.04, pcExtent/90);
+  $('pcInfo').textContent = `已重构 ${dPts.length.toLocaleString()} 点 (降采样自 ${allPts.length.toLocaleString()}) / ${pcBuffer.length} 帧 · 窗口 ${pcAccumSecs}s · 拖动旋转 / 滚轮缩放`;
   updatePcInfo();
+}
+// 体素降采样：把空间划分为格子，每格保留一个代表点（减少重复，重构更清晰）
+function voxelDownsample(pts, ints, ts) {
+  const n = pts.length;
+  if(!n) return {pts:[], int:[], ts:[]};
+  // 估算体素大小（按点云范围）
+  let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity,minZ=Infinity,maxZ=-Infinity;
+  for(const p of pts){
+    if(p[0]<minX)minX=p[0]; if(p[0]>maxX)maxX=p[0];
+    if(p[1]<minY)minY=p[1]; if(p[1]>maxY)maxY=p[1];
+    if(p[2]<minZ)minZ=p[2]; if(p[2]>maxZ)maxZ=p[2];
+  }
+  const extent = Math.max(maxX-minX, maxY-minY, maxZ-minZ, 0.5);
+  const voxel = Math.max(0.02, extent/300);   // 体素尺寸（自适应）
+  const keyFn = (x,y,z)=>Math.floor(x/voxel)+'_'+Math.floor(y/voxel)+'_'+Math.floor(z/voxel);
+  const seen = new Set();
+  const outPts=[], outInt=[], outTs=[];
+  for(let i=0;i<n;i++){
+    const k = keyFn(pts[i][0], pts[i][1], pts[i][2]);
+    if(seen.has(k)) continue;   // 同一体素已有点则跳过
+    seen.add(k);
+    outPts.push(pts[i]); outInt.push(ints[i]); outTs.push(ts[i]);
+  }
+  return {pts:outPts, int:outInt, ts:outTs};
+}
+// 判断点云范围是否显著变化（>40% 才重配相机，避免频繁跳动）
+function rangeChanged(pts) {
+  if(!pts.length) return false;
+  let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+  for(const p of pts){
+    if(p[0]<minX)minX=p[0]; if(p[0]>maxX)maxX=p[0];
+    if(p[1]<minY)minY=p[1]; if(p[1]>maxY)maxY=p[1];
+  }
+  const ex = Math.max(maxX-minX, maxY-minY, 0.5);
+  return Math.abs(ex - pcExtent) / Math.max(pcExtent, 0.5) > 0.4;
 }
 let pcBufferStartTs = Date.now();
 async function refreshPc() {
@@ -1138,7 +1199,7 @@ async function loadAnnSessions(){
 async function openAnnSession(id){
   annSession=id; annPage=0; annSel.clear();
   $('annFrameInfo').textContent=' · session '+id.slice(0,8);
-  await loadFramePage(0); await loadAnnList();
+  await refreshAnnData(); await loadFramePage(0);
 }
 async function loadFramePage(dir){
   if(!annSession)return;
@@ -1152,8 +1213,11 @@ async function loadFramePage(dir){
     const img=f.image?`<img src="/api/session/${annSession}/image/${f.image}" loading="lazy">`
       :`<div class="noimg">无图像</div>`;
     const rpy=f.imu_rpy?`R${fmt(f.imu_rpy[0],1)} P${fmt(f.imu_rpy[1],1)} Y${fmt(f.imu_rpy[2],1)}`:'';
+    const ann = annFrameMap[f.index];
+    const annBadge = ann ? `<div class="fmeta" style="color:var(--green);border-top:1px solid rgba(52,211,153,0.2);margin-top:3px;padding-top:3px;">🏷 ${ann.length>28?ann.slice(0,28)+'…':ann}</div>`
+                          : `<div class="fmeta" style="color:var(--muted);opacity:.5;">语言标注: 空</div>`;
     return `<div class="frame-card ${annSel.has(f.index)?'sel':''}" data-idx="${f.index}" onclick="toggleFrame(${f.index})" ondblclick="openFrameModal(${f.index})" title="单击选中 · 双击放大查看全部数据">
-      ${img}<div class="fidx">帧 Frame ${f.index}</div><div class="fmeta">tick ${f.tick||'-'} ${rpy}</div>
+      ${img}<div class="fidx">帧 Frame ${f.index}</div><div class="fmeta">tick ${f.tick||'-'} ${rpy}</div>${annBadge}
     </div>`;
   }).join('');
   updateSelCount();
@@ -1176,6 +1240,8 @@ async function openFrameModal(index){
   $('fmImg').style.display='none'; $('fmImgHint').textContent='加载中…';
   $('fmImu').innerHTML=''; $('fmPower').innerHTML=''; $('fmMotors').innerHTML='';
   $('fmFoot').textContent=''; $('fmSport').innerHTML='';
+  // 显示该帧的语言标注（无标注则显示"空"）
+  $('fmAnn').textContent = annFrameMap[index] || '（无标注 / No annotation）';
   document.getElementById('frameModal').classList.add('show');
   const d = await fetchJSON(`/api/session/${annSession}/frame/${index}/detail`);
   if(!d){ $('fmImgHint').textContent='加载失败'; return; }
@@ -1237,14 +1303,24 @@ async function saveAnnotation(){
   if(!text){ $('annMsg').textContent='请输入描述文本'; return; }
   const r=await postJSON(`/api/session/${annSession}/annotations`,{frame_indices:[...annSel].sort((a,b)=>a-b),text});
   if(r.error){ $('annMsg').textContent='❌ '+r.error; return; }
-  $('annMsg').textContent='✅ 标注已保存'; $('annText').value=''; clearSelection(); await loadAnnList();
+  $('annMsg').textContent='✅ 标注已保存'; $('annText').value=''; clearSelection();
+  await refreshAnnData(); await loadFramePage(0);
+}
+// 帧号 → 标注文本映射（保存后刷新，帧卡片和详情弹窗据此回显标注）
+let annFrameMap = {};
+let annEntries = [];
+async function refreshAnnData(){
+  if(!annSession) return;
+  const d=await fetchJSON(`/api/session/${annSession}/annotations`);
+  annEntries = (d&&d.entries)||[];
+  annFrameMap = {};
+  for(const e of annEntries){ for(const f of e.frame_indices){ annFrameMap[f]=e.text; } }
+  await loadAnnList();
 }
 async function loadAnnList(){
-  if(!annSession)return;
-  const d=await fetchJSON(`/api/session/${annSession}/annotations`);
   const list=$('annList');
-  if(!d||!d.entries||!d.entries.length){ list.innerHTML='<div style="color:var(--muted);font-size:11px;">暂无标注 No annotations</div>'; return; }
-  list.innerHTML=d.entries.map(e=>`<div class="ann-item">
+  if(!annEntries.length){ list.innerHTML='<div style="color:var(--muted);font-size:11px;">暂无标注 No annotations</div>'; return; }
+  list.innerHTML=annEntries.map(e=>`<div class="ann-item">
     <button class="sm red" onclick="delAnnotation('${e.id}')">删除</button>
     <div class="txt">${e.text}</div>
     <div class="meta">帧 Frame ${e.frame_indices.join(', ')} · ${new Date(e.created_at*1000).toLocaleString('zh-CN')}</div>
@@ -1252,7 +1328,7 @@ async function loadAnnList(){
 }
 async function delAnnotation(id){
   await postJSON(`/api/session/${annSession}/annotations/${id}`,null);
-  await loadAnnList();
+  await refreshAnnData(); await loadFramePage(0);
 }
 
 // ================= 初始化 =================

@@ -30,27 +30,34 @@ static bool save_depth_jpeg(const rs2::depth_frame& depth, const std::string& pa
     const int h = depth.get_height();
     cv::Mat img(h, w, CV_8UC3);
     uint16_t* dp = (uint16_t*)depth.get_data();
-    float min_d = 0.2f, max_d = 4.0f;  // 显示范围 0.2m~4m
+    // 显示范围：0.3m(近) ~ 8m(远)，符合 D435I 有效测量范围
+    const float min_d = 0.3f, max_d = 8.0f;
+    const float range = max_d - min_d;
     for (int y = 0; y < h; y++) {
         for (int x = 0; x < w; x++) {
             float d = dp[y * w + x] * 0.001f;  // mm -> m
             float t;
-            if (d <= 0 || d >= max_d) {
-                t = 0;  // 无效深度 -> 黑色
+            if (d <= 0 || d < min_d) {
+                t = 0;   // 无效/过近深度 -> 深蓝
+            } else if (d >= max_d) {
+                t = 1.0f;  // 过远 -> 最冷色
             } else {
-                t = (d - min_d) / (max_d - min_d);
-                t = std::max(0.0f, std::min(1.0f, t));
+                t = (d - min_d) / range;
             }
-            // 伪彩色: 近->红(暖), 远->蓝(冷)
             cv::Vec3b& px = img.at<cv::Vec3b>(y, x);
+            // 标准热力图：近=红(暖)，远=蓝(冷)。t:0→红, 0.33→黄, 0.66→绿, 1→蓝
+            // 无效深度(0)用深蓝黑区分
             if (t <= 0) {
-                px = cv::Vec3b(10, 10, 20);
-            } else if (t < 0.5f) {
-                float s = t / 0.5f;
-                px = cv::Vec3b((uchar)(255 * s), (uchar)(100 * s), (uchar)(50 * s));      // 红->黄
+                px = cv::Vec3b(15, 15, 40);          // 无效深度
+            } else if (t < 0.33f) {
+                float s = t / 0.33f;
+                px = cv::Vec3b((uchar)(255), (uchar)(int)(0 + 255*s), (uchar)(0));            // 红→黄
+            } else if (t < 0.66f) {
+                float s = (t - 0.33f) / 0.33f;
+                px = cv::Vec3b((uchar)(int)(255 - 255*s), (uchar)(255), (uchar)(0));          // 黄→绿
             } else {
-                float s = (t - 0.5f) / 0.5f;
-                px = cv::Vec3b((uchar)(255 * (1 - s)), (uchar)(100 + 155 * (1 - s)), (uchar)(50 + 205 * s)); // 黄->蓝
+                float s = (t - 0.66f) / 0.34f;
+                px = cv::Vec3b((uchar)(int)(0), (uchar)(int)(255 - 255*s), (uchar)(int)(0 + 255*s)); // 绿→蓝
             }
         }
     }

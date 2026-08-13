@@ -227,7 +227,9 @@ def run(interface: str, influx_url: str, database: str, interval: float,
     writer = InfluxWriter(influx_url, database)
     count = [0]            # 收到的消息计数（用于降采样）
     last_ts = [time.time()]  # 上一帧时间
-    hz = [0.0]             # 实时频率
+    hz = [0.0]             # 实时频率（滑动窗口平均）
+    hz_count = [0]         # 滑动窗口内的帧计数
+    hz_start = [time.time()]  # 滑动窗口起始时间
     _last_sched_check = 0.0  # 上次检查定时规则的时间
 
     def on_lowstate(msg, _name=None) -> None:
@@ -235,12 +237,19 @@ def run(interface: str, influx_url: str, database: str, interval: float,
         now = time.time()
         count[0] += 1
         dt = now - last_ts[0]
-        # 计算实时频率（间隔超过 0.5s 视为断流，频率归零）
+        # 计算实时频率（滑动窗口：每秒统计一次帧数，更稳定）
         if dt > 0.5:
             hz[0] = 0.0
+            last_ts[0] = now
+            hz_count[0] = 0
+            hz_start[0] = now
         else:
-            hz[0] = 1.0 / dt if dt > 0 else 0.0
-        last_ts[0] = now
+            last_ts[0] = now
+            hz_count[0] += 1
+            if now - hz_start[0] >= 1.0:
+                hz[0] = hz_count[0] / max(now - hz_start[0], 1e-6)
+                hz_count[0] = 0
+                hz_start[0] = now
 
         try:
             st = extract_lowstate(msg)
