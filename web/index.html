@@ -387,35 +387,42 @@
   <!-- ============ TAB3 视觉与点云 ============ -->
   <div class="tabview" id="tv-vision">
     <div class="card" style="margin-bottom:12px;">
-      <h2>激光雷达点云 3D <span class="hint">LiDAR Point Cloud · 时间聚合 + 彩色建模</span></h2>
+      <h2>激光雷达点云 3D <span class="hint">LiDAR Point Cloud · 时间聚合重构</span></h2>
       <div class="ctrl-row">
-        <span style="font-size:12px;color:var(--muted);">刷新频率(s) Refresh:</span>
-        <input type="number" id="pcInterval" class="refresh" value="5" min="0.5" step="0.5" list="pcIntervalList" onchange="applyPcInterval()" style="width:70px">
+        <span style="font-size:12px;color:var(--muted);">刷新间隔(s):</span>
+        <input type="number" id="pcInterval" class="refresh" value="2" min="0.5" step="0.5" list="pcIntervalList" onchange="applyPcInterval()" style="width:70px">
         <datalist id="pcIntervalList">
-          <option value="0.5"><option value="1"><option value="2"><option value="5"><option value="10"><option value="20">
+          <option value="0.5"><option value="1"><option value="2"><option value="5"><option value="10">
         </datalist>
         <span style="font-size:12px;color:var(--muted);">单帧点数:</span>
-        <input type="number" id="pcPoints" class="refresh" value="3000" min="500" step="500" list="pcPointsList" onchange="applyPcInterval()" style="width:80px">
+        <input type="number" id="pcPoints" class="refresh" value="5000" min="500" step="500" list="pcPointsList" onchange="applyPcInterval()" style="width:80px">
         <datalist id="pcPointsList">
-          <option value="1000"><option value="3000"><option value="8000"><option value="15000">
+          <option value="1000"><option value="3000"><option value="5000"><option value="8000"><option value="15000">
         </datalist>
-        <span style="font-size:12px;color:var(--muted);">累积时间(s) Window:</span>
-        <input type="number" id="pcAccum" class="refresh" value="10" min="1" step="1" list="pcAccumList" onchange="applyPcAccum()" style="width:70px">
+        <span style="font-size:12px;color:var(--muted);">累积窗口(s):</span>
+        <input type="number" id="pcAccum" class="refresh" value="30" min="2" step="1" list="pcAccumList" onchange="applyPcAccum()" style="width:70px">
         <datalist id="pcAccumList">
-          <option value="3"><option value="5"><option value="10"><option value="20"><option value="30"><option value="60"><option value="120">
+          <option value="5"><option value="10"><option value="20"><option value="30"><option value="60"><option value="120"><option value="180">
         </datalist>
-        <span style="font-size:12px;color:var(--muted);">着色模式 Color:</span>
+        <span style="font-size:12px;color:var(--muted);">着色:</span>
         <select id="pcColorMode" class="refresh" onchange="applyPcAccum()">
-          <option value="height" selected>高度伪彩色</option>
-          <option value="intensity">强度 Intensity</option>
-          <option value="time">时间渐变</option>
-          <option value="camera">相机RGB</option>
+          <option value="height" selected>高度</option>
+          <option value="intensity">强度</option>
+          <option value="time">时间</option>
+          <option value="camera">RGB</option>
         </select>
         <button class="sm" onclick="clearPcBuffer()">🗑 清空</button>
-        <span class="badge" id="pcStatus">加载中…</span>
-        <span class="badge" id="pcCountdown" style="font-family:var(--mono);">刷新倒计时 -s</span>
       </div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;" id="pcAccumInfo">累积时间窗口内的多帧点云会叠加显示，让你看清机器狗周围完整环境。可自由输入任意秒数。累积时间不能超过刷新间隔（会自动调整）。</div>
+      <div class="ctrl-row" style="margin-top:6px;">
+        <span class="badge" id="pcStatus">加载中…</span>
+        <span class="badge accent" id="pcCountdown" style="font-family:var(--mono);">下次刷新 -s</span>
+        <span class="badge" id="pcAccumCount" style="font-family:var(--mono);">已累积 0 帧</span>
+        <span class="badge" id="pcPointsCount" style="font-family:var(--mono);">0 点</span>
+      </div>
+      <div style="height:6px;background:rgba(255,255,255,0.06);border-radius:3px;margin:8px 0;overflow:hidden;">
+        <div id="pcAccumBar" style="height:100%;width:0%;background:linear-gradient(90deg,#00d4ff,#34d399);border-radius:3px;transition:width .3s;"></div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;" id="pcAccumInfo">累积窗口内多帧点云叠加，重构机器狗周围完整环境。</div>
       <div id="pointcloud3d"></div>
       <p class="pc-status" id="pcInfo">鼠标拖动旋转 / 滚轮缩放（Drag to rotate, scroll to zoom）</p>
     </div>
@@ -832,12 +839,33 @@ function initPc3D() {
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(8000*3), 3));
   geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(8000*3), 3));
-  // 点大小用相对单位（sizeAttenuation 默认开启），初始 0.05
-  const mat = new THREE.PointsMaterial({ size: 0.05, vertexColors: true, transparent: true, opacity: 0.95 });
+  // 高斯软点纹理：模拟 3D 高斯泼溅的软核视觉效果（浏览器实时渲染，无需训练）
+  const gaussTex = makeGaussTexture();
+  const mat = new THREE.PointsMaterial({
+    size: 0.06, map: gaussTex, vertexColors: true,
+    transparent: true, opacity: 0.85,
+    depthWrite: false, blending: THREE.AdditiveBlending,
+    sizeAttenuation: true,
+  });
   pointsMesh = new THREE.Points(geo, mat);
   scene.add(pointsMesh);
   pcCapacity = 8000;
   animate();
+}
+// 生成高斯径向渐变圆纹理（中心亮→边缘透明，模拟高斯核）
+function makeGaussTexture() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 64;
+  const ctx = c.getContext('2d');
+  const g = ctx.createRadialGradient(32,32,0, 32,32,32);
+  g.addColorStop(0,'rgba(255,255,255,1)');
+  g.addColorStop(0.4,'rgba(255,255,255,0.8)');
+  g.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0,0,64,64);
+  const tex = new THREE.CanvasTexture(c);
+  tex.needsUpdate = true;
+  return tex;
 }
 let pcCapacity = 8000;
 function ensurePcCapacity(n) {
@@ -898,33 +926,47 @@ function terrainColor(t) {
   return [c0[0]+(c1[0]-c0[0])*frac, c0[1]+(c1[1]-c0[1])*frac, c0[2]+(c1[2]-c0[2])*frac];
 }
 function applyPcAccum() {
-  // 约束：累积时间不能超过刷新间隔（否则点云还没累积完页面就刷新了）
-  const interval = parseFloat($('pcInterval').value) || 5;
-  let acc = parseInt($('pcAccum').value) || 10;
-  if(acc > interval){
-    acc = Math.max(1, Math.floor(interval));
-    $('pcAccum').value = acc;
-  }
+  // 累积窗口：每次刷新把新帧压入缓冲，窗口内所有帧叠加显示完整环境。
+  // 合理默认：刷新间隔 2s + 累积窗口 30s（雷达 4.5Hz，30s 足够覆盖全向环境）。
+  let acc = parseInt($('pcAccum').value) || 30;
+  acc = Math.max(2, Math.min(acc, 300));
   pcAccumSecs = acc;
-  $('pcAccumInfo').textContent = `累积时间窗口 ${pcAccumSecs} 秒（≤ 刷新间隔 ${interval}s）：多帧点云叠加显示。切换「着色模式」选择不同配色。`;
-  // 切换着色模式或窗口时立即重绘
+  updatePcInfo();
   if(pcBuffer.length) renderPcBuffer();
 }
 function clearPcBuffer() {
   pcBuffer = [];
+  pcBufferStartTs = Date.now();
   pointsMesh.geometry.setDrawRange(0, 0);
   const st = $('pcStatus');
   st.textContent = '已清空';
   st.className = 'badge';
+  updatePcInfo();
+}
+// 更新累积信息文本 + 进度条 + 计数
+function updatePcInfo() {
+  const interval = parseFloat($('pcInterval').value) || 2;
+  const frames = Math.ceil(pcAccumSecs / Math.max(0.5, interval));
+  $('pcAccumInfo').textContent =
+    `累积窗口 ${pcAccumSecs}s（约 ${frames} 帧叠加）→ 重构完整环境；刷新间隔 ${interval}s。` +
+    `雷达持续旋转，多帧叠加后即可看到机器狗四周完整三维模型。`;
+  $('pcAccumCount').textContent = `已累积 ${pcBuffer.length} 帧`;
+  // 进度条：当前已累积时间 / 目标窗口
+  const elapsed = (Date.now() - pcBufferStartTs) / 1000;
+  const pct = Math.min(100, (elapsed / pcAccumSecs) * 100);
+  const bar = $('pcAccumBar');
+  if(bar) bar.style.width = pct.toFixed(1) + '%';
+  // 点数统计
+  let total = 0;
+  for(const f of pcBuffer) total += f.points.length;
+  $('pcPointsCount').textContent = total.toLocaleString() + ' 点';
 }
 function renderPcBuffer() {
-  // 把缓冲中所有帧的点云合并渲染，支持多种着色模式
+  // 合并窗口内所有帧的点云，用高斯软点渲染 + 多种着色
   const mode = $('pcColorMode').value;
   const now = Date.now();
-  // 丢弃超出时间窗口的旧帧
   pcBuffer = pcBuffer.filter(f => now - f.ts <= pcAccumSecs*1000);
-  if(!pcBuffer.length){ pointsMesh.geometry.setDrawRange(0,0); return; }
-  // 合并所有点
+  if(!pcBuffer.length){ pointsMesh.geometry.setDrawRange(0,0); updatePcInfo(); return; }
   const allPts = [];
   const allTs = [];
   const allInt = [];
@@ -932,19 +974,18 @@ function renderPcBuffer() {
   ensurePcCapacity(allPts.length);
   const pos = pointsMesh.geometry.attributes.position.array;
   const col = pointsMesh.geometry.attributes.color.array;
-  // 计算全局高度范围（用于 terrain/camera 着色）
+  // 高度范围
   let zmin=Infinity, zmax=-Infinity;
   if(mode!=='time' && mode!=='intensity'){
     for(const p of allPts){ if(p[2]<zmin)zmin=p[2]; if(p[2]>zmax)zmax=p[2]; }
   }
-  // 强度范围（用于 intensity 着色）
+  // 强度范围
   let imin=Infinity, imax=-Infinity;
   if(mode==='intensity'){
     for(const it of allInt){ if(!isNaN(it)){ if(it<imin)imin=it; if(it>imax)imax=it; } }
     if(!isFinite(imin)){ imin=0; imax=1; }
     if(imax<=imin) imax=imin+1;
   }
-  // 时间范围（用于 time 渐变）
   const tMin = now - pcAccumSecs*1000, tMax = now;
   for(let i=0;i<allPts.length;i++){
     pos[i*3]=allPts[i][0]; pos[i*3+1]=allPts[i][1]; pos[i*3+2]=allPts[i][2];
@@ -953,14 +994,12 @@ function renderPcBuffer() {
       const c = terrainColor(t);
       col[i*3]=c[0]; col[i*3+1]=c[1]; col[i*3+2]=c[2];
     } else if(mode==='intensity'){
-      // 强度映射热力色：弱=蓝紫，强=亮黄
       const t = isNaN(allInt[i]) ? 0 : (allInt[i]-imin)/(imax-imin);
       col[i*3]=0.2+0.8*t; col[i*3+1]=0.1+0.8*t; col[i*3+2]=1-0.9*t;
     } else if(mode==='time'){
       const t = (tMax>tMin) ? (allTs[i]-tMin)/(tMax-tMin) : 0.5;
-      // 旧→蓝，新→红
       col[i*3]=0.2+0.8*t; col[i*3+1]=0.3+0.3*(1-Math.abs(t-0.5)*2); col[i*3+2]=1-t;
-    } else { // camera: 伪相机 RGB（按空间位置近似）
+    } else { // camera RGB
       const t = (zmax>zmin) ? (allPts[i][2]-zmin)/(zmax-zmin) : 0.5;
       col[i*3]=0.5+0.4*Math.sin(allPts[i][0]*2); col[i*3+1]=0.4+0.4*Math.cos(allPts[i][1]*2); col[i*3+2]=0.3+0.6*t;
     }
@@ -968,32 +1007,36 @@ function renderPcBuffer() {
   pointsMesh.geometry.setDrawRange(0, allPts.length);
   pointsMesh.geometry.attributes.position.needsUpdate = true;
   pointsMesh.geometry.attributes.color.needsUpdate = true;
-  // 首次自适应相机
+  // 点大小随范围自适应（高斯软点）
   if(!pcFitted){ autoFitCamera(allPts); pcFitted = true; }
-  $('pcInfo').textContent = `已聚合 ${allPts.length.toLocaleString()} 点 / ${pcBuffer.length} 帧 · 窗口 ${pcAccumSecs}s · 鼠标拖动旋转 / 滚轮缩放`;
+  pointsMesh.material.size = Math.max(0.03, pcExtent/100);
+  $('pcInfo').textContent = `已重构 ${allPts.length.toLocaleString()} 点 / ${pcBuffer.length} 帧 · 窗口 ${pcAccumSecs}s · 拖动旋转 / 滚轮缩放`;
+  updatePcInfo();
 }
+let pcBufferStartTs = Date.now();
 async function refreshPc() {
   pcMaxPoints = parseInt($('pcPoints').value);
   const st = $('pcStatus');
   try {
     const d = await fetchJSON('/api/lidar/cloud?max_points='+pcMaxPoints);
     if(d && d.online && d.points && d.points.length){
-      // 推入时间聚合缓冲（限制最大帧数防止内存膨胀）
+      // 首次成功时记录累积起始时间
+      if(!pcBuffer.length) pcBufferStartTs = Date.now();
       pcBuffer.push({ ts: Date.now(), points: d.points });
-      const maxFrames = Math.ceil(pcAccumSecs * 5) + 5;
+      // 缓冲容量：窗口内帧数 + 余量，防内存膨胀
+      const interval = parseFloat($('pcInterval').value) || 2;
+      const framesNeeded = Math.ceil(pcAccumSecs / Math.max(0.5, interval));
+      const maxFrames = Math.min(framesNeeded + 5, 200);
       if(pcBuffer.length > maxFrames) pcBuffer.shift();
       renderPcBuffer();
       const hasInt = d.has_intensity ? ' +强度' : '';
       st.textContent = `● 在线 · ${d.total||0}点/帧${hasInt}`;
       st.className = 'badge green';
-      // 有强度数据且当前没选强度模式时提示
-      if(d.has_intensity && $('pcColorMode').value!=='intensity'){
-        $('pcAccumInfo').textContent += '（雷达含强度数据，可选「强度」着色）';
-      }
     } else {
       st.textContent = '点云离线或暂无数据（机器人离线）';
       st.className = 'badge red';
       pointsMesh.geometry.setDrawRange(0, 0);
+      updatePcInfo();
     }
   } catch(e){
     st.textContent = '点云加载失败 ' + (e.message||'');
@@ -1001,22 +1044,27 @@ async function refreshPc() {
   }
 }
 function applyPcInterval() {
-  // 重新约束累积时间（刷新间隔可能变了）
-  applyPcAccum();
+  // 刷新间隔变化时，保持累积窗口合理（累积 >= 刷新）
+  const interval = parseFloat($('pcInterval').value) || 2;
+  let acc = parseInt($('pcAccum').value) || 30;
+  if(acc < interval) { acc = interval; $('pcAccum').value = acc; }
+  pcAccumSecs = acc;
   if(pcTimer) clearInterval(pcTimer);
-  pcCountdownRemaining = parseFloat($('pcInterval').value) || 5;
+  pcCountdownRemaining = interval;
   refreshPc();
-  pcTimer = setInterval(refreshPc, (parseFloat($('pcInterval').value)||5)*1000);
+  pcTimer = setInterval(refreshPc, interval*1000);
+  updatePcInfo();
 }
-// 刷新倒计时显示（每 100ms 更新）
-let pcCountdownRemaining = 5;
+// 刷新倒计时 + 累积进度（每 100ms 更新）
+let pcCountdownRemaining = 2;
 let pcCountdownTimer = null;
 function startPcCountdown() {
   if(pcCountdownTimer) clearInterval(pcCountdownTimer);
   pcCountdownTimer = setInterval(()=>{
     pcCountdownRemaining -= 0.1;
-    if(pcCountdownRemaining <= 0) pcCountdownRemaining = parseFloat($('pcInterval').value) || 5;
-    $('pcCountdown').textContent = `刷新倒计时 ${pcCountdownRemaining.toFixed(1)}s`;
+    if(pcCountdownRemaining <= 0) pcCountdownRemaining = parseFloat($('pcInterval').value) || 2;
+    $('pcCountdown').textContent = `下次刷新 ${pcCountdownRemaining.toFixed(1)}s`;
+    updatePcInfo();
   }, 100);
 }
 

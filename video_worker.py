@@ -67,20 +67,30 @@ class VideoWorker:
         # DDS ChannelFactory 已由主线程初始化；VideoClient 复用该单例工厂
         client = VideoClient()
         client.SetTimeout(3.0)
+        print("[video] creating client...", flush=True)
         try:
             client.Init()
+            print("[video] Init done", flush=True)
         except Exception as e:
             print(f"[video] VideoClient.Init failed: {e}", flush=True)
             return
 
         print("[video] camera worker started", flush=True)
+        fail_count = 0
         while not self._stop.is_set():
             t0 = time.time()
             try:
                 code, data = client.GetImageSample()
                 if code == 0 and data:
                     self._save_frame(bytes(data))   # 保存 JPEG 帧
+                    fail_count = 0
+                else:
+                    fail_count += 1
+                    if fail_count <= 5 or fail_count % 50 == 0:
+                        print(f"[video] GetImageSample code={code} len={len(data) if data else 0} "
+                              f"(fail#{fail_count})", flush=True)
             except Exception as e:
+                fail_count += 1
                 print(f"[video] sample error: {e}", flush=True)
             # 按目标帧率限流
             dt = time.time() - t0
@@ -88,18 +98,29 @@ class VideoWorker:
                 time.sleep(self._frame_interval - dt)
 
     def _save_frame(self, jpeg: bytes) -> None:
-        """把 JPEG 帧写到当前会话的 images/ 目录。"""
+        """保存 JPEG 帧。
+
+        - 始终写入独立的最新帧文件 latest_front.jpg（供 Web 实时预览，不依赖录制）
+        - 录制会话期间，额外保存到该会话的 images/ 目录（供训练数据集使用）
+        """
         with self._lock:
+            self._seq += 1
+            seq = self._seq
+            # 1) 始终保存最新帧到独立文件（实时预览用）
+            latest_path = self.images_root.parent / "latest_front.jpg"
+            try:
+                latest_path.write_bytes(jpeg)
+            except Exception as e:
+                print(f"[video] latest save error: {e}", flush=True)
+            self._latest_path = str(latest_path)
+            # 2) 录制会话期间，保存到会话目录
             session_id = self._session_id
             if not session_id:
                 return
-            self._seq += 1
-            seq = self._seq
             session_images = self.images_root / session_id / "images"
             session_images.mkdir(parents=True, exist_ok=True)
             path = session_images / f"frame_{seq:06d}.jpg"
-            self._latest_path = str(path)
-        try:
-            path.write_bytes(jpeg)
-        except Exception as e:
-            print(f"[video] save error: {e}", flush=True)
+            try:
+                path.write_bytes(jpeg)
+            except Exception as e:
+                print(f"[video] save error: {e}", flush=True)

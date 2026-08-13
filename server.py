@@ -656,12 +656,16 @@ def api_depth_status():
 
 @app.get("/api/image/latest")
 def api_image_latest():
-    """返回最近一帧相机 JPEG（供相机展示区域刷新）。
+    """返回最近一帧前置相机 JPEG（供相机展示区域刷新）。
 
-    优先取当前录制会话的最新帧；否则扫描最近的会话 images/ 目录。
+    优先返回 video_worker 实时写入的 latest_front.jpg（始终更新，不依赖录制）；
+    回退到当前录制会话或最近会话的最新帧。
     """
-    import glob
-    # 1) 优先：当前录制中的最新帧
+    # 1) 优先：实时前置相机帧（video_worker 持续写入，不依赖录制会话）
+    latest_front = BASE_DIR / "latest_front.jpg"
+    if latest_front.exists():
+        return Response(latest_front.read_bytes(), media_type="image/jpeg")
+    # 2) 回退：当前录制中的最新帧
     st = read_state()
     rec = st.get("recording") or {}
     if rec.get("active") and rec.get("session_id"):
@@ -670,7 +674,7 @@ def api_image_latest():
             frames = sorted(img_dir.glob("frame_*.jpg"))
             if frames:
                 return Response(frames[-1].read_bytes(), media_type="image/jpeg")
-    # 2) 回退：最近一个会话的最新帧
+    # 3) 再回退：最近一个会话的最新帧
     sessions_dir = Path(DATASET_ROOT) / "sessions"
     if sessions_dir.exists():
         latest = None
