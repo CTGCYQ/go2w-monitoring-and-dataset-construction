@@ -1075,24 +1075,42 @@ function rangeChanged(pts) {
   return Math.abs(ex - pcExtent) / Math.max(pcExtent, 0.5) > 0.4;
 }
 let pcBufferStartTs = Date.now();
+let pcPrevCentroid = null;   // 上一帧点云质心（用于运动检测）
+let pcMoving = false;        // 是否检测到机器狗运动
+// 计算点云质心（x,y 平面）
+function pcCentroid(pts){
+  let sx=0, sy=0, n=0;
+  for(const p of pts){ sx+=p[0]; sy+=p[1]; n++; }
+  return n ? [sx/n, sy/n] : [0,0];
+}
 async function refreshPc() {
   pcMaxPoints = parseInt($('pcPoints').value);
   const st = $('pcStatus');
   try {
     const d = await fetchJSON('/api/lidar/cloud?max_points='+pcMaxPoints);
     if(d && d.online && d.points && d.points.length){
-      // 首次成功时记录累积起始时间
-      if(!pcBuffer.length) pcBufferStartTs = Date.now();
-      pcBuffer.push({ ts: Date.now(), points: d.points });
-      // 缓冲容量：窗口内帧数 + 余量，防内存膨胀
-      const interval = parseFloat($('pcInterval').value) || 2;
-      const framesNeeded = Math.ceil(pcAccumSecs / Math.max(0.5, interval));
-      const maxFrames = Math.min(framesNeeded + 5, 200);
-      if(pcBuffer.length > maxFrames) pcBuffer.shift();
+      // 运动检测：比较相邻帧点云质心偏移（机器狗移动时点云整体平移）
+      const c = pcCentroid(d.points);
+      if(pcPrevCentroid){
+        const dx = c[0]-pcPrevCentroid[0], dy = c[1]-pcPrevCentroid[1];
+        pcMoving = (dx*dx + dy*dy) > 0.02;   // 阈值：约 0.14m 位移
+      }
+      pcPrevCentroid = c;
+      // 静止时才累积（运动时保持上次重构，避免错位）
+      if(!pcMoving){
+        if(!pcBuffer.length) pcBufferStartTs = Date.now();
+        pcBuffer.push({ ts: Date.now(), points: d.points });
+        // 缓冲容量：窗口内帧数 + 余量，防内存膨胀
+        const interval = parseFloat($('pcInterval').value) || 2;
+        const framesNeeded = Math.ceil(pcAccumSecs / Math.max(0.5, interval));
+        const maxFrames = Math.min(framesNeeded + 5, 200);
+        if(pcBuffer.length > maxFrames) pcBuffer.shift();
+      }
       renderPcBuffer();
       const hasInt = d.has_intensity ? ' +强度' : '';
-      st.textContent = `● 在线 · ${d.total||0}点/帧${hasInt}`;
-      st.className = 'badge green';
+      const movingTag = pcMoving ? ' 🚫运动检测中(暂停累积)' : '';
+      st.textContent = `● 在线 · ${d.total||0}点/帧${hasInt}${movingTag}`;
+      st.className = pcMoving ? 'badge amber' : 'badge green';
     } else {
       st.textContent = '点云离线或暂无数据（机器人离线）';
       st.className = 'badge red';
