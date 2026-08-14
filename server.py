@@ -375,8 +375,23 @@ def _load_table(session_id: str):
     return pa.concat_tables(tables)
 
 
-def _frame_summary(table, i: int) -> dict:
-    """提取第 i 帧的紧凑摘要（timestamp、tick、IMU 欧拉角、电机 q、图像名）。"""
+def _session_images(session_id: str) -> list:
+    """返回会话 images/ 目录下按名称排序的图像文件名列表。"""
+    img_dir = _session_dir(session_id) / "images"
+    if not img_dir.exists():
+        return []
+    return sorted(f.name for f in img_dir.glob("frame_*.jpg"))
+
+
+def _frame_summary(table, i: int, images: Optional[list] = None, total: int = 0) -> dict:
+    """提取第 i 帧的紧凑摘要（timestamp、tick、IMU 欧拉角、电机 q、图像名）。
+
+    Args:
+        table: pyarrow Table（会话 raw.arrow）
+        i: 帧索引
+        images: 会话 images/ 目录的图像文件名列表
+        total: 总帧数（用于按帧索引比例映射到图像）
+    """
     cols = table.column_names
     row = table.slice(i, 1)
     out = {"index": i}
@@ -399,11 +414,22 @@ def _frame_summary(table, i: int) -> dict:
             mq.append(round(float(row.column(c)[0].as_py() or 0), 3))
     if mq:
         out["motor_q"] = mq
-    # 相机图像文件名
+    # 相机图像：优先用 image_path 列（仅当指向 images/ 内文件），否则按帧比例映射
+    img_name = None
     if "image_path" in cols:
         p = row.column("image_path")[0].as_py()
         if p:
-            out["image"] = Path(p).name
+            candidate = Path(p).name
+            if images and candidate in images:
+                img_name = candidate
+    if not img_name and images:
+        # 按帧索引比例映射：状态帧数远多于图像帧数，i/total 决定取第几张图
+        if total > 0 and len(images) > 1:
+            img_idx = min(len(images) - 1, int(i * len(images) / total))
+        else:
+            img_idx = 0
+        img_name = images[img_idx]
+    out["image"] = img_name
     return out
 
 
@@ -438,10 +464,12 @@ def api_session_frames(session_id: str, start: int = 0, count: int = 50):
     start = max(0, start)
     table = _load_table(session_id)
     total = table.num_rows
+    images = _session_images(session_id)
     step = max(1, total // 2000)  # 超过 2000 帧时抽样展示
     idxs = list(range(start, min(total, start + count * step), step))
-    frames = [_frame_summary(table, i) for i in idxs]
-    return {"session_id": session_id, "total": total, "frames": frames}
+    frames = [_frame_summary(table, i, images, total) for i in idxs]
+    return {"session_id": session_id, "total": total, "frames": frames,
+            "has_images": bool(images)}
 
 
 @app.get("/api/session/{session_id}/frame/{index}")
@@ -450,7 +478,8 @@ def api_session_frame(session_id: str, index: int):
     table = _load_table(session_id)
     if not (0 <= index < table.num_rows):
         raise HTTPException(404, "frame index out of range")
-    return JSONResponse(_frame_summary(table, index))
+    return JSONResponse(_frame_summary(table, index, _session_images(session_id),
+                                       table.num_rows))
 
 
 @app.get("/api/session/{session_id}/frame/{index}/detail")
