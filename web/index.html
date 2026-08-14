@@ -424,7 +424,7 @@
       <div style="height:6px;background:rgba(255,255,255,0.06);border-radius:3px;margin:8px 0;overflow:hidden;">
         <div id="pcAccumBar" style="height:100%;width:0%;background:linear-gradient(90deg,#00d4ff,#34d399);border-radius:3px;transition:width .3s;"></div>
       </div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;" id="pcAccumInfo">累积窗口内多帧点云叠加，重构机器狗周围完整环境。</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;" id="pcAccumInfo">每 2 秒刷新一帧点云，累积窗口 30 秒内所有帧合并重构，越累积越完整（滚动窗口）。</div>
       <div id="pointcloud3d"></div>
       <p class="pc-status" id="pcInfo">鼠标拖动旋转 / 滚轮缩放（Drag to rotate, scroll to zoom）</p>
     </div>
@@ -844,6 +844,11 @@ async function refreshDepthDepth() {
 }
 
 // ================= 激光点云 3D（Three.js）=================
+// 机器狗坐标系(x前,y左,z上) → Three.js(x右,y上,z朝外) 的坐标转换
+// Three.js 默认 y 轴向上，所以把高度(z)映射到 y 轴，避免点云"躺倒"
+function pcTransform(p){
+  return [p[0], p[2], -p[1]];   // 前→x, 上(z)→y, 左(y)→-z
+}
 let pcTimer = null;
 let scene, camera, renderer, pointsMesh, controls;
 let pcExtent = 5;   // 点云当前范围（用于自适应相机和点大小）
@@ -853,7 +858,7 @@ function initPc3D() {
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x05070d);
   camera = new THREE.PerspectiveCamera(60, el.clientWidth/el.clientHeight, 0.01, 200);
-  camera.position.set(0, 2, 8);
+  camera.position.set(0, 3, 10);
   renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(el.clientWidth, el.clientHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // 限制像素比防卡顿
@@ -864,9 +869,20 @@ function initPc3D() {
   // 坐标轴辅助
   const axes = new THREE.AxesHelper(2);
   scene.add(axes);
-  // 网格参考（更大范围）
+  // 网格参考（更大范围，水平面 y=0）
   const grid = new THREE.GridHelper(10, 20, 0x00d4ff, 0x1a2a3a);
   scene.add(grid);
+  // 方向参考：锥体朝 x 正方向 = 机器狗前方
+  const cone = new THREE.Mesh(
+    new THREE.ConeGeometry(0.15, 0.6, 8),
+    new THREE.MeshBasicMaterial({color: 0xff4d4d, transparent: true, opacity: 0.7})
+  );
+  cone.rotation.z = -Math.PI/2;   // 让锥尖朝 x 正方向
+  cone.position.set(0.8, 0.6, 0);
+  scene.add(cone);
+  // 文字说明用 sprite（简单起见用箭头替代）
+  const arrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0.6,0), 1.0, 0xff4d4d, 0.2, 0.15);
+  scene.add(arrow);
   // 点云几何体（预分配，超出时自动扩容）
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(8000*3), 3));
@@ -874,8 +890,8 @@ function initPc3D() {
   // 高斯软点纹理：模拟 3D 高斯泼溅的软核视觉效果（浏览器实时渲染，无需训练）
   const gaussTex = makeGaussTexture();
   const mat = new THREE.PointsMaterial({
-    size: 0.06, map: gaussTex, vertexColors: true,
-    transparent: true, opacity: 0.85,
+    size: 0.08, map: gaussTex, vertexColors: true,
+    transparent: true, opacity: 0.9,
     depthWrite: false, blending: THREE.AdditiveBlending,
     sizeAttenuation: true,
   });
@@ -916,29 +932,28 @@ function animate() {
   renderer.render(scene, camera);
 }
 function autoFitCamera(pts) {
-  // 根据点云实际范围自适应相机位置、朝向和点大小
+  // 根据点云实际范围自适应相机位置、朝向和点大小（用转换后坐标）
   if(!pts.length) return;
-  // 用循环求极值，避免对大数组用展开运算符（...）可能超出调用栈
   let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity,minZ=Infinity,maxZ=-Infinity;
   for(let i=0;i<pts.length;i++){
-    const p=pts[i];
-    if(p[0]<minX)minX=p[0]; if(p[0]>maxX)maxX=p[0];
-    if(p[1]<minY)minY=p[1]; if(p[1]>maxY)maxY=p[1];
-    if(p[2]<minZ)minZ=p[2]; if(p[2]>maxZ)maxZ=p[2];
+    const t = pcTransform(pts[i]);
+    if(t[0]<minX)minX=t[0]; if(t[0]>maxX)maxX=t[0];
+    if(t[1]<minY)minY=t[1]; if(t[1]>maxY)maxY=t[1];
+    if(t[2]<minZ)minZ=t[2]; if(t[2]>maxZ)maxZ=t[2];
   }
   const cx=(minX+maxX)/2, cy=(minY+maxY)/2, cz=(minZ+maxZ)/2;
   const extent = Math.max(maxX-minX, maxY-minY, maxZ-minZ, 0.5);
   pcExtent = extent;
   controls.target.set(cx, cy, cz);
-  // 相机放在中心斜上方，距离约 2.2 * extent
-  const dist = extent * 2.2;
-  camera.position.set(cx + dist*0.5, cy + dist*0.6, cz + dist);
+  // 相机放在中心斜上方俯视，距离约 2.5 * extent
+  const dist = extent * 2.5;
+  camera.position.set(cx + dist*0.4, cy + dist*0.7, cz + dist);
   camera.near = Math.max(0.01, extent/50);
-  camera.far = extent*20;
+  camera.far = extent*25;
   camera.updateProjectionMatrix();
   controls.update();
-  // 点大小随范围缩放
-  pointsMesh.material.size = Math.max(0.02, extent/120);
+  // 点大小随范围缩放（加密显示）
+  pointsMesh.material.size = Math.max(0.04, extent/40);
 }
 let pcMaxPoints = 3000;
 // 点云时间聚合缓冲：每帧记录 {ts, points}，渲染时累积窗口内的所有帧
@@ -980,8 +995,8 @@ function updatePcInfo() {
   const interval = parseFloat($('pcInterval').value) || 2;
   const frames = Math.ceil(pcAccumSecs / Math.max(0.5, interval));
   $('pcAccumInfo').textContent =
-    `累积窗口 ${pcAccumSecs}s（约 ${frames} 帧叠加）→ 重构完整环境；刷新间隔 ${interval}s。` +
-    `雷达持续旋转，多帧叠加后即可看到机器狗四周完整三维模型。`;
+    `每 ${interval}s 刷新一帧 → 加入累积窗口（${pcAccumSecs}s，约 ${frames} 帧）。` +
+    `窗口内所有帧合并重构，越累积越完整（滚动窗口，始终保留最近 ${pcAccumSecs}s 的数据）。`;
   $('pcAccumCount').textContent = `已累积 ${pcBuffer.length} 帧`;
   // 进度条：当前已累积时间 / 目标窗口
   const elapsed = (Date.now() - pcBufferStartTs) / 1000;
@@ -1022,20 +1037,21 @@ function renderPcBuffer() {
   }
   const tMin = now - pcAccumSecs*1000, tMax = now;
   for(let i=0;i<dPts.length;i++){
-    pos[i*3]=dPts[i][0]; pos[i*3+1]=dPts[i][1]; pos[i*3+2]=dPts[i][2];
+    const t = pcTransform(dPts[i]);   // 机器狗坐标 → Three.js 坐标（z高度→y轴）
+    pos[i*3]=t[0]; pos[i*3+1]=t[1]; pos[i*3+2]=t[2];
     if(mode==='height'){
-      const t = (zmax>zmin) ? (dPts[i][2]-zmin)/(zmax-zmin) : 0.5;
-      const c = terrainColor(t);
+      const tz = (zmax>zmin) ? (dPts[i][2]-zmin)/(zmax-zmin) : 0.5;
+      const c = terrainColor(tz);
       col[i*3]=c[0]; col[i*3+1]=c[1]; col[i*3+2]=c[2];
     } else if(mode==='intensity'){
-      const t = isNaN(dInt[i]) ? 0 : (dInt[i]-imin)/(imax-imin);
-      col[i*3]=0.2+0.8*t; col[i*3+1]=0.1+0.8*t; col[i*3+2]=1-0.9*t;
+      const t2 = isNaN(dInt[i]) ? 0 : (dInt[i]-imin)/(imax-imin);
+      col[i*3]=0.2+0.8*t2; col[i*3+1]=0.1+0.8*t2; col[i*3+2]=1-0.9*t2;
     } else if(mode==='time'){
-      const t = (tMax>tMin) ? (dTs[i]-tMin)/(tMax-tMin) : 0.5;
-      col[i*3]=0.2+0.8*t; col[i*3+1]=0.3+0.3*(1-Math.abs(t-0.5)*2); col[i*3+2]=1-t;
+      const t2 = (tMax>tMin) ? (dTs[i]-tMin)/(tMax-tMin) : 0.5;
+      col[i*3]=0.2+0.8*t2; col[i*3+1]=0.3+0.3*(1-Math.abs(t2-0.5)*2); col[i*3+2]=1-t2;
     } else { // camera RGB
-      const t = (zmax>zmin) ? (dPts[i][2]-zmin)/(zmax-zmin) : 0.5;
-      col[i*3]=0.5+0.4*Math.sin(dPts[i][0]*2); col[i*3+1]=0.4+0.4*Math.cos(dPts[i][1]*2); col[i*3+2]=0.3+0.6*t;
+      const tz = (zmax>zmin) ? (dPts[i][2]-zmin)/(zmax-zmin) : 0.5;
+      col[i*3]=0.5+0.4*Math.sin(dPts[i][0]*2); col[i*3+1]=0.4+0.4*Math.cos(dPts[i][1]*2); col[i*3+2]=0.3+0.6*tz;
     }
   }
   pointsMesh.geometry.setDrawRange(0, dPts.length);
@@ -1044,14 +1060,14 @@ function renderPcBuffer() {
   // 相机自适应：首次或范围显著变化时重新 fit
   const needFit = !pcFitted || rangeChanged(dPts);
   if(needFit){ autoFitCamera(dPts); pcFitted = true; }
-  pointsMesh.material.size = Math.max(0.04, pcExtent/90);
-  $('pcInfo').textContent = `已重构 ${dPts.length.toLocaleString()} 点 (降采样自 ${allPts.length.toLocaleString()}) / ${pcBuffer.length} 帧 · 窗口 ${pcAccumSecs}s · 拖动旋转 / 滚轮缩放`;
+  $('pcInfo').textContent = `已重构 ${dPts.length.toLocaleString()} 点 (累积 ${allPts.length.toLocaleString()}) / ${pcBuffer.length} 帧 · 窗口 ${pcAccumSecs}s · 拖动旋转 / 滚轮缩放`;
   updatePcInfo();
 }
 // 体素降采样：把空间划分为格子，每格保留一个代表点（减少重复，重构更清晰）
 function voxelDownsample(pts, ints, ts) {
   const n = pts.length;
   if(!n) return {pts:[], int:[], ts:[]};
+  if(n <= 6000) return {pts, int:ints, ts:ts};  // 点不多时跳过降采样，保留细节
   // 估算体素大小（按点云范围）
   let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity,minZ=Infinity,maxZ=-Infinity;
   for(const p of pts){
@@ -1060,7 +1076,7 @@ function voxelDownsample(pts, ints, ts) {
     if(p[2]<minZ)minZ=p[2]; if(p[2]>maxZ)maxZ=p[2];
   }
   const extent = Math.max(maxX-minX, maxY-minY, maxZ-minZ, 0.5);
-  const voxel = Math.max(0.02, extent/300);   // 体素尺寸（自适应）
+  const voxel = Math.max(0.01, extent/600);   // 体素更小，保留更多点（加密）
   const keyFn = (x,y,z)=>Math.floor(x/voxel)+'_'+Math.floor(y/voxel)+'_'+Math.floor(z/voxel);
   const seen = new Set();
   const outPts=[], outInt=[], outTs=[];
@@ -1077,8 +1093,9 @@ function rangeChanged(pts) {
   if(!pts.length) return false;
   let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
   for(const p of pts){
-    if(p[0]<minX)minX=p[0]; if(p[0]>maxX)maxX=p[0];
-    if(p[1]<minY)minY=p[1]; if(p[1]>maxY)maxY=p[1];
+    const t = pcTransform(p);
+    if(t[0]<minX)minX=t[0]; if(t[0]>maxX)maxX=t[0];
+    if(t[1]<minY)minY=t[1]; if(t[1]>maxY)maxY=t[1];
   }
   const ex = Math.max(maxX-minX, maxY-minY, 0.5);
   return Math.abs(ex - pcExtent) / Math.max(pcExtent, 0.5) > 0.4;
