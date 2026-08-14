@@ -34,25 +34,26 @@ static bool save_depth_jpeg(const rs2::depth_frame& depth, const std::string& pa
     const float depth_unit = depth.get_units();
     static bool unit_logged = false;
     if (!unit_logged) { unit_logged = true; printf("[rs_capture] depth_unit=%.6f m/raw\n", depth_unit); }
-    // 显示范围：0.3m(近) ~ 8m(远)，符合 D435I 有效测量范围
-    const float min_d = 0.3f, max_d = 8.0f;
+    // 显示范围：0.05m(近) ~ 8m(远)。手靠近时也能显示红色（而非被判无效变黑）
+    const float min_d = 0.05f, max_d = 8.0f;
     const float range = max_d - min_d;
     for (int y = 0; y < h; y++) {
         for (int x = 0; x < w; x++) {
             float d = dp[y * w + x] * depth_unit;  // 原始值 * 单位 = 米
             float t;
-            if (d <= 0 || d < min_d) {
-                t = 0;   // 无效/过近深度 -> 深蓝
+            if (d <= 0.001f) {
+                t = 0;   // 完全无效深度 -> 品红区分
             } else if (d >= max_d) {
                 t = 1.0f;  // 过远 -> 最冷色
             } else {
                 t = (d - min_d) / range;
+                t = std::max(0.0f, std::min(1.0f, t));
             }
             cv::Vec3b& px = img.at<cv::Vec3b>(y, x);
             // 标准热力图：近=红(暖)，远=蓝(冷)。t:0→红, 0.33→黄, 0.66→绿, 1→蓝
-            // 无效深度(0)用深蓝黑区分
+            // 无效深度(0)用品红区分（避免与"极近"混淆成黑色）
             if (t <= 0) {
-                px = cv::Vec3b(15, 15, 40);          // 无效深度
+                px = cv::Vec3b(255, 0, 255);           // 品红 = 无效深度
             } else if (t < 0.33f) {
                 float s = t / 0.33f;
                 px = cv::Vec3b((uchar)(255), (uchar)(int)(0 + 255*s), (uchar)(0));            // 红→黄
