@@ -355,7 +355,7 @@
         <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">📁 已录会话 Sessions</div>
         <div class="scroll" style="max-height:240px;">
           <table>
-            <thead><tr><th>会话ID</th><th>标签</th><th>时长</th><th>样本</th><th>导出 Export</th></tr></thead>
+            <thead><tr><th>会话ID</th><th>开始时间</th><th>结束时间</th><th>时长</th><th>样本</th><th>导出</th></tr></thead>
             <tbody id="sessionsBody"></tbody>
           </table>
         </div>
@@ -435,9 +435,9 @@
           <span style="font-size:12px;color:var(--muted);">刷新频率 Refresh:</span>
           <select id="camInterval" class="refresh" onchange="applyCamInterval()">
             <option value="0.5">0.5 秒 / s</option>
-            <option value="1" selected>1 秒 / s</option>
+            <option value="1">1 秒 / s</option>
             <option value="2">2 秒 / s</option>
-            <option value="5">5 秒 / s</option>
+            <option value="5" selected>5 秒 / s</option>
             <option value="10">10 秒 / s</option>
           </select>
           <span class="badge" id="camStatus">加载中…</span>
@@ -454,9 +454,9 @@
           <span style="font-size:12px;color:var(--muted);">刷新频率 Refresh:</span>
           <select id="dcColorInterval" class="refresh" onchange="applyDepthColorInterval()">
             <option value="0.5">0.5 秒 / s</option>
-            <option value="1" selected>1 秒 / s</option>
+            <option value="1">1 秒 / s</option>
             <option value="2">2 秒 / s</option>
-            <option value="5">5 秒 / s</option>
+            <option value="5" selected>5 秒 / s</option>
           </select>
           <span class="badge" id="dcColorStatus">加载中…</span>
         </div>
@@ -471,9 +471,9 @@
           <span style="font-size:12px;color:var(--muted);">刷新频率 Refresh:</span>
           <select id="dcDepthInterval" class="refresh" onchange="applyDepthDepthInterval()">
             <option value="0.5">0.5 秒 / s</option>
-            <option value="1" selected>1 秒 / s</option>
+            <option value="1">1 秒 / s</option>
             <option value="2">2 秒 / s</option>
-            <option value="5">5 秒 / s</option>
+            <option value="5" selected>5 秒 / s</option>
           </select>
           <span class="badge" id="dcDepthStatus">加载中…</span>
         </div>
@@ -731,13 +731,24 @@ async function poll() {
   if(ff.length>=4){ pushChart('chartFoot','FL左前',+ff[0].toFixed(0)); pushChart('chartFoot','FR右前',+ff[1].toFixed(0)); pushChart('chartFoot','RL左后',+ff[2].toFixed(0)); pushChart('chartFoot','RR右后',+ff[3].toFixed(0)); }
   updateCharts();
 }
-// 电机位置映射（Go2 官方 12 轴：4腿×3关节，来自 unitree_legged_const.py）
+// 电机位置映射（Go2-W 官方 20 轴：腿部 4腿×3关节 + 4 轮毂电机 + 保留位）
 const MOTOR_NAMES = {
   0:'FR_0 右前髋',1:'FR_1 右前大腿',2:'FR_2 右前小腿',
   3:'FL_0 左前髋',4:'FL_1 左前大腿',5:'FL_2 左前小腿',
   6:'RR_0 右后髋',7:'RR_1 右后大腿',8:'RR_2 右后小腿',
   9:'RL_0 左后髋',10:'RL_1 左后大腿',11:'RL_2 左后小腿',
+  12:'FR_W 右前轮',13:'FL_W 左前轮',14:'RR_W 右后轮',15:'RL_W 左后轮',
+  16:'保留',17:'保留',18:'保留',19:'保留',
 };
+// 电机类型标签（腿关节 vs 轮毂）
+function motorPosLabel(idx){
+  if(idx>=12 && idx<=15) return '轮毂电机 Wheel';
+  if(idx>=16) return '保留位';
+  const legs=['右前','左前','右后','左后'];
+  const leg=legs[Math.floor(idx/3)];
+  const jt=idx%3===0?'髋':(idx%3===1?'大腿':'小腿');
+  return leg+'·'+jt;
+}
 // 电机表排序
 let motorSortKey = 'index', motorSortAsc = true;
 function renderMotors(motors) {
@@ -745,11 +756,9 @@ function renderMotors(motors) {
   const sorted = [...motors].sort((a,b)=> (a[motorSortKey]??0) - (b[motorSortKey]??0) * (motorSortAsc?1:-1));
   $('motorTable').innerHTML = sorted.map(m=>{
     const name = MOTOR_NAMES[m.index] || ('电机'+m.index);
-    const leg = ['右前','左前','右后','左后'][Math.floor(m.index/3)];
-    const cls = m.index%3===0 ? 'hip' : (m.index%3===1?'thigh':'calf');
     return `<tr>
       <td class="num">${m.index}</td>
-      <td title="${name}">${leg}·${cls=='hip'?'髋':cls=='thigh'?'大腿':'小腿'}</td>
+      <td title="${name}">${motorPosLabel(m.index)}</td>
       <td class="num">${fmt(m.q,3)}</td><td class="num">${fmt(m.dq,2)}</td>
       <td class="num">${fmt(m.tau_est,2)}</td><td class="num">${fmt(m.temperature,0)}</td></tr>`;
   }).join('');
@@ -1176,14 +1185,19 @@ async function stopRecording(){
 }
 async function loadSessions(){
   const d=await fetchJSON('/api/sessions'); const tb=$('sessionsBody');
-  if(!d||!d.sessions||!d.sessions.length){ tb.innerHTML='<tr><td colspan="5" style="color:var(--muted)">暂无会话 No sessions</td></tr>'; return; }
-  tb.innerHTML=d.sessions.map(s=>`<tr>
-    <td class="num" title="${s.session_id}">${(s.session_id||'').slice(0,10)}</td>
-    <td>${s.label||'-'}</td>
-    <td class="num">${fmtDur(s.duration_s)}</td>
-    <td class="num">${(s.sample_count||0).toLocaleString()}</td>
-    <td><button class="sm" onclick="exportSession('${s.session_id}')">HF</button> <button class="sm violet" onclick="exportLerobot('${s.session_id}')">LeRobot</button></td>
-  </tr>`).join('');
+  if(!d||!d.sessions||!d.sessions.length){ tb.innerHTML='<tr><td colspan="6" style="color:var(--muted)">暂无会话 No sessions</td></tr>'; return; }
+  tb.innerHTML=d.sessions.map(s=>{
+    const st = s.start_time ? s.start_time.slice(5,19) : (s.start_ts ? new Date(s.start_ts*1000).toLocaleString('zh-CN') : '-');
+    const et = s.end_time ? s.end_time.slice(5,19) : (s.end_ts ? new Date(s.end_ts*1000).toLocaleString('zh-CN') : '-');
+    return `<tr>
+      <td class="num" title="${s.session_id}">${(s.session_id||'').slice(0,8)}</td>
+      <td class="num">${st}</td>
+      <td class="num">${et}</td>
+      <td class="num">${fmtDur(s.duration_s)}</td>
+      <td class="num">${(s.sample_count||0).toLocaleString()}</td>
+      <td><button class="sm" onclick="exportSession('${s.session_id}')">HF</button> <button class="sm violet" onclick="exportLerobot('${s.session_id}')">LeRobot</button></td>
+    </tr>`;
+  }).join('');
 }
 async function exportSession(id){ $('recMsg').textContent='⏳ 导出 HF…'; const r=await postJSON('/api/dataset/export/'+id);
   if(r.error){$('recMsg').textContent='❌ '+r.error;return;} $('recMsg').textContent='✅ '+r.num_rows.toLocaleString()+' 行'; }

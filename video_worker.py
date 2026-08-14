@@ -101,7 +101,8 @@ class VideoWorker:
         """保存 JPEG 帧。
 
         - 始终写入独立的最新帧文件 latest_front.jpg（供 Web 实时预览，不依赖录制）
-        - 录制会话期间，额外保存到该会话的 images/ 目录（供训练数据集使用）
+        - 录制会话期间，额外保存到该会话的 images/ 目录，并让 _latest_path 指向
+          会话内帧文件（供状态帧引用，标注/帧浏览时能正确找到图像）
         """
         with self._lock:
             self._seq += 1
@@ -112,15 +113,17 @@ class VideoWorker:
                 latest_path.write_bytes(jpeg)
             except Exception as e:
                 print(f"[video] latest save error: {e}", flush=True)
-            self._latest_path = str(latest_path)
-            # 2) 录制会话期间，保存到会话目录
+            # 2) 录制会话期间，保存到会话目录，并把 _latest_path 指向会话帧文件
             session_id = self._session_id
-            if not session_id:
-                return
-            session_images = self.images_root / session_id / "images"
-            session_images.mkdir(parents=True, exist_ok=True)
-            path = session_images / f"frame_{seq:06d}.jpg"
-            try:
-                path.write_bytes(jpeg)
-            except Exception as e:
-                print(f"[video] save error: {e}", flush=True)
+            if session_id:
+                session_images = self.images_root / session_id / "images"
+                session_images.mkdir(parents=True, exist_ok=True)
+                path = session_images / f"frame_{seq:06d}.jpg"
+                try:
+                    path.write_bytes(jpeg)
+                    self._latest_path = str(path)   # 供状态帧引用会话内图像
+                except Exception as e:
+                    print(f"[video] save error: {e}", flush=True)
+                    self._latest_path = str(latest_path)
+            else:
+                self._latest_path = str(latest_path)

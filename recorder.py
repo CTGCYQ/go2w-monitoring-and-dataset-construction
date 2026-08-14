@@ -257,11 +257,15 @@ class SessionRecorder:
                 shutil.move(str(img_src), str(img_dst))
             shutil.rmtree(src, ignore_errors=True)
 
-            # 写会话元信息
-            duration = time.time() - start if start else 0
+            # 写会话元信息（含开始/结束时间）
+            end_ts = time.time()
+            duration = end_ts - start if start else 0
             meta = {
                 "session_id": session_id,
                 "start_ts": start,
+                "end_ts": end_ts,
+                "start_time": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start)) if start else None,
+                "end_time": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(end_ts)),
                 "duration_s": round(duration, 3),
                 "sample_count": n,
                 "size_bytes": size,
