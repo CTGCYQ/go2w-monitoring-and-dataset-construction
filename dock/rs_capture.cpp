@@ -25,6 +25,24 @@
 #include <thread>
 
 // 把深度帧(16bit mm)转伪彩色 JPEG
+// 深度热力图：近=红(暖)，远=蓝(冷)。平滑红→黄→绿→蓝过渡
+static void heatmap(float t, int& r, int& g, int& b) {
+    // t: 0=红, 0.33=黄, 0.66=绿, 1=蓝（线性插值）
+    static const float HR[4] = {1.0f, 1.0f, 0.0f, 0.0f};
+    static const float HG[4] = {0.0f, 1.0f, 1.0f, 0.0f};
+    static const float HB[4] = {0.0f, 0.0f, 0.0f, 1.0f};
+    float x = t * 3.0f;
+    int i = (int)x;
+    if (i < 0) i = 0;
+    if (i > 2) i = 2;
+    float f = x - i;
+    r = (int)((HR[i] + (HR[i+1]-HR[i])*f) * 255.0f);
+    g = (int)((HG[i] + (HG[i+1]-HG[i])*f) * 255.0f);
+    b = (int)((HB[i] + (HB[i+1]-HB[i])*f) * 255.0f);
+    if (r > 255) r = 255; if (g > 255) g = 255; if (b > 255) b = 255;
+    if (r < 0) r = 0; if (g < 0) g = 0; if (b < 0) b = 0;
+}
+
 static bool save_depth_jpeg(const rs2::depth_frame& depth, const std::string& path) {
     const int w = depth.get_width();
     const int h = depth.get_height();
@@ -34,36 +52,23 @@ static bool save_depth_jpeg(const rs2::depth_frame& depth, const std::string& pa
     const float depth_unit = depth.get_units();
     static bool unit_logged = false;
     if (!unit_logged) { unit_logged = true; printf("[rs_capture] depth_unit=%.6f m/raw\n", depth_unit); }
-    // 显示范围：0.05m(近) ~ 8m(远)。手靠近时也能显示红色（而非被判无效变黑）
-    const float min_d = 0.05f, max_d = 8.0f;
+    // D435I 标准有效范围：0.3m ~ 10m。热力图：近=红(暖)，远=蓝(冷)
+    const float min_d = 0.3f, max_d = 10.0f;
     const float range = max_d - min_d;
     for (int y = 0; y < h; y++) {
         for (int x = 0; x < w; x++) {
             float d = dp[y * w + x] * depth_unit;  // 原始值 * 单位 = 米
-            float t;
-            if (d <= 0.001f) {
-                t = 0;   // 完全无效深度 -> 品红区分
-            } else if (d >= max_d) {
-                t = 1.0f;  // 过远 -> 最冷色
-            } else {
-                t = (d - min_d) / range;
-                t = std::max(0.0f, std::min(1.0f, t));
-            }
             cv::Vec3b& px = img.at<cv::Vec3b>(y, x);
-            // 标准热力图：近=红(暖)，远=蓝(冷)。t:0→红, 0.33→黄, 0.66→绿, 1→蓝
-            // 无效深度(0)用品红区分（避免与"极近"混淆成黑色）
-            if (t <= 0) {
-                px = cv::Vec3b(255, 0, 255);           // 品红 = 无效深度
-            } else if (t < 0.33f) {
-                float s = t / 0.33f;
-                px = cv::Vec3b((uchar)(255), (uchar)(int)(0 + 255*s), (uchar)(0));            // 红→黄
-            } else if (t < 0.66f) {
-                float s = (t - 0.33f) / 0.33f;
-                px = cv::Vec3b((uchar)(int)(255 - 255*s), (uchar)(255), (uchar)(0));          // 黄→绿
-            } else {
-                float s = (t - 0.66f) / 0.34f;
-                px = cv::Vec3b((uchar)(int)(0), (uchar)(int)(255 - 255*s), (uchar)(int)(0 + 255*s)); // 绿→蓝
+            if (d <= 0.001f) {
+                px = cv::Vec3b(0, 0, 0);            // 无效深度 -> 黑色
+                continue;
             }
+            float t = (d - min_d) / range;
+            if (t < 0.0f) t = 0.0f;                 // 过近 -> 最暖(红)
+            if (t > 1.0f) t = 1.0f;                 // 过远 -> 最冷(蓝)
+            int r, g, b;
+            heatmap(t, r, g, b);
+            px = cv::Vec3b((uchar)b, (uchar)g, (uchar)r);  // cv::Vec3b 是 BGR
         }
     }
     try {
