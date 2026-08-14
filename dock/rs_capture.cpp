@@ -30,12 +30,16 @@ static bool save_depth_jpeg(const rs2::depth_frame& depth, const std::string& pa
     const int h = depth.get_height();
     cv::Mat img(h, w, CV_8UC3);
     uint16_t* dp = (uint16_t*)depth.get_data();
+    // 用官方 get_units() 获取深度单位（D435I 通常 0.001 = 毫米），避免硬编码错误
+    const float depth_unit = depth.get_units();
+    static bool unit_logged = false;
+    if (!unit_logged) { unit_logged = true; printf("[rs_capture] depth_unit=%.6f m/raw\n", depth_unit); }
     // 显示范围：0.3m(近) ~ 8m(远)，符合 D435I 有效测量范围
     const float min_d = 0.3f, max_d = 8.0f;
     const float range = max_d - min_d;
     for (int y = 0; y < h; y++) {
         for (int x = 0; x < w; x++) {
-            float d = dp[y * w + x] * 0.001f;  // mm -> m
+            float d = dp[y * w + x] * depth_unit;  // 原始值 * 单位 = 米
             float t;
             if (d <= 0 || d < min_d) {
                 t = 0;   // 无效/过近深度 -> 深蓝
@@ -89,6 +93,7 @@ int main(int argc, char** argv) {
 
         std::cout << "[rs_capture] started: " << width << "x" << height
                   << "@" << fps << "fps -> " << out_dir << std::endl;
+        std::cout << "[rs_capture] depth-color: NEAR=red WARM / FAR=blue COLD (v2.9 get_units)" << std::endl;
 
         long frame = 0;
         while (true) {
