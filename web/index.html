@@ -845,9 +845,10 @@ async function refreshDepthDepth() {
 
 // ================= 激光点云 3D（Three.js）=================
 // 机器狗坐标系(x前,y左,z上) → Three.js(x右,y上,z朝外) 的坐标转换
-// Three.js 默认 y 轴向上，所以把高度(z)映射到 y 轴，避免点云"躺倒"
+// Three.js 默认 y 轴向上，相机默认在 +z 看向原点（视觉前方=屏幕里=-z）
+// 所以：前方(x)→-z(屏幕里)，左(y)→+x(右)，上(z)→+y(上)
 function pcTransform(p){
-  return [p[0], p[2], -p[1]];   // 前→x, 上(z)→y, 左(y)→-z
+  return [-p[1], p[2], -p[0]];   // 左→x(右), 上(z)→y(上), 前(x)→-z(屏幕里=视觉前方)
 }
 let pcTimer = null;
 let scene, camera, renderer, pointsMesh, controls;
@@ -872,17 +873,17 @@ function initPc3D() {
   // 网格参考（更大范围，水平面 y=0）
   const grid = new THREE.GridHelper(10, 20, 0x00d4ff, 0x1a2a3a);
   scene.add(grid);
-  // 方向参考：锥体朝 x 正方向 = 机器狗前方
+  // 方向参考：红色箭头指向 -z = 机器狗前方（默认视角的"屏幕里"= 视觉前方）
+  const arrow = new THREE.ArrowHelper(new THREE.Vector3(0,0,-1), new THREE.Vector3(0,0.6,0), 1.2, 0xff4d4d, 0.25, 0.18);
+  scene.add(arrow);
+  // 原点小锥体标记
   const cone = new THREE.Mesh(
-    new THREE.ConeGeometry(0.15, 0.6, 8),
+    new THREE.ConeGeometry(0.12, 0.5, 8),
     new THREE.MeshBasicMaterial({color: 0xff4d4d, transparent: true, opacity: 0.7})
   );
-  cone.rotation.z = -Math.PI/2;   // 让锥尖朝 x 正方向
-  cone.position.set(0.8, 0.6, 0);
+  cone.rotation.x = Math.PI/2;   // 让锥尖朝 -z（前方）
+  cone.position.set(0, 0.5, -0.3);
   scene.add(cone);
-  // 文字说明用 sprite（简单起见用箭头替代）
-  const arrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0.6,0), 1.0, 0xff4d4d, 0.2, 0.15);
-  scene.add(arrow);
   // 点云几何体（预分配，超出时自动扩容）
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(8000*3), 3));
