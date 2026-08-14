@@ -37,6 +37,52 @@ from recorder import SessionRecorder                                # 录制引�
 from scheduler import ScheduleManager                               # 定时调度
 from video_worker import VideoWorker                                # 相机采集线程
 
+# 多模态数据源（录制时同步到会话目录）
+PC_CACHE = Path(__file__).resolve().parent / "pc_cache.json"   # 激光点云缓存（pc_worker 写入）
+DOCK_RS_DIR = "/home/unitree/rs_out"                            # 深度相机输出目录（机器狗扩展坞）
+
+
+def _snapshot_pointcloud(session_dir: Path) -> Optional[Path]:
+    """把最新点云缓存复制到会话目录（返回保存的文件路径）。"""
+    import shutil
+    try:
+        if PC_CACHE.exists():
+            cloud_dir = session_dir / "pointclouds"
+            cloud_dir.mkdir(parents=True, exist_ok=True)
+            import time as _t
+            dst = cloud_dir / f"cloud_{int(_t.time())}.json"
+            shutil.copy(PC_CACHE, dst)
+            return dst
+    except Exception as e:
+        print(f"[snapshot] pointcloud error: {e}", flush=True)
+    return None
+
+
+def _snapshot_depth(session_dir: Path) -> None:
+    """把深度相机最新帧复制到会话目录（机器狗扩展坞上的 rs_capture 输出）。"""
+    import shutil
+    try:
+        import paramiko as _paramiko
+        cli = _paramiko.SSHClient()
+        cli.set_missing_host_key_policy(_paramiko.AutoAddPolicy())
+        cli.connect("192.168.123.18", username="unitree", password="123", timeout=5)
+        sftp = cli.open_sftp()
+        depth_dir = session_dir / "depth"
+        color_dir = session_dir / "depth_color"
+        depth_dir.mkdir(parents=True, exist_ok=True)
+        color_dir.mkdir(parents=True, exist_ok=True)
+        import time as _t
+        ts = int(_t.time())
+        for remote, local_dir in (("latest_depth.jpg", depth_dir), ("latest_color.jpg", color_dir)):
+            try:
+                sftp.get(f"{DOCK_RS_DIR}/{remote}", str(local_dir / f"{ts}_{remote}"))
+            except Exception:
+                pass
+        sftp.close()
+        cli.close()
+    except Exception as e:
+        print(f"[snapshot] depth error: {e}", flush=True)
+
 # ---------------------------------------------------------------------------
 # 全局路径与状态
 # ---------------------------------------------------------------------------
@@ -231,6 +277,7 @@ def run(interface: str, influx_url: str, database: str, interval: float,
     hz_count = [0]         # 滑动窗口内的帧计数
     hz_start = [time.time()]  # 滑动窗口起始时间
     _last_sched_check = 0.0  # 上次检查定时规则的时间
+    _last_snap = 0.0        # 上次多模态快照的时间
 
     def on_lowstate(msg, _name=None) -> None:
         """低频状态回调（约 500Hz）。"""
@@ -426,6 +473,17 @@ def run(interface: str, influx_url: str, database: str, interval: float,
         with LOCK:
             if LATEST["last_seen_s"] and time.time() - LATEST["last_seen_s"] > 3.0:
                 LATEST["online"] = False
+
+        # ---- 录制期间多模态快照（点云 + 深度图，每 3 秒） ----
+        if _recorder.is_active() and time.time() - _last_snap >= 3.0:
+            _last_snap = time.time()
+            st = _recorder.status()
+            sid = st.get("session_id")
+            if sid:
+                session_dir = Path(dataset_root) / "sessions" / sid
+                _snapshot_pointcloud(session_dir)
+                _snapshot_depth(session_dir)
+
         time.sleep(1)
 
     # 退出前若仍在录制，保存数据
