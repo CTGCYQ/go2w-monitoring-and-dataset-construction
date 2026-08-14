@@ -392,9 +392,9 @@
       <h2>激光雷达点云 3D <span class="hint">LiDAR Point Cloud · 时间聚合重构</span></h2>
       <div class="ctrl-row">
         <span style="font-size:12px;color:var(--muted);">刷新间隔(s):</span>
-        <input type="number" id="pcInterval" class="refresh" value="2" min="0.5" step="0.5" list="pcIntervalList" onchange="applyPcInterval()" style="width:70px">
+        <input type="number" id="pcInterval" class="refresh" value="0.5" min="0.5" step="0.5" list="pcIntervalList" onchange="applyPcInterval()" style="width:70px">
         <datalist id="pcIntervalList">
-          <option value="0.5"><option value="1"><option value="2"><option value="5"><option value="10">
+          <option value="0.5"><option value="1"><option value="2"><option value="5">
         </datalist>
         <span style="font-size:12px;color:var(--muted);">单帧点数:</span>
         <input type="number" id="pcPoints" class="refresh" value="5000" min="500" step="500" list="pcPointsList" onchange="applyPcInterval()" style="width:80px">
@@ -402,9 +402,9 @@
           <option value="1000"><option value="3000"><option value="5000"><option value="8000"><option value="15000">
         </datalist>
         <span style="font-size:12px;color:var(--muted);">累积窗口(s):</span>
-        <input type="number" id="pcAccum" class="refresh" value="30" min="2" step="1" list="pcAccumList" onchange="applyPcAccum()" style="width:70px">
+        <input type="number" id="pcAccum" class="refresh" value="60" min="5" step="5" list="pcAccumList" onchange="applyPcAccum()" style="width:70px">
         <datalist id="pcAccumList">
-          <option value="5"><option value="10"><option value="20"><option value="30"><option value="60"><option value="120"><option value="180">
+          <option value="10"><option value="20"><option value="30"><option value="60"><option value="120"><option value="180"><option value="300">
         </datalist>
         <span style="font-size:12px;color:var(--muted);">着色:</span>
         <select id="pcColorMode" class="refresh" onchange="applyPcAccum()">
@@ -414,7 +414,7 @@
           <option value="camera">RGB</option>
         </select>
         <button class="sm" onclick="clearPcBuffer()">🗑 清空</button>
-        <button class="sm" style="border-color:var(--amber);color:var(--amber);" onclick="calibratePcForward()">🎯 校准前方</button>
+        <button class="sm" style="border-color:var(--amber);color:var(--amber);" onclick="updatePcHeading()">🧭 刷新朝向</button>
       </div>
       <div class="ctrl-row" style="margin-top:6px;">
         <span class="badge" id="pcStatus">加载中…</span>
@@ -720,6 +720,8 @@ async function poll() {
   $('spYaw').textContent = fmt(sp.yaw_speed);
   $('spFootRaise').textContent = fmt(sp.foot_raise_height);
   $('spUpdate').textContent = fmtTime(st.last_seen_s);
+  // 更新点云朝向箭头（根据机器狗 IMU yaw）
+  updatePcHeading();
   // 录制状态
   const rec = st.recording;
   if(rec && rec.active){ $('navRec').textContent='● 录制中'; $('navRec').className='badge amber'; }
@@ -847,37 +849,39 @@ async function refreshDepthDepth() {
 
 // ================= 激光点云 3D（Three.js）=================
 // 机器狗坐标系(x前,y左,z上) → Three.js 坐标转换
-// 基础映射：左→+x(右), 上→+y(上), 前→-z(屏幕里)
-// pcCalibYaw：用户校准的绕y轴旋转角，使前方对齐期望方向
-let pcCalibYaw = 0;
+// 基础映射：左→+x, 上→+y, 前→-z
+// 方向箭头根据机器狗姿态(IMU yaw)旋转，始终指向真实正前方
+let pcFwdArrow = null;   // 前方箭头（随姿态更新）
+let pcDirLabels = [];    // 方位标签（前/后/左/右）
 function pcTransform(p){
   // 基础：左(y)→x, 上(z)→y, 前(x)→-z
-  const x0 = -p[1], y0 = p[2], z0 = -p[0];
-  if(pcCalibYaw){
-    // 绕 y 轴旋转 x-z 平面：让前方转到期望方向
-    const c = Math.cos(pcCalibYaw), s = Math.sin(pcCalibYaw);
-    return [x0*c + z0*s, y0, -x0*s + z0*c];
-  }
-  return [x0, y0, z0];
+  return [-p[1], p[2], -p[0]];
 }
-// 校准前方：用户把机器狗前方转到"屏幕上方"后点击，点云绕y轴旋转使前方朝+上
-function calibratePcForward(){
-  if(!controls) return;
-  // 基础前方方向是 -z（屏幕里）。屏幕上方是 +y。
-  // 但点云在 x-z 平面（水平），+y 是高度。前方应保持在水平面，
-  // 所以"校准"是让前方在水平面上转到用户期望的水平方向。
-  // 用户旋转视角后，相机朝向的水平角度作为"视觉前方"，
-  // 我们让点云前方对齐它。这里更简单：让前方朝 -z 保持不变（当前即如此），
-  // 但记录用户的相机朝向作为校准参考，后续 resetView 用之。
-  const camPos = camera.position.clone();
-  const target = controls.target.clone();
-  const dir = target.clone().sub(camPos);
-  const ang = Math.atan2(dir.x, dir.z);   // 视觉前方角度
-  // 让机器狗前方（-z）旋转到与视觉前方一致：需要旋转 ang
-  pcCalibYaw = ang;
-  $('pcCalib').textContent = '方向: 已校准 ' + Math.round(ang*180/Math.PI) + '°';
-  $('pcAccumInfo').textContent = '✅ 已校准：机器狗前方对齐当前视角前方。旋转视角观察点云。';
-  if(pcBuffer.length) renderPcBuffer();
+// 根据机器狗 IMU yaw 更新方向箭头和标签（机器狗本体朝向，非点云）
+function updatePcHeading(){
+  if(!pcFwdArrow || !lastState) return;
+  const rpy = lastState.imu?.rpy_deg;
+  if(!rpy) return;
+  const yaw = rpy[2];   // 机器狗偏航角（度）
+  // 机器狗前方 = 雷达 +x。俯视图中前方映射到 -z。
+  // 机器狗相对初始方向偏转 yaw，箭头和标签应随之旋转（绕 y 轴）
+  const ang = -yaw * Math.PI / 180;
+  pcFwdArrow.rotation.y = ang;
+  // 方向标签也旋转（前在 -z 方向，随 yaw 转）
+  const labels = [
+    {sprite: pcDirLabels[0], dx: 0, dz: -2.2},  // 前
+    {sprite: pcDirLabels[1], dx: 0, dz: 2.2},   // 后
+    {sprite: pcDirLabels[2], dx: -2.2, dz: 0},  // 左
+    {sprite: pcDirLabels[3], dx: 2.2, dz: 0},   // 右
+  ];
+  const c = Math.cos(ang), s = Math.sin(ang);
+  for(const lb of labels){
+    // 绕 y 轴旋转标签位置
+    const x = lb.dx*c + lb.dz*s;
+    const z = -lb.dx*s + lb.dz*c;
+    lb.sprite.position.set(x, 0.6, z);
+  }
+  $('pcCalib').textContent = '朝向 ' + Math.round(yaw) + '°';
 }
 let pcTimer = null;
 let scene, camera, renderer, pointsMesh, controls;
@@ -908,14 +912,15 @@ function initPc3D() {
   disc.rotation.x = -Math.PI/2;   // 平放地面
   disc.position.set(0, 0.02, 0);
   scene.add(disc);
-  // 唯一的红色箭头：指向机器狗前方（pcTransform 中前方 x+ → -z，即屏幕深处/上方）
-  const arrow = new THREE.ArrowHelper(new THREE.Vector3(0,0,-1), new THREE.Vector3(0,0.3,0), 1.0, 0xff4d4d, 0.3, 0.2);
-  scene.add(arrow);
-  // 方位文字标签（前/后/左/右）——俯视图：前=屏幕上方(-z)，后=下方(+z)，左=屏幕左(-x)，右=屏幕右(+x)
-  addDirLabel('前 FRONT', new THREE.Vector3(0, 0.6, -2.2), 0xff4d4d);
-  addDirLabel('后 BACK', new THREE.Vector3(0, 0.6, 2.2), 0x4d7bff);
-  addDirLabel('左 LEFT', new THREE.Vector3(-2.2, 0.6, 0), 0x4dff8a);
-  addDirLabel('右 RIGHT', new THREE.Vector3(2.2, 0.6, 0), 0xffaa4d);
+  // 红色箭头指向机器狗前方（pcTransform 中前方 x+ → -z，即屏幕上方）
+  pcFwdArrow = new THREE.ArrowHelper(new THREE.Vector3(0,0,-1), new THREE.Vector3(0,0.3,0), 1.0, 0xff4d4d, 0.3, 0.2);
+  scene.add(pcFwdArrow);
+  // 方向标签随机器狗姿态更新（前/后/左/右）
+  pcDirLabels = [];
+  pcDirLabels.push(addDirLabel('前 FRONT', new THREE.Vector3(0, 0.6, -2.2), 0xff4d4d));
+  pcDirLabels.push(addDirLabel('后 BACK', new THREE.Vector3(0, 0.6, 2.2), 0x4d7bff));
+  pcDirLabels.push(addDirLabel('左 LEFT', new THREE.Vector3(-2.2, 0.6, 0), 0x4dff8a));
+  pcDirLabels.push(addDirLabel('右 RIGHT', new THREE.Vector3(2.2, 0.6, 0), 0xffaa4d));
   // 点云几何体（预分配，超出时自动扩容）
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(8000*3), 3));
