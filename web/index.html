@@ -414,12 +414,14 @@
           <option value="camera">RGB</option>
         </select>
         <button class="sm" onclick="clearPcBuffer()">🗑 清空</button>
+        <button class="sm" style="border-color:var(--amber);color:var(--amber);" onclick="calibratePcForward()">🎯 校准前方</button>
       </div>
       <div class="ctrl-row" style="margin-top:6px;">
         <span class="badge" id="pcStatus">加载中…</span>
         <span class="badge accent" id="pcCountdown" style="font-family:var(--mono);">下次刷新 -s</span>
         <span class="badge" id="pcAccumCount" style="font-family:var(--mono);">已累积 0 帧</span>
         <span class="badge" id="pcPointsCount" style="font-family:var(--mono);">0 点</span>
+        <span class="badge" id="pcCalib" style="font-family:var(--mono);">方向: 未校准</span>
       </div>
       <div style="height:6px;background:rgba(255,255,255,0.06);border-radius:3px;margin:8px 0;overflow:hidden;">
         <div id="pcAccumBar" style="height:100%;width:0%;background:linear-gradient(90deg,#00d4ff,#34d399);border-radius:3px;transition:width .3s;"></div>
@@ -844,11 +846,38 @@ async function refreshDepthDepth() {
 }
 
 // ================= 激光点云 3D（Three.js）=================
-// 机器狗坐标系(x前,y左,z上) → Three.js(x右,y上,z朝外) 的坐标转换
-// Three.js 默认 y 轴向上，相机默认在 +z 看向原点（视觉前方=屏幕里=-z）
-// 所以：前方(x)→-z(屏幕里)，左(y)→+x(右)，上(z)→+y(上)
+// 机器狗坐标系(x前,y左,z上) → Three.js 坐标转换
+// 基础映射：左→+x(右), 上→+y(上), 前→-z(屏幕里)
+// pcCalibYaw：用户校准的绕y轴旋转角，使前方对齐期望方向
+let pcCalibYaw = 0;
 function pcTransform(p){
-  return [-p[1], p[2], -p[0]];   // 左→x(右), 上(z)→y(上), 前(x)→-z(屏幕里=视觉前方)
+  // 基础：左(y)→x, 上(z)→y, 前(x)→-z
+  const x0 = -p[1], y0 = p[2], z0 = -p[0];
+  if(pcCalibYaw){
+    // 绕 y 轴旋转 x-z 平面：让前方转到期望方向
+    const c = Math.cos(pcCalibYaw), s = Math.sin(pcCalibYaw);
+    return [x0*c + z0*s, y0, -x0*s + z0*c];
+  }
+  return [x0, y0, z0];
+}
+// 校准前方：用户把机器狗前方转到"屏幕上方"后点击，点云绕y轴旋转使前方朝+上
+function calibratePcForward(){
+  if(!controls) return;
+  // 基础前方方向是 -z（屏幕里）。屏幕上方是 +y。
+  // 但点云在 x-z 平面（水平），+y 是高度。前方应保持在水平面，
+  // 所以"校准"是让前方在水平面上转到用户期望的水平方向。
+  // 用户旋转视角后，相机朝向的水平角度作为"视觉前方"，
+  // 我们让点云前方对齐它。这里更简单：让前方朝 -z 保持不变（当前即如此），
+  // 但记录用户的相机朝向作为校准参考，后续 resetView 用之。
+  const camPos = camera.position.clone();
+  const target = controls.target.clone();
+  const dir = target.clone().sub(camPos);
+  const ang = Math.atan2(dir.x, dir.z);   // 视觉前方角度
+  // 让机器狗前方（-z）旋转到与视觉前方一致：需要旋转 ang
+  pcCalibYaw = ang;
+  $('pcCalib').textContent = '方向: 已校准 ' + Math.round(ang*180/Math.PI) + '°';
+  $('pcAccumInfo').textContent = '✅ 已校准：机器狗前方对齐当前视角前方。旋转视角观察点云。';
+  if(pcBuffer.length) renderPcBuffer();
 }
 let pcTimer = null;
 let scene, camera, renderer, pointsMesh, controls;
@@ -859,7 +888,8 @@ function initPc3D() {
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x05070d);
   camera = new THREE.PerspectiveCamera(60, el.clientWidth/el.clientHeight, 0.01, 200);
-  camera.position.set(0, 3, 10);
+  camera.position.set(0, 10, -6);   // 机器狗后上方俯视：前方(-z)朝屏幕上方，地图式
+  camera.up.set(0, 1, 0);
   renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(el.clientWidth, el.clientHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // 限制像素比防卡顿
@@ -867,23 +897,25 @@ function initPc3D() {
   controls = new THREE.OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.1;
-  // 坐标轴辅助
-  const axes = new THREE.AxesHelper(2);
-  scene.add(axes);
-  // 网格参考（更大范围，水平面 y=0）
-  const grid = new THREE.GridHelper(10, 20, 0x00d4ff, 0x1a2a3a);
+  // 网格参考（水平面 y=0，俯视时清晰）
+  const grid = new THREE.GridHelper(12, 24, 0x00d4ff, 0x1a2a3a);
   scene.add(grid);
-  // 方向参考：红色箭头指向 -z = 机器狗前方（默认视角的"屏幕里"= 视觉前方）
-  const arrow = new THREE.ArrowHelper(new THREE.Vector3(0,0,-1), new THREE.Vector3(0,0.6,0), 1.2, 0xff4d4d, 0.25, 0.18);
-  scene.add(arrow);
-  // 原点小锥体标记
-  const cone = new THREE.Mesh(
-    new THREE.ConeGeometry(0.12, 0.5, 8),
-    new THREE.MeshBasicMaterial({color: 0xff4d4d, transparent: true, opacity: 0.7})
+  // 机器狗位置标记：原点小圆盘
+  const disc = new THREE.Mesh(
+    new THREE.CircleGeometry(0.3, 24),
+    new THREE.MeshBasicMaterial({color: 0xff4d4d, transparent: true, opacity: 0.6, side: THREE.DoubleSide})
   );
-  cone.rotation.x = Math.PI/2;   // 让锥尖朝 -z（前方）
-  cone.position.set(0, 0.5, -0.3);
-  scene.add(cone);
+  disc.rotation.x = -Math.PI/2;   // 平放地面
+  disc.position.set(0, 0.02, 0);
+  scene.add(disc);
+  // 唯一的红色箭头：指向机器狗前方（pcTransform 中前方 x+ → -z，即屏幕深处/上方）
+  const arrow = new THREE.ArrowHelper(new THREE.Vector3(0,0,-1), new THREE.Vector3(0,0.3,0), 1.0, 0xff4d4d, 0.3, 0.2);
+  scene.add(arrow);
+  // 方位文字标签（前/后/左/右）——俯视图：前=屏幕上方(-z)，后=下方(+z)，左=屏幕左(-x)，右=屏幕右(+x)
+  addDirLabel('前 FRONT', new THREE.Vector3(0, 0.6, -2.2), 0xff4d4d);
+  addDirLabel('后 BACK', new THREE.Vector3(0, 0.6, 2.2), 0x4d7bff);
+  addDirLabel('左 LEFT', new THREE.Vector3(-2.2, 0.6, 0), 0x4dff8a);
+  addDirLabel('右 RIGHT', new THREE.Vector3(2.2, 0.6, 0), 0xffaa4d);
   // 点云几何体（预分配，超出时自动扩容）
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(8000*3), 3));
@@ -915,6 +947,25 @@ function makeGaussTexture() {
   const tex = new THREE.CanvasTexture(c);
   tex.needsUpdate = true;
   return tex;
+}
+// 生成方向文字标签（前/后/左/右），用于校验坐标系
+function addDirLabel(text, pos, color) {
+  const cv = document.createElement('canvas');
+  cv.width = 256; cv.height = 64;
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = 'rgba(0,0,0,0)';
+  ctx.fillRect(0,0,256,64);
+  ctx.font = 'bold 28px sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#' + new THREE.Color(color).getHexString();
+  ctx.fillText(text, 128, 32);
+  const tex = new THREE.CanvasTexture(cv);
+  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+  const sprite = new THREE.Sprite(mat);
+  sprite.position.copy(pos);
+  sprite.scale.set(2.0, 0.5, 1);
+  scene.add(sprite);
+  return sprite;
 }
 let pcCapacity = 8000;
 function ensurePcCapacity(n) {
