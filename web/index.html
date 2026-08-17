@@ -1273,13 +1273,12 @@ async function loadSessions(){
     </tr>`;
   }).join('');
 }
-// 触发浏览器下载一个已导出的 zip 到用户本地（不跳转页面）
+// 触发浏览器下载一个已导出的 zip 到用户本地
+// 用 location.href 而非 a.click()：async/await 之后 a.click() 属于非用户手势，
+// 会被浏览器下载保护拦截；location.href 对 attachment 响应不跳转页面且不受此限制。
 function downloadZip(id, fmt){
-  const a = document.createElement('a');
-  a.href = '/api/dataset/download/' + id + '?format=' + fmt;
-  a.download = id + (fmt === 'lerobot' ? '_lerobot' : '') + '.zip';
-  document.body.appendChild(a); a.click(); a.remove();
-  $('recMsg').textContent = '⬇ 开始下载 ' + (fmt === 'lerobot' ? 'LeRobot' : 'HF') + ' 数据包…';
+  window.location.href = '/api/dataset/download/' + id + '?format=' + fmt;
+  $('recMsg').textContent = '⬇ 已触发 ' + (fmt === 'lerobot' ? 'LeRobot' : 'HF') + ' 下载，请查看浏览器下载列表…';
 }
 async function exportSession(id){ $('recMsg').textContent='⏳ 导出 HF…'; const r=await fetchJSON('/api/dataset/export/'+id);
   if(!r || r.detail){$('recMsg').textContent='❌ 导出失败';return;} $('recMsg').textContent='✅ '+r.num_rows.toLocaleString()+' 行，正在下载到本地…'; downloadZip(id,'hf'); }
