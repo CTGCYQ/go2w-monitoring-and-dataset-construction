@@ -1273,10 +1273,10 @@ async function loadSessions(){
     </tr>`;
   }).join('');
 }
-async function exportSession(id){ $('recMsg').textContent='⏳ 导出 HF…'; const r=await postJSON('/api/dataset/export/'+id);
-  if(r.error){$('recMsg').textContent='❌ '+r.error;return;} $('recMsg').textContent='✅ '+r.num_rows.toLocaleString()+' 行'; }
-async function exportLerobot(id){ $('recMsg').textContent='⏳ 导出 LeRobot…'; const r=await postJSON('/api/dataset/export/lerobot/'+id);
-  if(r.error){$('recMsg').textContent='❌ '+r.error;return;} $('recMsg').textContent='✅ '+r.num_frames.toLocaleString()+' 帧'; }
+async function exportSession(id){ $('recMsg').textContent='⏳ 导出 HF…'; const r=await fetchJSON('/api/dataset/export/'+id);
+  if(!r || r.detail){$('recMsg').textContent='❌ 导出失败';return;} $('recMsg').textContent='✅ '+r.num_rows.toLocaleString()+' 行'; }
+async function exportLerobot(id){ $('recMsg').textContent='⏳ 导出 LeRobot…'; const r=await fetchJSON('/api/dataset/export/lerobot/'+id);
+  if(!r || r.detail){$('recMsg').textContent='❌ 导出失败';return;} $('recMsg').textContent='✅ '+r.num_frames.toLocaleString()+' 帧'; }
 
 // ================= 定时规则 =================
 const DOW=['一','二','三','四','五','六','日'];

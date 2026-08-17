@@ -52,6 +52,49 @@ for i in range(3):
     FEATURE_TYPES[f"sport_vel_{'xyz'[i]}"] = "float32"
 
 
+def _arrow_type_to_hf_dtype(t: pa.DataType) -> str:
+    """把 pyarrow 类型映射为 HuggingFace Dataset 的 dtype 字符串。"""
+    if pa.types.is_float64(t):
+        return "float64"
+    if pa.types.is_float32(t):
+        return "float32"
+    if pa.types.is_uint32(t):
+        return "uint32"
+    if pa.types.is_uint16(t):
+        return "uint16"
+    if pa.types.is_uint8(t):
+        return "uint8"
+    if pa.types.is_int64(t):
+        return "int64"
+    if pa.types.is_int32(t):
+        return "int32"
+    if pa.types.is_int16(t):
+        return "int16"
+    if pa.types.is_int8(t):
+        return "int8"
+    if pa.types.is_boolean(t):
+        return "bool"
+    if pa.types.is_string(t) or pa.types.is_large_string(t):
+        return "string"
+    # 未识别类型回退为字符串（安全，避免 dtype 为空导致 HF 加载失败）
+    return "string"
+
+
+def _features_from_table(table: pa.Table) -> dict:
+    """从实际 parquet schema 动态生成 HF 标准的 features 描述。
+
+    使用 HF Dataset 标准格式：{"dtype": "<type>", "_type": "Value"}，
+    并保证与真实列一一对应（含 image_path 等动态列），避免静态字段表遗漏。
+    """
+    features = {}
+    for f in table.schema:
+        features[f.name] = {
+            "dtype": _arrow_type_to_hf_dtype(f.type),
+            "_type": "Value",
+        }
+    return features
+
+
 def read_session_table(session_path: Path) -> pa.Table:
     """读取一个已完成会话的 raw.arrow 为 pyarrow Table。"""
     raw = session_path / "raw.arrow"
@@ -116,7 +159,8 @@ def build_session_dataset(
     n_val_written = write_split("test", val_table)
 
     # 写 dataset_info.json（字段 schema 与 split 规模）
-    features = {k: {"dtype": v} for k, v in FEATURE_TYPES.items()}
+    # 从真实 parquet schema 动态生成 features，保证与实际列一致（含 image_path 等动态列）
+    features = _features_from_table(table)
     info = {
         "description": f"Go2-W LowState recording session {session_id}",
         "features": features,
@@ -309,7 +353,7 @@ def build_lerobot_dataset(
     ep_cols = {
         "observation.state": pa.array(obs_list, type=pa.list_(pa.float32())),
         "action": pa.array(act_list, type=pa.list_(pa.float32())),
-        "timestamp": pa.array(ts_list, type=pa.float64()),
+        "timestamp": pa.array(ts_list, type=pa.float32()),
         "episode_index": pa.array([episode_index] * episode_length, type=pa.int64()),
         "frame_index": pa.array(fi_list, type=pa.int64()),
         "index": pa.array(fi_list, type=pa.int64()),
@@ -335,6 +379,10 @@ def build_lerobot_dataset(
             "observation.state": {"dtype": "float32", "shape": [obs_dim]},
             "action": {"dtype": "float32", "shape": [act_dim]},
             "timestamp": {"dtype": "float32", "shape": [1]},
+            "episode_index": {"dtype": "int64", "shape": [1]},
+            "frame_index": {"dtype": "int64", "shape": [1]},
+            "index": {"dtype": "int64", "shape": [1]},
+            "next.done": {"dtype": "bool", "shape": [1]},
         },
     }
     if tasks:

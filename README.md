@@ -185,16 +185,24 @@ tmux new-session -d -s go2wweb "python server.py"
 ### HuggingFace 格式
 ```
 <export>/<session_id>/
-├── dataset_info.json          # schema + split 信息
+├── dataset_info.json          # schema + split 信息（features 含标准 _type 标记）
 └── data/
     ├── train/data-00000-of-00001.parquet
     └── test/data-00000-of-00001.parquet
 ```
 可用 `datasets` 库直接加载：
 ```python
+from datasets import load_dataset
+d = load_dataset("<export>")          # 直接按 HF Dataset 标准目录加载
+# 或按分片加载
 from datasets import Dataset
 d = Dataset.from_parquet("<export>/data/train/data-00000-of-00001.parquet")
 ```
+
+> **格式合规性说明**：`dataset_info.json` 的 `features` 从原始 Arrow 表
+> schema 动态生成（而非静态字段表），每个字段带 HuggingFace 标准的
+> `{"dtype": "...", "_type": "Value"}` 标记，且与实际 parquet 列严格一一对应
+> （含 `image_path` 等动态列），保证 `datasets.load_dataset()` 能正确解析 schema。
 
 ### LeRobot v2 格式（推荐用于 VLA 训练）
 ```
@@ -212,6 +220,11 @@ d = Dataset.from_parquet("<export>/data/train/data-00000-of-00001.parquet")
 
 `observation.state` 70 维：IMU(四元数+陀螺仪+加速度+欧拉角) + 电源/电池 + 12 电机(q/dq/tau/temp) + 4 足底力。
 `action` 24 维：12 电机角度 + 12 电机速度的帧间增量（delta）。
+
+> **格式合规性说明**：LeRobot parquet 的 `timestamp` 列为 `float32`（与
+> `meta/info.json` 中声明的 dtype 一致），标准列
+> `observation.state` / `action` / `timestamp` / `episode_index` /
+> `frame_index` / `index` / `next.done` 齐全，符合 LeRobot v2.x 加载器规范。
 
 ---
 
