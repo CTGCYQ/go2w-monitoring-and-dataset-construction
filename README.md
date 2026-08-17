@@ -182,6 +182,15 @@ tmux new-session -d -s go2wweb "python server.py"
 
 ## 🚀 数据集导出
 
+> **下载到本地**：Web 界面「数据录制」面板的会话列表里，每个会话有
+> `HF` / `LeRobot`（导出）和 `⬇HF` / `⬇LR`（下载）按钮。点击 `HF` 或
+> `LeRobot` 会先导出到服务器，导出成功后自动触发浏览器下载 zip 到本地；
+> `⬇HF` / `⬇LR` 则直接下载已导出的 zip（不重复导出）。
+>
+> 底层下载接口：`GET /api/dataset/download/<session_id>?format=hf|lerobot`
+> 返回 `application/zip`（`Content-Disposition: attachment`），浏览器直接下载。
+> 未导出的会话会返回 404，需先调用导出接口。
+
 ### HuggingFace 格式
 ```
 <export>/<session_id>/
@@ -296,6 +305,7 @@ nohup ./rs_capture /home/unitree/rs_out 640 480 15 < /dev/null > /tmp/rs_cap.log
 | POST | `/api/session/<id>/annotations` | 添加自然语言标注 |
 | GET | `/api/dataset/export/<id>` | 导出 HuggingFace |
 | GET | `/api/dataset/export/lerobot/<id>` | 导出 LeRobot |
+| GET | `/api/dataset/download/<id>?format=hf\|lerobot` | 下载已导出数据集（zip） |
 
 ---
 

@@ -1269,14 +1269,22 @@ async function loadSessions(){
       <td class="num">${et}</td>
       <td class="num">${fmtDur(s.duration_s)}</td>
       <td class="num">${(s.sample_count||0).toLocaleString()}</td>
-      <td><button class="sm" onclick="exportSession('${s.session_id}')">HF</button> <button class="sm violet" onclick="exportLerobot('${s.session_id}')">LeRobot</button></td>
+      <td><button class="sm" onclick="exportSession('${s.session_id}')">HF</button> <button class="sm violet" onclick="exportLerobot('${s.session_id}')">LeRobot</button> <button class="sm green" onclick="downloadZip('${s.session_id}','hf')">⬇HF</button> <button class="sm green" onclick="downloadZip('${s.session_id}','lerobot')">⬇LR</button></td>
     </tr>`;
   }).join('');
 }
+// 触发浏览器下载一个已导出的 zip 到用户本地（不跳转页面）
+function downloadZip(id, fmt){
+  const a = document.createElement('a');
+  a.href = '/api/dataset/download/' + id + '?format=' + fmt;
+  a.download = id + (fmt === 'lerobot' ? '_lerobot' : '') + '.zip';
+  document.body.appendChild(a); a.click(); a.remove();
+  $('recMsg').textContent = '⬇ 开始下载 ' + (fmt === 'lerobot' ? 'LeRobot' : 'HF') + ' 数据包…';
+}
 async function exportSession(id){ $('recMsg').textContent='⏳ 导出 HF…'; const r=await fetchJSON('/api/dataset/export/'+id);
-  if(!r || r.detail){$('recMsg').textContent='❌ 导出失败';return;} $('recMsg').textContent='✅ '+r.num_rows.toLocaleString()+' 行'; }
+  if(!r || r.detail){$('recMsg').textContent='❌ 导出失败';return;} $('recMsg').textContent='✅ '+r.num_rows.toLocaleString()+' 行，正在下载到本地…'; downloadZip(id,'hf'); }
 async function exportLerobot(id){ $('recMsg').textContent='⏳ 导出 LeRobot…'; const r=await fetchJSON('/api/dataset/export/lerobot/'+id);
-  if(!r || r.detail){$('recMsg').textContent='❌ 导出失败';return;} $('recMsg').textContent='✅ '+r.num_frames.toLocaleString()+' 帧'; }
+  if(!r || r.detail){$('recMsg').textContent='❌ 导出失败';return;} $('recMsg').textContent='✅ '+r.num_frames.toLocaleString()+' 帧，正在下载到本地…'; downloadZip(id,'lerobot'); }
 
 // ================= 定时规则 =================
 const DOW=['一','二','三','四','五','六','日'];

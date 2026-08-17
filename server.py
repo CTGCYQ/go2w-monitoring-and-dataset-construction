@@ -17,6 +17,7 @@
 from __future__ import annotations
 
 import json    # 会话元信息 / 标注 JSON 读写
+import shutil  # 导出目录打包 zip（下载到本地）
 import time    # 轮询等待 collector 确认命令
 import uuid    # 生成标注 ID
 from pathlib import Path
@@ -281,6 +282,43 @@ def api_dataset_export_lerobot(session_id: str):
     except Exception as e:
         raise HTTPException(500, f"lerobot export failed: {e}")
     return JSONResponse(result)
+
+
+def _export_dir(session_id: str, fmt: str) -> Path:
+    """返回指定格式导出目录（校验 session_id 防路径穿越）。"""
+    if not session_id.replace("_", "").replace("-", "").isalnum():
+        raise HTTPException(400, "invalid session_id")
+    if fmt == "lerobot":
+        return Path(DATASET_ROOT) / "exports" / f"{session_id}_lerobot"
+    if fmt == "hf":
+        return Path(DATASET_ROOT) / "exports" / session_id
+    raise HTTPException(400, f"unknown format {fmt}")
+
+
+@app.get("/api/dataset/download/{session_id}")
+def api_dataset_download(session_id: str, format: str = "hf"):
+    """把已导出的数据集目录打包为 zip，供浏览器下载到用户本地。
+
+    需先调用对应导出接口（/api/dataset/export 或 .../lerobot）生成目录，
+    再调用本接口下载。format 取 "hf" 或 "lerobot"。
+
+    Returns:
+        一个 application/zip 文件流，Content-Disposition 为 attachment，
+        浏览器会直接下载到本地。
+    """
+    export_dir = _export_dir(session_id, format)
+    if not export_dir.exists():
+        raise HTTPException(
+            404, f"export not found for {format}; please export first")
+    # 打包到同一 exports 目录下的 zip 文件
+    zip_path = export_dir.parent / f"{export_dir.name}.zip"
+    shutil.make_archive(str(export_dir.parent / export_dir.name), "zip",
+                        root_dir=export_dir)
+    return FileResponse(
+        zip_path,
+        media_type="application/zip",
+        filename=f"{export_dir.name}.zip",
+    )
 
 
 # ---------------------------------------------------------------------------
