@@ -353,9 +353,12 @@
         </div>
         <div style="font-size:11px;color:var(--muted);margin-bottom:12px;" id="recMsg">录制期间机器人状态（含相机帧）将流式写入数据集，停止后自动保存为会话。</div>
         <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">📁 已录会话 Sessions</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">
+          💡 操作说明：「导出」把数据集生成到<strong>服务器磁盘</strong>（<code>exports/</code> 目录）；「下载」把已导出的数据集打包成 zip <strong>下载到你的本地电脑</strong>。需先导出，再下载。
+        </div>
         <div class="scroll" style="max-height:240px;">
           <table>
-            <thead><tr><th>会话ID</th><th>开始时间</th><th>结束时间</th><th>时长</th><th>样本</th><th>导出</th></tr></thead>
+            <thead><tr><th>会话ID</th><th>开始时间</th><th>结束时间</th><th>时长</th><th>样本</th><th>① 导出(服务器)</th><th>② 下载(本地)</th></tr></thead>
             <tbody id="sessionsBody"></tbody>
           </table>
         </div>
@@ -1259,7 +1262,7 @@ async function stopRecording(){
 }
 async function loadSessions(){
   const d=await fetchJSON('/api/sessions'); const tb=$('sessionsBody');
-  if(!d||!d.sessions||!d.sessions.length){ tb.innerHTML='<tr><td colspan="6" style="color:var(--muted)">暂无会话 No sessions</td></tr>'; return; }
+  if(!d||!d.sessions||!d.sessions.length){ tb.innerHTML='<tr><td colspan="7" style="color:var(--muted)">暂无会话 No sessions</td></tr>'; return; }
   tb.innerHTML=d.sessions.map(s=>{
     const st = s.start_time ? s.start_time.slice(5,19) : (s.start_ts ? new Date(s.start_ts*1000).toLocaleString('zh-CN') : '-');
     const et = s.end_time ? s.end_time.slice(5,19) : (s.end_ts ? new Date(s.end_ts*1000).toLocaleString('zh-CN') : '-');
@@ -1269,7 +1272,8 @@ async function loadSessions(){
       <td class="num">${et}</td>
       <td class="num">${fmtDur(s.duration_s)}</td>
       <td class="num">${(s.sample_count||0).toLocaleString()}</td>
-      <td><button class="sm" onclick="exportSession('${s.session_id}')">HF</button> <button class="sm violet" onclick="exportLerobot('${s.session_id}')">LeRobot</button> <button class="sm green" onclick="downloadZip('${s.session_id}','hf')">⬇HF</button> <button class="sm green" onclick="downloadZip('${s.session_id}','lerobot')">⬇LR</button></td>
+      <td><button class="sm" title="导出到服务器 exports/ 目录" onclick="exportSession('${s.session_id}')">导出HF</button> <button class="sm violet" title="导出到服务器 exports/ 目录" onclick="exportLerobot('${s.session_id}')">导出LR</button></td>
+      <td><button class="sm green" title="下载 zip 到本地" onclick="downloadZip('${s.session_id}','hf')">⬇HF</button> <button class="sm green" title="下载 zip 到本地" onclick="downloadZip('${s.session_id}','lerobot')">⬇LR</button></td>
     </tr>`;
   }).join('');
 }
@@ -1280,10 +1284,11 @@ function downloadZip(id, fmt){
   window.location.href = '/api/dataset/download/' + id + '?format=' + fmt;
   $('recMsg').textContent = '⬇ 已触发 ' + (fmt === 'lerobot' ? 'LeRobot' : 'HF') + ' 下载，请查看浏览器下载列表…';
 }
-async function exportSession(id){ $('recMsg').textContent='⏳ 导出 HF…'; const r=await fetchJSON('/api/dataset/export/'+id);
-  if(!r || r.detail){$('recMsg').textContent='❌ 导出失败';return;} $('recMsg').textContent='✅ '+r.num_rows.toLocaleString()+' 行，正在下载到本地…'; downloadZip(id,'hf'); }
-async function exportLerobot(id){ $('recMsg').textContent='⏳ 导出 LeRobot…'; const r=await fetchJSON('/api/dataset/export/lerobot/'+id);
-  if(!r || r.detail){$('recMsg').textContent='❌ 导出失败';return;} $('recMsg').textContent='✅ '+r.num_frames.toLocaleString()+' 帧，正在下载到本地…'; downloadZip(id,'lerobot'); }
+// 导出：只把数据集生成到服务器 exports/ 目录（不下载），成功后自动触发下载
+async function exportSession(id){ $('recMsg').textContent='⏳ 导出 HF 到服务器…'; const r=await fetchJSON('/api/dataset/export/'+id);
+  if(!r || r.detail){$('recMsg').textContent='❌ 导出失败';return;} $('recMsg').textContent='✅ HF 已导出（'+r.num_rows.toLocaleString()+' 行），开始下载…'; downloadZip(id,'hf'); }
+async function exportLerobot(id){ $('recMsg').textContent='⏳ 导出 LeRobot 到服务器…'; const r=await fetchJSON('/api/dataset/export/lerobot/'+id);
+  if(!r || r.detail){$('recMsg').textContent='❌ 导出失败';return;} $('recMsg').textContent='✅ LeRobot 已导出（'+r.num_frames.toLocaleString()+' 帧），开始下载…'; downloadZip(id,'lerobot'); }
 
 // ================= 定时规则 =================
 const DOW=['一','二','三','四','五','六','日'];
