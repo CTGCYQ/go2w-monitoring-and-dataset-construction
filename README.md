@@ -193,6 +193,13 @@ tmux new-session -d -s go2wweb "python server.py"
   逐一点亮回放；**点击节点弹框查看该环节的输入/输出/状态**。
 - 自定义关键词/指令匹配位于语音代码 `voice_agent/core.py` 的 `VoiceDialog.handle()`
   （唤醒词、站起/趴下/状态/时间等），语音路径沿用；文字路径可用模式标签优先。
+- **🎤 语音输入（用户电脑麦克风）**：按住输入框旁的 🎤 录音（微信式）→ 上传 `/api/agent/asr`
+  → text_service 用 ffmpeg 转 16k PCM + FunASR(SenseVoiceSmall) 转文字 → 回填输入框确认后发送（指令/对话都可用）。
+- **🔊 语音回复开关**：发送前可勾选/取消「🔊 语音回复」；取消时 `speak=0`，机器狗不喇叭发声，仅文字/动作。
+- **⏹ 打断语音**：点「⏹ 打断」→ `/api/agent/interrupt` → text_service 置打断标记并 `exit_megaphone()`，
+  正在播放的喇叭语音立即停止。
+- **对话字数限制**：问答大模型加 system 提示词限 ≤50 字（`qa_router.QA_SYSTEM_PROMPT`），喇叭播报短；
+  指令模式不受限（动作描述要详细），播报文本统一截短（`text_service._trim_speech` ≤48 字）。
 
 ---
 

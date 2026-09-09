@@ -24,7 +24,7 @@ from pathlib import Path
 from typing import Optional
 
 import requests  # 代理查询 InfluxDB
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
@@ -832,23 +832,62 @@ def api_agent_health():
 
 
 @app.get("/api/agent/cmd")
-def api_agent_cmd(text: str = ""):
+def api_agent_cmd(text: str = "", speak: str = "1"):
     """把文字指令转发给 text_service，返回其结构化结果。
 
-    text_service 返回 {"text","reply","accepted","spoken"}：
+    text_service 返回 {"text","reply","accepted","spoken","trace"}：
     - reply: 机器狗语音回复内容
-    - accepted: 指令是否被接受（locked 下动作会被拒）
+    - accepted: 指令是否被接受
     - spoken: 是否已通过喇叭发声
+    - trace: 决策环节（供前端流程图）
+    speak=0 时机器狗不喇叭回复（仅文字）。
     """
     text = (text or "").strip()
     if not text:
         raise HTTPException(400, "text required")
+    params = {"text": text}
+    if str(speak).lower() not in ("1", "true", "yes", "on", ""):
+        params["speak"] = "0"
     try:
-        r = requests.get(f"{AGENT_CMD_URL}/cmd", params={"text": text}, timeout=120)
+        r = requests.get(f"{AGENT_CMD_URL}/cmd", params=params, timeout=120)
         if r.status_code == 200:
             return JSONResponse(r.json())
         return JSONResponse({"error": f"agent http {r.status_code}", "text": text},
                             status_code=502)
+    except requests.exceptions.ConnectionError:
+        raise HTTPException(503, "agent service offline")
+    except Exception as e:
+        raise HTTPException(502, f"agent service error: {e}")
+
+
+@app.post("/api/agent/asr")
+async def api_agent_asr(file: UploadFile = File(...)):
+    """接收用户电脑麦克风录音 → 转发 text_service 的 /asr 转文字（微信式语音输入）。"""
+    data = await file.read()
+    if not data:
+        raise HTTPException(400, "empty audio")
+    try:
+        r = requests.post(f"{AGENT_CMD_URL}/asr", data=data,
+                          headers={"Content-Type": file.content_type or "application/octet-stream"},
+                          timeout=90)
+        if r.status_code == 200:
+            return JSONResponse(r.json())
+        return JSONResponse({"error": f"agent http {r.status_code}", "text": ""},
+                            status_code=502)
+    except requests.exceptions.ConnectionError:
+        raise HTTPException(503, "agent service offline")
+    except Exception as e:
+        raise HTTPException(502, f"agent service error: {e}")
+
+
+@app.post("/api/agent/interrupt")
+def api_agent_interrupt():
+    """打断机器狗正在播放的喇叭语音。"""
+    try:
+        r = requests.post(f"{AGENT_CMD_URL}/interrupt", timeout=10)
+        if r.status_code == 200:
+            return JSONResponse(r.json())
+        return JSONResponse({"error": f"agent http {r.status_code}"}, status_code=502)
     except requests.exceptions.ConnectionError:
         raise HTTPException(503, "agent service offline")
     except Exception as e:

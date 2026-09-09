@@ -545,6 +545,9 @@
           <button id="agentModeCmd" class="sm green" onclick="setAgentMode('command')">🤖 指令模式</button>
           <button id="agentModeChat" class="sm" onclick="setAgentMode('chat')">💬 对话模式</button>
           <span class="badge" id="agentModeTip" style="font-family:var(--mono)">🤖 指令模式 · 打字执行动作</span>
+          <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:4px;cursor:pointer;margin-left:auto;">
+            <input type="checkbox" id="agentSpeak" checked style="accent-color:#34d399;cursor:pointer;">🔊 语音回复
+          </label>
         </div>
         <div class="ctrl-row">
           <span class="badge" id="agentHealth">服务探测中…</span>
@@ -557,8 +560,10 @@
         </div>
         <div id="agentLog" style="height:360px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px;background:rgba(0,0,0,0.25);"></div>
         <div class="ctrl-row" style="margin-top:8px;margin-bottom:0;">
-          <input type="text" id="agentInput" placeholder="输入指令，如：后退 / 站起来 / 现在几点…" style="flex:1;min-width:180px;" onkeydown="if(event.key==='Enter')sendAgentCmd()">
+          <input type="text" id="agentInput" placeholder="输入/按住🎤说话，如：后退 / 今天天气…" style="flex:1;min-width:150px;" onkeydown="if(event.key==='Enter')sendAgentCmd()">
+          <button id="agentMicBtn" class="sm" title="按住说话 → 语音转文字" style="font-size:18px;padding:1px 10px;user-select:none;touch-action:none;" onpointerdown="startRec()" onpointerup="stopRec()" onpointerleave="stopRec()" oncontextmenu="event.preventDefault()">🎤</button>
           <button class="violet" onclick="sendAgentCmd()">发送 ▶</button>
+          <button class="sm amber" style="border-color:rgba(251,191,36,0.35);color:var(--amber);" onclick="interruptSpeech()" title="打断正在播放的喇叭语音">⏹ 打断</button>
           <button class="sm" onclick="clearAgentLog()">清空</button>
         </div>
       </div>
@@ -1398,7 +1403,8 @@ async function doSendAgent(text){
   agentBusy = true;
   agentLogMsg('user', text);
   try{
-    const d = await fetchJSON('/api/agent/cmd?text=' + encodeURIComponent(text));
+    const url = '/api/agent/cmd?text=' + encodeURIComponent(text) + (speakOn() ? '' : '&speak=0');
+    const d = await fetchJSON(url);
     if(!d || d.detail){
       agentLogMsg('robot', '指令服务未响应（' + ((d&&d.detail)||'未知') + '）');
       return;
@@ -1419,6 +1425,62 @@ async function doSendAgent(text){
   }
 }
 function clearAgentLog(){ $('agentLog').innerHTML = ''; }
+// 语音回复开关（🔊 checkbox）
+function speakOn(){ const el = $('agentSpeak'); return !el || el.checked; }
+// 打断机器狗正在播放的喇叭语音
+async function interruptSpeech(){
+  try{
+    const r = await fetch('/api/agent/interrupt', {method:'POST'});
+    agentLogMsg('robot', '⏹ 已发送打断，喇叭将停止播放');
+  }catch(e){
+    agentLogMsg('robot', '打断请求失败：' + (e.message||e));
+  }
+}
+// ---- 语音输入（用户电脑麦克风录音→ASR，微信式按住说话）----
+let _rec = {mr:null, chunks:[], stream:null, on:false};
+function _recUI(on){
+  const b = $('agentMicBtn');
+  if(b) b.style.background = on ? 'rgba(248,113,113,0.35)' : '';
+}
+async function startRec(){
+  if(_rec.on) return;
+  try{
+    if(!navigator.mediaDevices || !window.MediaRecorder){ agentLogMsg('robot','浏览器不支持录音'); return; }
+    _rec.stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    _rec.chunks = [];
+    const mime = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : (MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : '');
+    _rec.mr = new MediaRecorder(_rec.stream, mime ? {mimeType:mime} : undefined);
+    _rec.mr.ondataavailable = e => { if(e.data && e.data.size) _rec.chunks.push(e.data); };
+    _rec.mr.onstop = () => { _rec.on = false; _recUI(false); _uploadRec(); };
+    _rec.mr.start(); _rec.on = true; _recUI(true);
+    $('agentModeTip').textContent = '🎤 录音中…松开结束';
+  }catch(e){ agentLogMsg('robot', '无法访问麦克风：' + (e.message||e)); }
+}
+function stopRec(){
+  if(_rec.on && _rec.mr && _rec.mr.state !== 'inactive'){ _rec.mr.stop(); }
+}
+async function _uploadRec(){
+  const mrType = (_rec.mr && _rec.mr.mimeType) || 'audio/webm';
+  const blob = new Blob(_rec.chunks, {type: mrType});
+  if(_rec.stream){ _rec.stream.getTracks().forEach(t=>t.stop()); _rec.stream = null; }
+  _rec.mr = null; _rec.chunks = [];
+  setAgentMode(AGENT_MODE); // 恢复模式 tip
+  if(!blob.size){ agentLogMsg('robot','录音为空'); return; }
+  agentLogMsg('user', '🎤 语音输入识别中…');
+  const fd = new FormData();
+  fd.append('file', blob, 'rec' + (mrType.includes('mp4') ? '.m4a' : '.webm'));
+  try{
+    const r = await fetch('/api/agent/asr', {method:'POST', body: fd});
+    const d = await r.json();
+    if(d && d.text){
+      const input = $('agentInput');
+      if(input) input.value = (input.value ? input.value + ' ' : '') + d.text;
+      agentLogMsg('robot', '识别到：「' + d.text + '」（确认后回车发送）');
+    } else {
+      agentLogMsg('robot', '未识别到语音' + (d && d.error ? '：' + d.error : ''));
+    }
+  }catch(e){ agentLogMsg('robot', '语音识别请求失败：' + (e.message||e)); }
+}
 
 // ---- VLA 决策流程图：静态 7 节点 + 指令 trace 动画回放 ----
 const AGENT_FLOW_NODES = [
