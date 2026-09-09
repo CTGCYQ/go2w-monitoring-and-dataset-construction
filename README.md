@@ -178,6 +178,22 @@ tmux new-session -d -s go2wweb "python server.py"
 4. 点击「保存标注」，标注持久化到 `annotations.json`；
 5. 导出 LeRobot 时，标注自动写入 `tasks.jsonl`，对应帧设 `task_index`。
 
+### 文字交互（打字控制机器狗）
+顶部导航 →「文字交互」。复用已部署的 `voice_agent/text_service`（文字→唤醒词/大模型规划→
+安全监督→动作执行→喇叭语音回复），经 8000 同源代理转发。
+
+- **🤖 指令模式**（默认）：打字执行动作。发送自动加 `#指令` 前缀，后端用确定性规则
+  解析常见动作（后退/前进→`move_distance`、左转/右转→`turn_angle`、站起/趴下/停止/报告状态），
+  再交给安全监督与运动后端执行；无法用规则解析的文本才回退到大模型规划。
+- **💬 对话模式**：打字问问题（天气/闲聊/常识），发送自动加 `#对话` 前缀，直接调用本机
+  ollama（`qwen2.5:7b`）问答，不执行动作。
+- 也可在消息里手动写 `#指令 ...` / `#对话 ...` 强制指定。
+- 页面含：第一人称前置相机实时画面 + 机器狗状态（在线/模式/电量）+ **VLA 决策流程图**
+  （输入→意图识别→大模型规划→计划校验→安全监督→动作执行→语音回复），发送指令后节点
+  逐一点亮回放；**点击节点弹框查看该环节的输入/输出/状态**。
+- 自定义关键词/指令匹配位于语音代码 `voice_agent/core.py` 的 `VoiceDialog.handle()`
+  （唤醒词、站起/趴下/状态/时间等），语音路径沿用；文字路径可用模式标签优先。
+
 ---
 
 ## 🚀 数据集导出
@@ -306,6 +322,8 @@ nohup ./rs_capture /home/unitree/rs_out 640 480 15 < /dev/null > /tmp/rs_cap.log
 | GET | `/api/dataset/export/<id>` | 导出 HuggingFace |
 | GET | `/api/dataset/export/lerobot/<id>` | 导出 LeRobot |
 | GET | `/api/dataset/download/<id>?format=hf\|lerobot` | 下载已导出数据集（zip） |
+| GET | `/api/agent/health` | 文字指令服务在线探测（text_service :8787） |
+| GET | `/api/agent/cmd?text=<中文指令>` | 文字指令代理（转 8787，返回 reply/accepted/spoken/trace） |
 
 ---
 
