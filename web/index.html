@@ -571,6 +571,11 @@
         </div>
       </div>
     </div>
+    <div class="card" style="margin-top:12px;width:100%;">
+      <h2>VLA 决策流程 <span class="hint">Flow · 本指令经历哪些环节</span></h2>
+      <div id="agentFlow" style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-height:54px;padding:8px 4px;"></div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px;" id="agentFlowHint">💡 发送指令后，流程图回放该指令经历的决策环节（约 0.3s/环节）。灰色=本指令跳过（如已知技能不经大模型规划）；绿=通过；红=拦截/失败。</div>
+    </div>
   </div>
 
 </div>
@@ -1281,6 +1286,7 @@ function startPcCountdown() {
 let agentCamTimer = null, agentHealthTimer = null, agentBusy = false;
 // 切到本 tab 时启动：相机轮询 + 服务健康探测 + 状态表刷新
 function startAgentView(){
+  resetAgentFlow();
   refreshAgentCam(); pollAgentHealth(); renderAgentState();
   if(!agentCamTimer) agentCamTimer = setInterval(refreshAgentCam, 1000);
   if(!agentHealthTimer) agentHealthTimer = setInterval(()=>{ pollAgentHealth(); renderAgentState(); }, 2000);
@@ -1373,6 +1379,7 @@ async function sendAgentCmd(){
     bits.push(d.accepted ? '✅ 已接受' : '⛔ 未接受');
     bits.push('发声:' + (d.spoken ? '是 🔊' : '否'));
     agentLogMsg('robot', d.reply || '(无回复)', bits.join(' · '));
+    replayAgentFlow(d.trace);
   }catch(e){
     agentLogMsg('robot', '发送失败：' + (e.message||e));
   }finally{
@@ -1380,6 +1387,75 @@ async function sendAgentCmd(){
   }
 }
 function clearAgentLog(){ $('agentLog').innerHTML = ''; }
+
+// ---- VLA 决策流程图：静态 7 节点 + 指令 trace 动画回放 ----
+const AGENT_FLOW_NODES = [
+  {key:'input',   label:'输入'},
+  {key:'intent',  label:'意图识别'},
+  {key:'plan',    label:'大模型规划'},
+  {key:'validate',label:'计划校验'},
+  {key:'safety',  label:'安全监督'},
+  {key:'execute', label:'动作执行'},
+  {key:'speak',   label:'语音回复'},
+];
+let _flowNodes = {}, _flowTimer = null;
+function resetAgentFlow(){
+  if(_flowTimer){ clearInterval(_flowTimer); _flowTimer = null; }
+  const wrap = $('agentFlow');
+  if(!wrap) return;
+  wrap.innerHTML = ''; _flowNodes = {};
+  AGENT_FLOW_NODES.forEach((n,i)=>{
+    const cell = document.createElement('div');
+    cell.style.cssText = 'display:inline-flex;align-items:center;gap:6px;';
+    const chip = document.createElement('div');
+    chip.textContent = n.label;
+    chip.style.cssText = 'padding:5px 12px;border-radius:8px;font-size:12px;border:1px solid var(--border);color:var(--muted);background:rgba(255,255,255,0.02);white-space:nowrap;transition:all .2s;';
+    _flowNodes[n.key] = chip;
+    cell.appendChild(chip);
+    wrap.appendChild(cell);
+    if(i < AGENT_FLOW_NODES.length-1){
+      const ar = document.createElement('span');
+      ar.textContent = '→';
+      ar.style.cssText = 'color:var(--muted);font-size:14px;';
+      wrap.appendChild(ar);
+    }
+  });
+}
+function setFlowNode(key, status, detail){
+  const chip = _flowNodes[key];
+  if(!chip) return;
+  chip.style.borderColor = 'var(--border)';
+  chip.style.color = 'var(--muted)';
+  chip.style.opacity = '1';
+  chip.style.boxShadow = 'none';
+  chip.style.background = 'rgba(255,255,255,0.02)';
+  if(status === 'done'){
+    chip.style.borderColor = 'rgba(52,211,153,0.65)';
+    chip.style.color = '#34d399';
+    chip.style.background = 'rgba(52,211,153,0.16)';
+    chip.style.boxShadow = '0 0 12px rgba(52,211,153,0.3)';
+  } else if(status === 'skipped'){
+    chip.style.opacity = '0.45';
+    chip.textContent = (chip.dataset.label || chip.textContent) + ' · 跳过';
+  } else if(status === 'blocked' || status === 'failed'){
+    chip.style.borderColor = 'rgba(248,113,113,0.75)';
+    chip.style.color = '#f87171';
+    chip.style.background = 'rgba(248,113,113,0.15)';
+  }
+  if(detail){ const h = $('agentFlowHint'); if(h) h.textContent = '➤ ' + detail; }
+}
+function replayAgentFlow(trace){
+  resetAgentFlow();
+  AGENT_FLOW_NODES.forEach(n=>{ const c = _flowNodes[n.key]; if(c) c.dataset.label = n.label; });
+  const h = $('agentFlowHint');
+  if(!trace || !trace.length){ if(h) h.textContent = '（本次指令服务未返回流程 trace）'; return; }
+  let idx = 0;
+  _flowTimer = setInterval(()=>{
+    if(idx >= trace.length){ clearInterval(_flowTimer); _flowTimer = null; return; }
+    const t = trace[idx++];
+    setFlowNode(t.node, t.status, t.detail);
+  }, 320);
+}
 
 // ================= 录制控制 =================
 async function pollRecording() {
