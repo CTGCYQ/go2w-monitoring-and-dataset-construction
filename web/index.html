@@ -534,12 +534,18 @@
   <!-- ============ TAB5 文字交互 ============ -->
   <div class="tabview" id="tv-agent">
     <div style="font-size:11px;color:var(--muted);margin:0 0 12px 0;">
-      💡 打字与机器狗交互：指令经「文字→语音/VLA 服务」（含唤醒词匹配 + 安全监督 + 动作白名单），机器狗用喇叭语音回复 / 执行动作。右上角徽标显示服务运行模式；动作类指令是否执行取决于服务当前模式（<b>locked</b>=锁定不动作 · <b>sim</b>=模拟 · <b>real</b>=实机执行）。画面为第一人称前置相机实时视角。
+      💡 交互方式：<b>🤖 指令模式</b>=打字执行动作（发「后退/前进 0.5 米/左转」→ 机器狗真机动作）；<b>💬 对话模式</b>=打字问问题（天气/闲聊 → 大模型语音回答，不动作）。也可在文字里手动加 <code>#指令</code> 或 <code>#对话</code> 前缀强制指定。无模式时自动识别关键词。自定义关键词/指令匹配位于 <code>voice_agent/core.py</code> 的 <code>VoiceDialog.handle()</code>（唤醒词、站起/趴下/状态/电量/时间/停止等）。动作经安全监督+白名单限幅。画面为第一人称前置相机实时视角。
     </div>
     <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;">
       <!-- 左：对话 -->
       <div class="card" style="flex:1 1 420px;min-width:320px;">
         <h2>文字指令 <span class="hint">Type → Robot replies / acts</span></h2>
+        <div class="ctrl-row" style="margin-bottom:6px;">
+          <span style="font-size:12px;color:var(--muted);">模式:</span>
+          <button id="agentModeCmd" class="sm green" onclick="setAgentMode('command')">🤖 指令模式</button>
+          <button id="agentModeChat" class="sm" onclick="setAgentMode('chat')">💬 对话模式</button>
+          <span class="badge" id="agentModeTip" style="font-family:var(--mono)">🤖 指令模式 · 打字执行动作</span>
+        </div>
         <div class="ctrl-row">
           <span class="badge" id="agentHealth">服务探测中…</span>
           <button class="sm green" onclick="agentQuick('站起来')">站起来</button>
@@ -549,9 +555,9 @@
           <button class="sm" onclick="agentQuick('右转')">右转</button>
           <button class="sm red" onclick="agentQuick('紧急停止')">紧急停止</button>
         </div>
-        <div id="agentLog" style="height:400px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px;background:rgba(0,0,0,0.25);"></div>
+        <div id="agentLog" style="height:360px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px;background:rgba(0,0,0,0.25);"></div>
         <div class="ctrl-row" style="margin-top:8px;margin-bottom:0;">
-          <input type="text" id="agentInput" placeholder="输入指令，如：站起来 / 现在几点 / 原地转一圈…" style="flex:1;min-width:180px;" onkeydown="if(event.key==='Enter')sendAgentCmd()">
+          <input type="text" id="agentInput" placeholder="输入指令，如：后退 / 站起来 / 现在几点…" style="flex:1;min-width:180px;" onkeydown="if(event.key==='Enter')sendAgentCmd()">
           <button class="violet" onclick="sendAgentCmd()">发送 ▶</button>
           <button class="sm" onclick="clearAgentLog()">清空</button>
         </div>
@@ -636,6 +642,17 @@
   <div class="item">存储 Storage：<b>InfluxDB + Arrow + LeRobot</b></div>
   <div class="spacer"></div>
   <div class="item">GO2-W TELEMETRY · v2.1</div>
+</div>
+
+<!-- ============ VLA 流程节点详情弹框 ============ -->
+<div class="modal-overlay" id="flowModal">
+  <div class="modal" style="max-width:640px;">
+    <div class="mhead">
+      <h3 id="fmFlowTitle">流程节点</h3>
+      <span class="mclose" onclick="closeFlowModal()">✕</span>
+    </div>
+    <div id="fmFlowBody" style="font-size:13px;line-height:1.7;"></div>
+  </div>
 </div>
 
 <script>
@@ -1338,8 +1355,18 @@ function renderAgentState(){
   ];
   $('agentStateBody').innerHTML = rows.map(r=>`<tr><td style="color:var(--muted);width:40%;">${r[0]}</td><td class="num">${r[1]}</td></tr>`).join('');
 }
-// 快捷指令
-function agentQuick(text){ $('agentInput').value = text; sendAgentCmd(); }
+// 交互模式：指令模式(打字执行动作) / 对话模式(打字大模型回答)
+let AGENT_MODE = 'command';
+function setAgentMode(m){
+  AGENT_MODE = (m === 'chat') ? 'chat' : 'command';
+  const isCmd = AGENT_MODE === 'command';
+  const c = $('agentModeCmd'), ch = $('agentModeChat'), tip = $('agentModeTip');
+  if(c) c.className = 'sm' + (isCmd ? ' green' : '');
+  if(ch) ch.className = 'sm' + (isCmd ? '' : ' green');
+  if(tip){ tip.textContent = isCmd ? '🤖 指令模式 · 打字执行动作（自动加 #指令）' : '💬 对话模式 · 打字问答（自动加 #对话）'; tip.className = 'badge ' + (isCmd ? 'green' : 'violet'); }
+}
+// 快捷动作按钮：一律按指令模式执行
+function agentQuick(text){ doSendAgent('#指令 ' + text); }
 // 追加一条对话气泡
 function agentLogMsg(role, text, meta){
   const log = $('agentLog');
@@ -1355,16 +1382,21 @@ function agentLogMsg(role, text, meta){
   log.appendChild(div);
   log.scrollTop = log.scrollHeight;
 }
-// 发送指令：同源走 /api/agent/cmd 代理 → text_service
+// 发送：按当前模式自动加 #指令 / #对话 前缀
 async function sendAgentCmd(){
   const input = $('agentInput');
-  const text = (input.value || '').trim();
-  if(!text || agentBusy) return;
-  agentLogMsg('user', text);
+  if(!input) return;
+  const raw = (input.value || '').trim();
+  if(!raw || agentBusy) return;
   input.value = '';
+  if(/^#(指令|对话)/.test(raw)){ doSendAgent(raw); return; }
+  doSendAgent((AGENT_MODE === 'chat' ? '#对话 ' : '#指令 ') + raw);
+}
+// 真正下发：同源走 /api/agent/cmd 代理 → text_service
+async function doSendAgent(text){
+  if(!text || agentBusy) return;
   agentBusy = true;
-  const btn = $('agentInput').nextElementSibling;
-  const tags = ['accepted','spoken','reply'];
+  agentLogMsg('user', text);
   try{
     const d = await fetchJSON('/api/agent/cmd?text=' + encodeURIComponent(text));
     if(!d || d.detail){
@@ -1398,18 +1430,22 @@ const AGENT_FLOW_NODES = [
   {key:'execute', label:'动作执行'},
   {key:'speak',   label:'语音回复'},
 ];
-let _flowNodes = {}, _flowTimer = null;
+let _flowNodes = {}, _flowTimer = null, _flowNodeData = {};
 function resetAgentFlow(){
   if(_flowTimer){ clearInterval(_flowTimer); _flowTimer = null; }
   const wrap = $('agentFlow');
   if(!wrap) return;
-  wrap.innerHTML = ''; _flowNodes = {};
+  wrap.innerHTML = ''; _flowNodes = {}; _flowNodeData = {};
   AGENT_FLOW_NODES.forEach((n,i)=>{
     const cell = document.createElement('div');
     cell.style.cssText = 'display:inline-flex;align-items:center;gap:6px;';
     const chip = document.createElement('div');
     chip.textContent = n.label;
-    chip.style.cssText = 'padding:5px 12px;border-radius:8px;font-size:12px;border:1px solid var(--border);color:var(--muted);background:rgba(255,255,255,0.02);white-space:nowrap;transition:all .2s;';
+    chip.dataset.label = n.label;
+    chip.dataset.node = n.key;
+    chip.title = '点击查看该环节输入/输出';
+    chip.style.cssText = 'padding:5px 12px;border-radius:8px;font-size:12px;border:1px solid var(--border);color:var(--muted);background:rgba(255,255,255,0.02);white-space:nowrap;transition:all .2s;cursor:pointer;';
+    chip.addEventListener('click', ()=>openFlowNodeModal(n.key));
     _flowNodes[n.key] = chip;
     cell.appendChild(chip);
     wrap.appendChild(cell);
@@ -1442,7 +1478,7 @@ function setFlowNode(key, status, detail){
     chip.style.color = '#f87171';
     chip.style.background = 'rgba(248,113,113,0.15)';
   }
-  if(detail){ const h = $('agentFlowHint'); if(h) h.textContent = '➤ ' + detail; }
+  if(detail){ const h = $('agentFlowHint'); if(h) h.textContent = '➤ ' + detail + '（点节点看输入/输出）'; }
 }
 function replayAgentFlow(trace){
   resetAgentFlow();
@@ -1451,11 +1487,38 @@ function replayAgentFlow(trace){
   if(!trace || !trace.length){ if(h) h.textContent = '（本次指令服务未返回流程 trace）'; return; }
   let idx = 0;
   _flowTimer = setInterval(()=>{
-    if(idx >= trace.length){ clearInterval(_flowTimer); _flowTimer = null; return; }
+    if(idx >= trace.length){
+      clearInterval(_flowTimer); _flowTimer = null;
+      if(h) h.textContent = '➤ 流程已结束。点击任意节点查看该环节的输入/输出。';
+      return;
+    }
     const t = trace[idx++];
+    _flowNodeData[t.node] = t;
     setFlowNode(t.node, t.status, t.detail);
   }, 320);
 }
+// 节点详情弹框：展示该环节 输入/输出/状态
+function openFlowNodeModal(key){
+  const d = _flowNodeData[key];
+  const title = $('fmFlowTitle');
+  if(title) title.textContent = (AGENT_FLOW_NODES.find(n=>n.key===key) || {}).label || key;
+  const body = $('fmFlowBody');
+  if(!body) return;
+  const statusCN = {done:'✅ 通过', skipped:'⏭ 跳过', blocked:'⛔ 拦截', failed:'❌ 失败', '':'—'};
+  if(!d){
+    body.innerHTML = '<div style="color:var(--muted);">该环节本次指令未经过（或尚无数据）。</div>';
+  } else {
+    body.innerHTML = [
+      ['环节', (AGENT_FLOW_NODES.find(n=>n.key===key) || {}).label || key],
+      ['状态', statusCN[d.status] || d.status],
+      ['说明', d.detail || '—'],
+      ['输入 in', d.in || '—'],
+      ['输出 out', d.out || '—'],
+    ].map(r=>`<div style="margin:6px 0;"><span style="display:inline-block;width:64px;color:var(--muted);">${r[0]}</span><span style="color:var(--text);word-break:break-all;">${r[1]}</span></div>`).join('');
+  }
+  document.getElementById('flowModal').classList.add('show');
+}
+function closeFlowModal(){ document.getElementById('flowModal').classList.remove('show'); }
 
 // ================= 录制控制 =================
 async function pollRecording() {
