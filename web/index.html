@@ -263,6 +263,7 @@
     <div class="tab" data-tab="record" onclick="switchTab('record')">数据录制</div>
     <div class="tab" data-tab="vision" onclick="switchTab('vision')">视觉与点云</div>
     <div class="tab" data-tab="annotate" onclick="switchTab('annotate')">标注工作台</div>
+    <div class="tab" data-tab="agent" onclick="switchTab('agent')">文字交互</div>
   </div>
   <div class="spacer"></div>
   <div class="conn">
@@ -530,6 +531,48 @@
     </div>
   </div>
 
+  <!-- ============ TAB5 文字交互 ============ -->
+  <div class="tabview" id="tv-agent">
+    <div style="font-size:11px;color:var(--muted);margin:0 0 12px 0;">
+      💡 打字与机器狗交互：指令经「文字→语音/VLA 服务」（含唤醒词匹配 + 安全监督 + 动作白名单），机器狗用喇叭语音回复 / 执行动作。右上角徽标显示服务运行模式；动作类指令是否执行取决于服务当前模式（<b>locked</b>=锁定不动作 · <b>sim</b>=模拟 · <b>real</b>=实机执行）。画面为第一人称前置相机实时视角。
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;">
+      <!-- 左：对话 -->
+      <div class="card" style="flex:1 1 420px;min-width:320px;">
+        <h2>文字指令 <span class="hint">Type → Robot replies / acts</span></h2>
+        <div class="ctrl-row">
+          <span class="badge" id="agentHealth">服务探测中…</span>
+          <button class="sm green" onclick="agentQuick('站起来')">站起来</button>
+          <button class="sm green" onclick="agentQuick('趴下')">趴下</button>
+          <button class="sm" onclick="agentQuick('前进')">前进</button>
+          <button class="sm" onclick="agentQuick('左转')">左转</button>
+          <button class="sm" onclick="agentQuick('右转')">右转</button>
+          <button class="sm red" onclick="agentQuick('紧急停止')">紧急停止</button>
+        </div>
+        <div id="agentLog" style="height:400px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px;background:rgba(0,0,0,0.25);"></div>
+        <div class="ctrl-row" style="margin-top:8px;margin-bottom:0;">
+          <input type="text" id="agentInput" placeholder="输入指令，如：站起来 / 现在几点 / 原地转一圈…" style="flex:1;min-width:180px;" onkeydown="if(event.key==='Enter')sendAgentCmd()">
+          <button class="violet" onclick="sendAgentCmd()">发送 ▶</button>
+          <button class="sm" onclick="clearAgentLog()">清空</button>
+        </div>
+      </div>
+      <!-- 右：第一人称 + 状态 -->
+      <div style="flex:1 1 360px;min-width:300px;">
+        <div class="card" style="margin-bottom:12px;">
+          <h2>第一人称视角 <span class="hint">Front Camera</span></h2>
+          <div class="cam-wrap">
+            <img id="agentCamImg" src="/api/image/latest?t=0" alt="前置相机" style="width:100%;max-height:300px;object-fit:contain;background:#000;border-radius:8px;border:1px solid var(--border);">
+            <div class="cam-overlay" id="agentCamOverlay">CAMERA · 前置</div>
+          </div>
+        </div>
+        <div class="card">
+          <h2>机器狗状态 <span class="hint">Robot Status</span></h2>
+          <table><tbody id="agentStateBody"></tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 
@@ -633,6 +676,7 @@ function switchTab(name) {
     }
     refreshCam(); refreshPc();
   }
+  if (name==='agent') { startAgentView(); } else { stopAgentView(); }
 }
 
 // ================= ECharts 图表 =================
@@ -1232,6 +1276,110 @@ function startPcCountdown() {
     updatePcInfo();
   }, 100);
 }
+
+// ================= 文字交互（打字→机器狗语音回复/执行）=================
+let agentCamTimer = null, agentHealthTimer = null, agentBusy = false;
+// 切到本 tab 时启动：相机轮询 + 服务健康探测 + 状态表刷新
+function startAgentView(){
+  refreshAgentCam(); pollAgentHealth(); renderAgentState();
+  if(!agentCamTimer) agentCamTimer = setInterval(refreshAgentCam, 1000);
+  if(!agentHealthTimer) agentHealthTimer = setInterval(()=>{ pollAgentHealth(); renderAgentState(); }, 2000);
+}
+function stopAgentView(){
+  if(agentCamTimer){ clearInterval(agentCamTimer); agentCamTimer = null; }
+  if(agentHealthTimer){ clearInterval(agentHealthTimer); agentHealthTimer = null; }
+}
+// 第一人称前置相机
+async function refreshAgentCam(){
+  const t = Date.now();
+  try{
+    const resp = await fetch('/api/image/latest?t='+t);
+    if(resp.ok){
+      $('agentCamImg').src = '/api/image/latest?t='+t;
+      $('agentCamImg').style.opacity = '1';
+      $('agentCamOverlay').textContent = 'CAMERA · 前置 · '+new Date().toTimeString().slice(0,8);
+    }
+  }catch(e){}
+}
+// 文字指令服务健康/模式
+async function pollAgentHealth(){
+  const d = await fetchJSON('/api/agent/health');
+  const el = $('agentHealth');
+  if(!d) return;
+  if(d.online){
+    el.textContent = '● 指令服务在线';
+    el.className = 'badge green';
+  } else {
+    el.textContent = '● 指令服务离线';
+    el.className = 'badge red';
+  }
+}
+// 渲染机器人状态表（复用全局 poll() 的 lastState）
+function renderAgentState(){
+  const st = lastState;
+  if(!st){ $('agentStateBody').innerHTML='<tr><td colspan="2" style="color:var(--muted)">等待数据…</td></tr>'; return; }
+  const rpy = st.imu?.rpy_deg || [];
+  const sp = st.sport_mode || {};
+  const rows = [
+    ['机器人连接', st.online ? '● 在线' : '○ 离线'],
+    ['采集频率', fmt(st.hz,0) + ' Hz'],
+    ['运动模式', sp.mode ?? '-'],
+    ['机身高度', fmt(sp.body_height) + ' m'],
+    ['偏航角 yaw', rpy[2]!==undefined ? fmt(rpy[2],1) + '°' : '-'],
+    ['俯仰/横滚', (rpy[1]!==undefined?fmt(rpy[1],1):'-') + '° / ' + (rpy[0]!==undefined?fmt(rpy[0],1):'-') + '°'],
+    ['电量 SOC', (st.battery?.soc ?? '-') + ' %'],
+    ['最后更新', fmtTime(st.last_seen_s)],
+  ];
+  $('agentStateBody').innerHTML = rows.map(r=>`<tr><td style="color:var(--muted);width:40%;">${r[0]}</td><td class="num">${r[1]}</td></tr>`).join('');
+}
+// 快捷指令
+function agentQuick(text){ $('agentInput').value = text; sendAgentCmd(); }
+// 追加一条对话气泡
+function agentLogMsg(role, text, meta){
+  const log = $('agentLog');
+  const div = document.createElement('div');
+  div.style.cssText = 'margin:6px 0;display:flex;flex-direction:column;align-items:'+(role==='user'?'flex-end':'flex-start');
+  const bubble = document.createElement('div');
+  bubble.style.cssText = 'max-width:88%;padding:7px 11px;border-radius:10px;font-size:13px;line-height:1.5;white-space:pre-wrap;word-break:break-word;' +
+    (role==='user' ? 'background:rgba(0,212,255,0.16);border:1px solid rgba(0,212,255,0.4);color:var(--text);'
+                   : 'background:rgba(52,211,153,0.14);border:1px solid rgba(52,211,153,0.35);color:var(--text);');
+  bubble.textContent = (role==='user' ? '🧑 ' : '🐕 ') + text;
+  div.appendChild(bubble);
+  if(meta){ const m=document.createElement('div'); m.textContent=meta; m.style.cssText='font-size:10px;color:var(--muted);font-family:var(--mono);margin-top:2px;'; div.appendChild(m); }
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+// 发送指令：同源走 /api/agent/cmd 代理 → text_service
+async function sendAgentCmd(){
+  const input = $('agentInput');
+  const text = (input.value || '').trim();
+  if(!text || agentBusy) return;
+  agentLogMsg('user', text);
+  input.value = '';
+  agentBusy = true;
+  const btn = $('agentInput').nextElementSibling;
+  const tags = ['accepted','spoken','reply'];
+  try{
+    const d = await fetchJSON('/api/agent/cmd?text=' + encodeURIComponent(text));
+    if(!d || d.detail){
+      agentLogMsg('robot', '指令服务未响应（' + ((d&&d.detail)||'未知') + '）');
+      return;
+    }
+    if(d.error){
+      agentLogMsg('robot', '服务返回错误：' + d.error);
+      return;
+    }
+    const bits = [];
+    bits.push(d.accepted ? '✅ 已接受' : '⛔ 未接受');
+    bits.push('发声:' + (d.spoken ? '是 🔊' : '否'));
+    agentLogMsg('robot', d.reply || '(无回复)', bits.join(' · '));
+  }catch(e){
+    agentLogMsg('robot', '发送失败：' + (e.message||e));
+  }finally{
+    agentBusy = false;
+  }
+}
+function clearAgentLog(){ $('agentLog').innerHTML = ''; }
 
 // ================= 录制控制 =================
 async function pollRecording() {

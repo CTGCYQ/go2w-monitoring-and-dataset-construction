@@ -45,6 +45,9 @@ DATABASE = "go2w_monitor"                    # InfluxDB 数据库名
 DATASET_ROOT = "/mnt/85ee0fe8-b944-40f5-8474-40cc274f0cef/go2w-dataset"  # 数据集根目录
 SCHEDULE_FILE = BASE_DIR / "schedule.json"   # 定时规则文件
 
+# 文字指令服务（voice_agent/text_service，复用已部署服务；改端口只需改这一处）
+AGENT_CMD_URL = "http://127.0.0.1:8787"
+
 app = FastAPI(title="Go2-W Monitor", version="2.0.0")
 _scheduler = ScheduleManager(str(SCHEDULE_FILE))
 
@@ -809,6 +812,47 @@ def api_lidar_cloud(max_points: int = 3000):
         "has_intensity": cache.get("has_intensity", False),
         "ts": cache.get("ts", 0),
     })
+
+
+# ---------------------------------------------------------------------------
+# 文字交互（复用已部署的 voice_agent/text_service，做同源代理避免跨域）
+# ---------------------------------------------------------------------------
+# 前端「文字交互」标签页：用户打字 → 本代理转发给 text_service(8787) →
+# text_service 走唤醒词+SkillGate+SafetySupervisor+VLA，返回结构化 JSON，
+# 并根据运行模式让机器狗语音回复/执行动作。GET /cmd 超时放宽：VLA 规划 + TTS 可能数秒。
+
+@app.get("/api/agent/health")
+def api_agent_health():
+    """探测文字指令服务是否在线（供前端显示服务可用性）。"""
+    try:
+        r = requests.get(f"{AGENT_CMD_URL}/", timeout=3)
+        return {"online": r.status_code == 200, "url": AGENT_CMD_URL}
+    except Exception:
+        return {"online": False, "url": AGENT_CMD_URL}
+
+
+@app.get("/api/agent/cmd")
+def api_agent_cmd(text: str = ""):
+    """把文字指令转发给 text_service，返回其结构化结果。
+
+    text_service 返回 {"text","reply","accepted","spoken"}：
+    - reply: 机器狗语音回复内容
+    - accepted: 指令是否被接受（locked 下动作会被拒）
+    - spoken: 是否已通过喇叭发声
+    """
+    text = (text or "").strip()
+    if not text:
+        raise HTTPException(400, "text required")
+    try:
+        r = requests.get(f"{AGENT_CMD_URL}/cmd", params={"text": text}, timeout=120)
+        if r.status_code == 200:
+            return JSONResponse(r.json())
+        return JSONResponse({"error": f"agent http {r.status_code}", "text": text},
+                            status_code=502)
+    except requests.exceptions.ConnectionError:
+        raise HTTPException(503, "agent service offline")
+    except Exception as e:
+        raise HTTPException(502, f"agent service error: {e}")
 
 
 @app.get("/favicon.ico")
