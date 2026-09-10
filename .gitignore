@@ -19,6 +19,8 @@ exports/
 images/
 *.jpg
 *.png
+# 例外：前端品牌 logo 需入库
+!web/logo.png
 
 # IDE / 系统
 .vscode/

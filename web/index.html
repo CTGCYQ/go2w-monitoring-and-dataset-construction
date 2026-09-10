@@ -11,15 +11,15 @@
 <script src="/static/lib/OrbitControls.js"></script>
 <style>
   :root {
-    --bg0: #05070d; --bg1: #0a0e17; --bg2: #0e1420;
-    --card: rgba(14,20,32,0.7);
-    --border: rgba(0,212,255,0.12);
-    --border-hi: rgba(0,212,255,0.35);
-    --text: #e8f1ff; --muted: #7a8ba6;
-    --cyan: #00d4ff; --violet: #a78bfa; --green: #34d399; --red: #f87171;
-    --amber: #fbbf24;
-    --shadow: 0 8px 32px rgba(0,0,0,0.45);
-    --glow: 0 0 20px rgba(0,212,255,0.15);
+    --bg0: #e9eef6; --bg1: #f4f6fb; --bg2: #eef2f8;
+    --card: rgba(255,255,255,0.86);
+    --border: rgba(23,45,90,0.10);
+    --border-hi: rgba(37,99,235,0.38);
+    --text: #16233b; --muted: #5d6d86;
+    --cyan: #2563eb; --violet: #7c3aed; --green: #16a34a; --red: #dc2626;
+    --amber: #d97706;
+    --shadow: 0 10px 30px rgba(30,50,90,0.08);
+    --glow: 0 0 16px rgba(37,99,235,0.14);
     --font: "Inter","Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
     --mono: "JetBrains Mono","Consolas","Menlo",monospace;
   }
@@ -27,8 +27,8 @@
   html, body { height: 100%; }
   body {
     background:
-      radial-gradient(1200px 600px at 80% -10%, rgba(167,139,250,0.08), transparent 60%),
-      radial-gradient(1000px 500px at 10% 110%, rgba(0,212,255,0.07), transparent 60%),
+      radial-gradient(1100px 520px at 85% -12%, rgba(124,58,237,0.07), transparent 60%),
+      radial-gradient(950px 480px at 8% 110%, rgba(37,99,235,0.06), transparent 60%),
       var(--bg1);
     color: var(--text);
     font-family: var(--font);
@@ -37,19 +37,20 @@
   /* ---------- 顶部导航 ---------- */
   .nav {
     position: sticky; top: 0; z-index: 100;
-    display: flex; align-items: center; gap: 24px;
-    padding: 12px 24px;
-    background: rgba(5,7,13,0.85);
+    display: flex; align-items: center; gap: 20px;
+    padding: 8px 20px;
+    background: rgba(255,255,255,0.82);
     backdrop-filter: blur(18px);
     border-bottom: 1px solid var(--border);
     flex-wrap: wrap;
+    box-shadow: 0 2px 12px rgba(23,45,90,0.05);
   }
   .nav .logo {
+    display: flex; align-items: center; gap: 8px;
     font-size: 16px; font-weight: 700; letter-spacing: .3px;
-    background: linear-gradient(90deg, var(--cyan), var(--violet));
-    -webkit-background-clip: text; background-clip: text; color: transparent;
-    white-space: nowrap;
+    color: #1d3f8f; white-space: nowrap;
   }
+  .nav .logo img { height: 30px; display: block; }
   .nav .tabs { display: flex; gap: 4px; flex-wrap: wrap; }
   .nav .tab {
     padding: 7px 14px; border-radius: 8px; cursor: pointer;
@@ -57,10 +58,10 @@
     border: 1px solid transparent; transition: all .2s;
     user-select: none;
   }
-  .nav .tab:hover { color: var(--text); background: rgba(0,212,255,0.06); }
+  .nav .tab:hover { color: var(--text); background: rgba(37,99,235,0.06); }
   .nav .tab.active {
     color: var(--cyan); border-color: var(--border-hi);
-    background: rgba(0,212,255,0.08); box-shadow: var(--glow);
+    background: rgba(37,99,235,0.08); box-shadow: var(--glow);
   }
   .nav .spacer { flex: 1; }
   .nav .conn { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); flex-wrap: wrap; }
@@ -101,42 +102,47 @@
   }
   .kpi:hover { border-color: var(--border-hi); box-shadow: var(--glow); }
   .kpi::before {
-    content: ""; position: absolute; inset: 0 0 auto 0; height: 2px;
+    content: ""; position: absolute; inset: 0 0 auto 0; height: 3px;
     background: linear-gradient(90deg, transparent, var(--cyan), transparent);
-    opacity: .6;
+    opacity: .8;
   }
+  /* 组件颜色区分：KPI 四卡各一色（电压/横滚/俯仰/偏航） */
+  .grid.g4 .kpi:nth-child(1)::before { background: linear-gradient(90deg, transparent, #2563eb, transparent); }
+  .grid.g4 .kpi:nth-child(2)::before { background: linear-gradient(90deg, transparent, #16a34a, transparent); }
+  .grid.g4 .kpi:nth-child(3)::before { background: linear-gradient(90deg, transparent, #d97706, transparent); }
+  .grid.g4 .kpi:nth-child(4)::before { background: linear-gradient(90deg, transparent, #dc2626, transparent); }
   .kpi .label { font-size: 10px; color: var(--muted); letter-spacing: 1px; }
   .kpi .val {
     font-family: var(--mono); font-size: 22px; font-weight: 700; margin-top: 4px;
-    text-shadow: 0 0 18px rgba(0,212,255,0.25);
+    text-shadow: 0 0 18px rgba(37,99,235,0.25);
   }
   .kpi .sub { font-size: 10px; color: var(--muted); margin-top: 2px; font-family: var(--mono); }
   /* ---------- 徽章 ---------- */
   .badge {
     display: inline-block; padding: 4px 10px; border-radius: 999px;
     font-size: 12px; border: 1px solid var(--border); color: var(--muted);
-    background: rgba(255,255,255,0.02);
+    background: rgba(23,45,90,0.04);
   }
   .badge.accent { color: var(--cyan); border-color: var(--border-hi); }
-  .badge.green { color: var(--green); border-color: rgba(52,211,153,0.35); }
-  .badge.amber { color: var(--amber); border-color: rgba(251,191,36,0.35); }
-  .badge.red { color: var(--red); border-color: rgba(248,113,113,0.35); }
+  .badge.green { color: var(--green); border-color: rgba(22,163,74,0.35); }
+  .badge.amber { color: var(--amber); border-color: rgba(217,119,6,0.35); }
+  .badge.red { color: var(--red); border-color: rgba(220,38,38,0.35); }
   .badgebar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
   /* ---------- 按钮 / 输入 ---------- */
   button {
-    background: rgba(0,212,255,0.06); color: var(--text);
+    background: rgba(37,99,235,0.06); color: var(--text);
     border: 1px solid var(--border); border-radius: 8px;
     padding: 6px 14px; font-size: 12.5px; cursor: pointer; font-family: var(--font);
     transition: all .2s;
   }
   button:hover:not(:disabled) { border-color: var(--border-hi); box-shadow: var(--glow); transform: translateY(-1px); }
   button:disabled { opacity: .35; cursor: not-allowed; }
-  button.green { color: var(--green); border-color: rgba(52,211,153,0.35); }
-  button.red { color: var(--red); border-color: rgba(248,113,113,0.35); }
-  button.violet { color: var(--violet); border-color: rgba(167,139,250,0.35); }
+  button.green { color: var(--green); border-color: rgba(22,163,74,0.35); }
+  button.red { color: var(--red); border-color: rgba(220,38,38,0.35); }
+  button.violet { color: var(--violet); border-color: rgba(124,58,237,0.35); }
   button.sm { padding: 3px 9px; font-size: 11px; }
   input, select, textarea {
-    background: rgba(255,255,255,0.03); color: var(--text);
+    background: rgba(23,45,90,0.05); color: var(--text);
     border: 1px solid var(--border); border-radius: 7px;
     padding: 6px 10px; font-size: 12.5px; font-family: var(--font);
     outline: none; transition: border-color .2s;
@@ -147,7 +153,7 @@
   select.refresh { font-family: var(--mono); }
   /* ---------- 表格 ---------- */
   table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  th, td { padding: 5px 8px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  th, td { padding: 5px 8px; text-align: left; border-bottom: 1px solid rgba(23,45,90,0.09); }
   th { color: var(--muted); font-weight: 600; font-size: 10px; letter-spacing: .6px; text-transform: uppercase; cursor: pointer; user-select: none; }
   th:hover { color: var(--cyan); }
   .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
@@ -167,7 +173,7 @@
     position: absolute; top: 8px; left: 8px; font-size: 11px; color: var(--cyan);
     background: rgba(0,0,0,0.6); padding: 3px 8px; border-radius: 6px; font-family: var(--mono);
   }
-  #pointcloud3d { width: 100%; height: 480px; border-radius: 8px; background: radial-gradient(circle at 30% 20%, #0d1424, #05070d); }
+  #pointcloud3d { width: 100%; height: 480px; border-radius: 8px; background: radial-gradient(circle at 30% 20%, #0e1f36, #05070d); }
   .pc-status { font-size: 11px; color: var(--muted); margin-top: 6px; font-family: var(--mono); }
   .ctrl-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
   /* ---------- 标注工作台 ---------- */
@@ -178,20 +184,20 @@
     padding: 7px; cursor: pointer; transition: all .18s; text-align: left; color: var(--text);
   }
   .frame-card:hover { border-color: var(--border-hi); transform: translateY(-2px); }
-  .frame-card.sel { border-color: var(--cyan); box-shadow: 0 0 14px rgba(0,212,255,0.25); background: rgba(0,212,255,0.07); }
+  .frame-card.sel { border-color: var(--cyan); box-shadow: 0 0 14px rgba(37,99,235,0.25); background: rgba(37,99,235,0.07); }
   .frame-card img { width: 100%; height: 60px; object-fit: cover; border-radius: 5px; background: #000; }
   .frame-card .fidx { font-family: var(--mono); font-size: 10px; color: var(--cyan); margin-top: 4px; }
   .frame-card .fmeta { font-size: 9px; color: var(--muted); margin-top: 2px; font-family: var(--mono); }
-  .noimg { width: 100%; height: 60px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.03); border-radius: 5px; color: var(--muted); font-size: 9px; }
+  .noimg { width: 100%; height: 60px; display: flex; align-items: center; justify-content: center; background: rgba(23,45,90,0.05); border-radius: 5px; color: var(--muted); font-size: 9px; }
   .ann-list { margin-top: 12px; }
-  .ann-item { padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; background: rgba(255,255,255,0.02); }
+  .ann-item { padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; background: rgba(23,45,90,0.04); }
   .ann-item .txt { font-size: 12px; color: var(--text); }
   .ann-item .meta { font-size: 10px; color: var(--muted); margin-top: 3px; font-family: var(--mono); }
   .ann-item button { padding: 2px 8px; font-size: 10px; float: right; }
   /* ---------- 帧详情弹窗 ---------- */
   .modal-overlay {
     position: fixed; inset: 0; z-index: 200;
-    background: rgba(0,0,0,0.75); backdrop-filter: blur(6px);
+    background: rgba(23,45,90,0.45); backdrop-filter: blur(6px);
     display: none; align-items: center; justify-content: center; padding: 20px;
   }
   .modal-overlay.show { display: flex; }
@@ -210,14 +216,14 @@
   .modal .mcard img { width: 100%; max-height: 220px; object-fit: contain; background: #000; border-radius: 6px; }
   .modal table { font-size: 11px; }
   .modal .motor-mini { display: grid; grid-template-columns: repeat(4,1fr); gap: 4px; }
-  .modal .motor-mini .m { background: rgba(255,255,255,0.03); border-radius: 4px; padding: 3px 5px; font-size: 10px; font-family: var(--mono); }
+  .modal .motor-mini .m { background: rgba(23,45,90,0.05); border-radius: 4px; padding: 3px 5px; font-size: 10px; font-family: var(--mono); }
   @media (max-width: 900px) {
     .modal .mgrid { grid-template-columns: 1fr; }
   }
   /* ---------- 底部固定信息栏 ---------- */
   .footerbar {
     border-top: 1px solid var(--border);
-    background: rgba(5,7,13,0.85);
+    background: rgba(255,255,255,0.86);
     backdrop-filter: blur(12px);
     padding: 8px 24px;
     display: flex; gap: 18px; align-items: center; flex-wrap: wrap;
@@ -257,7 +263,7 @@
 
 <!-- ============ 顶部导航 ============ -->
 <nav class="nav">
-  <div class="logo">◈ GO2-W 遥测中心</div>
+  <div class="logo"><img src="/static/logo.png" alt="logo"><span>GO2-W 遥测中心</span></div>
   <div class="tabs">
     <div class="tab active" data-tab="monitor" onclick="switchTab('monitor')">实时监控</div>
     <div class="tab" data-tab="record" onclick="switchTab('record')">数据录制</div>
@@ -293,7 +299,7 @@
     <div class="grid g2">
       <div class="card">
         <h2>IMU 姿态 <span class="hint">Angle (deg)</span></h2>
-        <div class="legend"><span style="color:#f87171">横滚 Roll</span><span style="color:#34d399">俯仰 Pitch</span><span style="color:#00d4ff">偏航 Yaw</span></div>
+        <div class="legend"><span style="color:#dc2626">横滚 Roll</span><span style="color:#16a34a">俯仰 Pitch</span><span style="color:#2563eb">偏航 Yaw</span></div>
         <div class="chart" id="chartRPY"></div>
       </div>
       <div class="card">
@@ -306,7 +312,7 @@
       </div>
       <div class="card">
         <h2>足底力 <span class="hint">Foot Force (N)</span></h2>
-        <div class="legend"><span style="color:#00d4ff">左前 FL</span><span style="color:#34d399">右前 FR</span><span style="color:#fbbf24">左后 RL</span><span style="color:#f87171">右后 RR</span></div>
+        <div class="legend"><span style="color:#2563eb">左前 FL</span><span style="color:#16a34a">右前 FR</span><span style="color:#d97706">左后 RL</span><span style="color:#dc2626">右后 RR</span></div>
         <div class="chart" id="chartFoot"></div>
       </div>
     </div>
@@ -427,8 +433,8 @@
         <span class="badge" id="pcPointsCount" style="font-family:var(--mono);">0 点</span>
         <span class="badge" id="pcCalib" style="font-family:var(--mono);">方向: 未校准</span>
       </div>
-      <div style="height:6px;background:rgba(255,255,255,0.06);border-radius:3px;margin:8px 0;overflow:hidden;">
-        <div id="pcAccumBar" style="height:100%;width:0%;background:linear-gradient(90deg,#00d4ff,#34d399);border-radius:3px;transition:width .3s;"></div>
+      <div style="height:6px;background:rgba(37,99,235,0.09);border-radius:3px;margin:8px 0;overflow:hidden;">
+        <div id="pcAccumBar" style="height:100%;width:0%;background:linear-gradient(90deg,#2563eb,#16a34a);border-radius:3px;transition:width .3s;"></div>
       </div>
       <div style="font-size:11px;color:var(--muted);margin-bottom:8px;" id="pcAccumInfo">每 2 秒刷新一帧点云，累积窗口 30 秒内所有帧合并重构，越累积越完整（滚动窗口）。</div>
       <div id="pointcloud3d"></div>
@@ -546,7 +552,7 @@
           <button id="agentModeChat" class="sm" onclick="setAgentMode('chat')">💬 对话模式</button>
           <span class="badge" id="agentModeTip" style="font-family:var(--mono)">🤖 指令模式 · 打字执行动作</span>
           <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:4px;cursor:pointer;margin-left:auto;">
-            <input type="checkbox" id="agentSpeak" checked style="accent-color:#34d399;cursor:pointer;">🔊 语音回复
+            <input type="checkbox" id="agentSpeak" checked style="accent-color:#16a34a;cursor:pointer;">🔊 语音回复
           </label>
         </div>
         <div class="ctrl-row">
@@ -558,12 +564,12 @@
           <button class="sm" onclick="agentQuick('右转')">右转</button>
           <button class="sm red" onclick="agentQuick('紧急停止')">紧急停止</button>
         </div>
-        <div id="agentLog" style="height:360px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px;background:rgba(0,0,0,0.25);"></div>
+        <div id="agentLog" style="height:360px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px;background:rgba(23,45,90,0.05);"></div>
         <div class="ctrl-row" style="margin-top:8px;margin-bottom:0;">
           <input type="text" id="agentInput" placeholder="输入/按住🎤说话，如：后退 / 今天天气…" style="flex:1;min-width:150px;" onkeydown="if(event.key==='Enter')sendAgentCmd()">
           <button id="agentMicBtn" class="sm" title="按住说话 → 语音转文字" style="font-size:18px;padding:1px 10px;user-select:none;touch-action:none;" onpointerdown="startRec()" onpointerup="stopRec()" onpointerleave="stopRec()" oncontextmenu="event.preventDefault()">🎤</button>
           <button class="violet" onclick="sendAgentCmd()">发送 ▶</button>
-          <button class="sm amber" style="border-color:rgba(251,191,36,0.35);color:var(--amber);" onclick="interruptSpeech()" title="打断正在播放的喇叭语音">⏹ 打断</button>
+          <button class="sm amber" style="border-color:rgba(217,119,6,0.35);color:var(--amber);" onclick="interruptSpeech()" title="打断正在播放的喇叭语音">⏹ 打断</button>
           <button class="sm" onclick="clearAgentLog()">清空</button>
         </div>
       </div>
@@ -599,7 +605,7 @@
       <h3 id="fmTitle">帧详情 Frame Detail</h3>
       <span class="mclose" onclick="closeFrameModal()">✕</span>
     </div>
-    <div class="mcard" style="margin-bottom:12px;border-color:rgba(167,139,250,0.35);">
+    <div class="mcard" style="margin-bottom:12px;border-color:rgba(124,58,237,0.35);">
       <h4>语言标注 Annotation</h4>
       <div id="fmAnn" style="font-size:13px;color:var(--violet);min-height:20px;">无标注</div>
     </div>
@@ -714,9 +720,9 @@ function initChart(id, color) {
   const ch = echarts.init(el, null, { renderer: 'canvas' });
   ch.setOption({
     grid: { left: 42, right: 12, top: 24, bottom: 24 },
-    tooltip: { trigger: 'axis', backgroundColor: 'rgba(10,14,23,0.9)', borderColor: 'rgba(0,212,255,0.3)', textStyle: { color: '#e8f1ff', fontSize: 11 } },
+    tooltip: { trigger: 'axis', backgroundColor: 'rgba(10,14,23,0.9)', borderColor: 'rgba(37,99,235,0.3)', textStyle: { color: '#e8f1ff', fontSize: 11 } },
     xAxis: { type: 'category', show: false },
-    yAxis: { type: 'value', splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } }, axisLabel: { color: '#7a8ba6', fontSize: 10 } },
+    yAxis: { type: 'value', splitLine: { lineStyle: { color: 'rgba(37,99,235,0.09)' } }, axisLabel: { color: '#5d6d86', fontSize: 10 } },
     series: [],
   });
   charts[id] = { ch, color, data: {} };
@@ -744,9 +750,9 @@ function updateCharts() {
         type: 'line',
         smooth: true,
         showSymbol: false,
-        lineStyle: { width: 1.6, color: c.color[key] || '#00d4ff' },
-        itemStyle: { color: c.color[key] || '#00d4ff' },
-        areaStyle: { opacity: 0.06, color: c.color[key] || '#00d4ff' },
+        lineStyle: { width: 1.6, color: c.color[key] || '#2563eb' },
+        itemStyle: { color: c.color[key] || '#2563eb' },
+        areaStyle: { opacity: 0.06, color: c.color[key] || '#2563eb' },
         data: c.data[key],
       });
     }
@@ -964,7 +970,7 @@ let pcFitted = false;  // 是否已完成首次相机自适应
 function initPc3D() {
   const el = $('pointcloud3d');
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x05070d);
+  scene.background = new THREE.Color(0x0e1f36);
   camera = new THREE.PerspectiveCamera(60, el.clientWidth/el.clientHeight, 0.01, 200);
   camera.position.set(0, 10, -6);   // 机器狗后上方俯视：前方(-z)朝屏幕上方，地图式
   camera.up.set(0, 1, 0);
@@ -1379,8 +1385,8 @@ function agentLogMsg(role, text, meta){
   div.style.cssText = 'margin:6px 0;display:flex;flex-direction:column;align-items:'+(role==='user'?'flex-end':'flex-start');
   const bubble = document.createElement('div');
   bubble.style.cssText = 'max-width:88%;padding:7px 11px;border-radius:10px;font-size:13px;line-height:1.5;white-space:pre-wrap;word-break:break-word;' +
-    (role==='user' ? 'background:rgba(0,212,255,0.16);border:1px solid rgba(0,212,255,0.4);color:var(--text);'
-                   : 'background:rgba(52,211,153,0.14);border:1px solid rgba(52,211,153,0.35);color:var(--text);');
+    (role==='user' ? 'background:rgba(37,99,235,0.16);border:1px solid rgba(37,99,235,0.4);color:var(--text);'
+                   : 'background:rgba(22,163,74,0.14);border:1px solid rgba(22,163,74,0.35);color:var(--text);');
   bubble.textContent = (role==='user' ? '🧑 ' : '🐕 ') + text;
   div.appendChild(bubble);
   if(meta){ const m=document.createElement('div'); m.textContent=meta; m.style.cssText='font-size:10px;color:var(--muted);font-family:var(--mono);margin-top:2px;'; div.appendChild(m); }
@@ -1440,7 +1446,7 @@ async function interruptSpeech(){
 let _rec = {mr:null, chunks:[], stream:null, on:false};
 function _recUI(on){
   const b = $('agentMicBtn');
-  if(b) b.style.background = on ? 'rgba(248,113,113,0.35)' : '';
+  if(b) b.style.background = on ? 'rgba(220,38,38,0.35)' : '';
 }
 async function startRec(){
   if(_rec.on) return;
@@ -1506,7 +1512,7 @@ function resetAgentFlow(){
     chip.dataset.label = n.label;
     chip.dataset.node = n.key;
     chip.title = '点击查看该环节输入/输出';
-    chip.style.cssText = 'padding:5px 12px;border-radius:8px;font-size:12px;border:1px solid var(--border);color:var(--muted);background:rgba(255,255,255,0.02);white-space:nowrap;transition:all .2s;cursor:pointer;';
+    chip.style.cssText = 'padding:5px 12px;border-radius:8px;font-size:12px;border:1px solid var(--border);color:var(--muted);background:rgba(23,45,90,0.04);white-space:nowrap;transition:all .2s;cursor:pointer;';
     chip.addEventListener('click', ()=>openFlowNodeModal(n.key));
     _flowNodes[n.key] = chip;
     cell.appendChild(chip);
@@ -1526,19 +1532,19 @@ function setFlowNode(key, status, detail){
   chip.style.color = 'var(--muted)';
   chip.style.opacity = '1';
   chip.style.boxShadow = 'none';
-  chip.style.background = 'rgba(255,255,255,0.02)';
+  chip.style.background = 'rgba(23,45,90,0.04)';
   if(status === 'done'){
-    chip.style.borderColor = 'rgba(52,211,153,0.65)';
-    chip.style.color = '#34d399';
-    chip.style.background = 'rgba(52,211,153,0.16)';
-    chip.style.boxShadow = '0 0 12px rgba(52,211,153,0.3)';
+    chip.style.borderColor = 'rgba(22,163,74,0.65)';
+    chip.style.color = '#16a34a';
+    chip.style.background = 'rgba(22,163,74,0.16)';
+    chip.style.boxShadow = '0 0 12px rgba(22,163,74,0.3)';
   } else if(status === 'skipped'){
     chip.style.opacity = '0.45';
     chip.textContent = (chip.dataset.label || chip.textContent) + ' · 跳过';
   } else if(status === 'blocked' || status === 'failed'){
-    chip.style.borderColor = 'rgba(248,113,113,0.75)';
-    chip.style.color = '#f87171';
-    chip.style.background = 'rgba(248,113,113,0.15)';
+    chip.style.borderColor = 'rgba(220,38,38,0.75)';
+    chip.style.color = '#dc2626';
+    chip.style.background = 'rgba(220,38,38,0.15)';
   }
   if(detail){ const h = $('agentFlowHint'); if(h) h.textContent = '➤ ' + detail + '（点节点看输入/输出）'; }
 }
@@ -1681,7 +1687,7 @@ async function loadFramePage(dir){
       :`<div class="noimg">无图像</div>`;
     const rpy=f.imu_rpy?`R${fmt(f.imu_rpy[0],1)} P${fmt(f.imu_rpy[1],1)} Y${fmt(f.imu_rpy[2],1)}`:'';
     const ann = annFrameMap[f.index];
-    const annBadge = ann ? `<div class="fmeta" style="color:var(--green);border-top:1px solid rgba(52,211,153,0.2);margin-top:3px;padding-top:3px;">🏷 ${ann.length>28?ann.slice(0,28)+'…':ann}</div>`
+    const annBadge = ann ? `<div class="fmeta" style="color:var(--green);border-top:1px solid rgba(22,163,74,0.2);margin-top:3px;padding-top:3px;">🏷 ${ann.length>28?ann.slice(0,28)+'…':ann}</div>`
                           : `<div class="fmeta" style="color:var(--muted);opacity:.5;">语言标注: 空</div>`;
     return `<div class="frame-card ${annSel.has(f.index)?'sel':''}" data-idx="${f.index}" onclick="toggleFrame(${f.index})" ondblclick="openFrameModal(${f.index})" title="单击选中 · 双击放大查看全部数据">
       ${img}<div class="fidx">帧 Frame ${f.index}</div><div class="fmeta">tick ${f.tick||'-'} ${rpy}</div>${annBadge}
@@ -1799,10 +1805,10 @@ async function delAnnotation(id){
 }
 
 // ================= 初始化 =================
-initChart('chartRPY', {'横滚Roll':'#f87171','俯仰Pitch':'#34d399','偏航Yaw':'#00d4ff'});
-initChart('chartSoc', {'电量SOC':'#34d399'});
-initChart('chartVoltage', {'电压V':'#fbbf24'});
-initChart('chartFoot', {'FL左前':'#00d4ff','FR右前':'#34d399','RL左后':'#fbbf24','RR右后':'#f87171'});
+initChart('chartRPY', {'横滚Roll':'#dc2626','俯仰Pitch':'#16a34a','偏航Yaw':'#2563eb'});
+initChart('chartSoc', {'电量SOC':'#16a34a'});
+initChart('chartVoltage', {'电压V':'#d97706'});
+initChart('chartFoot', {'FL左前':'#2563eb','FR右前':'#16a34a','RL左后':'#d97706','RR右后':'#dc2626'});
 initPc3D();
 poll(); setInterval(poll, 1000);
 pollRecording(); setInterval(pollRecording, 2000);
