@@ -556,6 +556,7 @@
           <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:4px;cursor:pointer;margin-left:auto;">
             <input type="checkbox" id="agentSpeak" checked style="accent-color:#16a34a;cursor:pointer;">🔊 语音回复
           </label>
+          <button id="motionGateBtn" class="sm" onclick="toggleMotionGate()" title="切换运动门禁（robot.yaml motion_enabled）">🚪 门禁: …</button>
         </div>
         <div class="ctrl-row">
           <span class="badge" id="agentHealth">服务探测中…</span>
@@ -591,7 +592,18 @@
         </div>
         <div class="card" style="margin-top:12px;">
           <h2>避障检测 <span class="hint">Obstacle · 前方点云</span></h2>
+          <div class="ctrl-row" style="margin-bottom:6px;">
+            <span style="font-size:12px;color:var(--muted);">触发距离:</span>
+            <select id="obstacleDist" class="refresh" onchange="setObstacleDist()">
+              <option value="0.3">0.3 米</option>
+              <option value="0.5">0.5 米</option>
+              <option value="0.8" selected>0.8 米</option>
+              <option value="1.0">1.0 米</option>
+              <option value="1.5">1.5 米</option>
+            </select>
+          </div>
           <div style="font-size:13px;" id="agentObstacle">检测中…</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px;">排除机器狗自身盲区 0.3m 内的点；<span id="obstacleDistLabel">0.8</span> 米内有障碍即拦截前进。</div>
         </div>
       </div>
     </div>
@@ -1431,7 +1443,7 @@ let agentCamTimer = null, agentHealthTimer = null, agentBusy = false;
 // 切到本 tab 时启动：相机轮询 + 服务健康探测 + 状态表刷新
 function startAgentView(){
   resetAgentFlow();
-  refreshAgentCam(); pollAgentHealth(); renderAgentState(); pollObstacle();
+  refreshAgentCam(); pollAgentHealth(); renderAgentState(); pollObstacle(); pollMotionGate();
   if(!agentCamTimer) agentCamTimer = setInterval(refreshAgentCam, 1000);
   if(!agentHealthTimer) agentHealthTimer = setInterval(()=>{ pollAgentHealth(); renderAgentState(); pollObstacle(); }, 2000);
 }
@@ -1439,9 +1451,40 @@ function stopAgentView(){
   if(agentCamTimer){ clearInterval(agentCamTimer); agentCamTimer = null; }
   if(agentHealthTimer){ clearInterval(agentHealthTimer); agentHealthTimer = null; }
 }
+// 避障触发距离（全局，可选项）
+let AGENT_OBSTACLE_DIST = 0.8;
+function setObstacleDist(){
+  AGENT_OBSTACLE_DIST = parseFloat($('obstacleDist').value) || 0.8;
+  const lb = $('obstacleDistLabel');
+  if(lb) lb.textContent = AGENT_OBSTACLE_DIST;
+  pollObstacle();
+}
+// 运动门禁开关
+async function pollMotionGate(){
+  const d = await fetchJSON('/api/agent/motion-gate');
+  const btn = $('motionGateBtn');
+  if(!btn) return;
+  if(d && d.enabled === true){ btn.textContent = '🚪 门禁: 开'; btn.className = 'sm green'; }
+  else if(d && d.enabled === false){ btn.textContent = '🚪 门禁: 关'; btn.className = 'sm red'; }
+  else { btn.textContent = '🚪 门禁: 未知'; btn.className = 'sm'; }
+}
+async function toggleMotionGate(){
+  const btn = $('motionGateBtn');
+  const cur = btn ? btn.textContent.includes('开') : false;
+  const want = !cur;
+  if(btn){ btn.textContent = '⏳ 切换中…'; btn.className = 'sm'; }
+  try{
+    const r = await fetch('/api/agent/motion-gate?enabled=' + want, {method:'POST'});
+    const d = await r.json();
+    agentLogMsg('robot', '🚪 运动门禁已' + (d.enabled ? '开启' : '关闭') + '，text_service 重启中（约 20-40s 生效）');
+  }catch(e){
+    agentLogMsg('robot', '门禁切换失败：' + (e.message||e));
+  }
+  setTimeout(pollMotionGate, 3000);
+}
 // 避障检测：轮询 /api/lidar/obstacle
 async function pollObstacle(){
-  const d = await fetchJSON('/api/lidar/obstacle');
+  const d = await fetchJSON('/api/lidar/obstacle?min_dist=' + AGENT_OBSTACLE_DIST);
   const el = $('agentObstacle');
   if(!el) return;
   if(!d || !d.online){ el.innerHTML = '<span style="color:var(--muted)">无点云数据（LiDAR 未开或无数据）</span>'; return; }
@@ -1541,7 +1584,9 @@ async function doSendAgent(text){
   agentBusy = true;
   agentLogMsg('user', text);
   try{
-    const url = '/api/agent/cmd?text=' + encodeURIComponent(text) + (speakOn() ? '' : '&speak=0');
+    const url = '/api/agent/cmd?text=' + encodeURIComponent(text)
+      + (speakOn() ? '' : '&speak=0')
+      + '&obstacle_dist=' + (AGENT_OBSTACLE_DIST || 0.8);
     const d = await fetchJSON(url);
     if(!d || d.detail){
       agentLogMsg('robot', '指令服务未响应（' + ((d&&d.detail)||'未知') + '）');
@@ -1647,6 +1692,7 @@ async function _uploadRec(){
 const AGENT_FLOW_NODES = [
   {key:'input',   label:'输入'},
   {key:'intent',  label:'意图识别'},
+  {key:'vision',  label:'图像输入'},
   {key:'plan',    label:'大模型规划'},
   {key:'validate',label:'计划校验'},
   {key:'safety',  label:'安全监督'},

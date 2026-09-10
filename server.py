@@ -828,17 +828,19 @@ def api_lidar_cloud(max_points: int = 3000):
 def api_lidar_obstacle(
     min_dist: float = 0.6,
     fov_half: float = 0.5,
+    blind: float = 0.3,
     z_min: float = -0.15,
     z_max: float = 0.8,
 ):
     """检测机器狗前进方向的最近障碍物。
 
-    在 x>0、|y|<=fov_half、z_min<=z<=z_max 的前方扇形区域内找最近点，
-    返回 {online, blocked, min_dist, count}。blocked = min_dist < min_dist 阈值。
+    在前方扇形 x>blind、|y|<=fov_half、z_min<=z<=z_max 内找最近点，
+    返回 {online, blocked, min_dist, count}。blocked = 最近点距离 < min_dist。
 
     Args:
         min_dist: 避障触发距离阈值(米)，默认 0.6
         fov_half: 前方扇形半宽(米)，默认 0.5（|y| 范围）
+        blind: 盲区(米)，x<=blind 的点视为机器人自身（腿/身体）忽略，默认 0.3
         z_min/z_max: 障碍高度范围(米)，过滤地面/低处与过高点
     """
     cache = _read_pc_cache()
@@ -850,7 +852,7 @@ def api_lidar_obstacle(
     cnt = 0
     for p in pts:
         x, y, z = p[0], p[1], p[2]
-        if x <= 0.02:
+        if x <= blind:
             continue
         if abs(y) > fov_half:
             continue
@@ -954,6 +956,53 @@ def api_robots():
 # text_service 走唤醒词+SkillGate+SafetySupervisor+VLA，返回结构化 JSON，
 # 并根据运行模式让机器狗语音回复/执行动作。GET /cmd 超时放宽：VLA 规划 + TTS 可能数秒。
 
+@app.get("/api/agent/motion-gate")
+def api_agent_motion_gate():
+    """读当前运动门禁状态（robot.yaml motion_enabled）。"""
+    try:
+        import yaml
+        with open(ROBOT_CONFIG_FILE, "r", encoding="utf-8") as fh:
+            cfg = yaml.safe_load(fh) or {}
+        return {"enabled": bool(cfg.get("motion_enabled", False)),
+                "file": ROBOT_CONFIG_FILE}
+    except Exception as e:
+        return {"enabled": None, "error": str(e)}
+
+
+@app.post("/api/agent/motion-gate")
+def api_agent_motion_gate_set(enabled: bool = True):
+    """切换运动门禁（robot.yaml motion_enabled），并重启 text_service 生效。
+
+    写 robot.yaml 后 tmux 重启 go2wtext（text_service 启动时读一次配置）。
+    """
+    try:
+        import yaml
+        cfg = {}
+        try:
+            with open(ROBOT_CONFIG_FILE, "r", encoding="utf-8") as fh:
+                cfg = yaml.safe_load(fh) or {}
+        except Exception:
+            cfg = {}
+        cfg["motion_enabled"] = bool(enabled)
+        with open(ROBOT_CONFIG_FILE, "w", encoding="utf-8") as fh:
+            yaml.safe_dump(cfg, fh, allow_unicode=True, sort_keys=False)
+    except Exception as e:
+        raise HTTPException(500, f"write robot.yaml failed: {e}")
+    # 重启 text_service（tmux go2wtext）
+    try:
+        import subprocess
+        subprocess.run(["pkill", "-f", "text_service"], timeout=10)
+        subprocess.run(["tmux", "kill-session", "-t", "go2wtext"], timeout=10)
+        subprocess.run(["tmux", "new-session", "-d", "-s", "go2wtext",
+                        "bash /home/dell/go2w_vla/deploy/run_text_real.sh 2>&1 | "
+                        "tee /home/dell/go2w_vla/logs/text_vla_real_web.log"], timeout=10)
+    except Exception as e:
+        return JSONResponse({"enabled": bool(enabled), "restart": "failed",
+                             "note": f"config written but restart failed: {e}"})
+    return JSONResponse({"enabled": bool(enabled), "restart": "started",
+                         "note": "text_service 重启中，约 20-40s 后生效"})
+
+
 @app.get("/api/agent/health")
 def api_agent_health():
     """探测文字指令服务是否在线（供前端显示服务可用性）。"""
@@ -965,7 +1014,7 @@ def api_agent_health():
 
 
 @app.get("/api/agent/cmd")
-def api_agent_cmd(text: str = "", speak: str = "1"):
+def api_agent_cmd(text: str = "", speak: str = "1", obstacle_dist: str = "0.8"):
     """把文字指令转发给 text_service，返回其结构化结果。
 
     text_service 返回 {"text","reply","accepted","spoken","trace"}：
@@ -973,7 +1022,7 @@ def api_agent_cmd(text: str = "", speak: str = "1"):
     - accepted: 指令是否被接受
     - spoken: 是否已通过喇叭发声
     - trace: 决策环节（供前端流程图）
-    speak=0 时机器狗不喇叭回复（仅文字）。
+    speak=0 时机器狗不喇叭回复（仅文字）；obstacle_dist 为避障触发距离(米)。
     """
     text = (text or "").strip()
     if not text:
@@ -981,6 +1030,7 @@ def api_agent_cmd(text: str = "", speak: str = "1"):
     params = {"text": text}
     if str(speak).lower() not in ("1", "true", "yes", "on", ""):
         params["speak"] = "0"
+    params["obstacle_dist"] = obstacle_dist
     try:
         r = requests.get(f"{AGENT_CMD_URL}/cmd", params=params, timeout=120)
         if r.status_code == 200:
