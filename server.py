@@ -816,6 +816,58 @@ def api_lidar_cloud(max_points: int = 3000):
 
 
 # ---------------------------------------------------------------------------
+# 避障：基于最新点云检测机器狗前进方向上的障碍
+# ---------------------------------------------------------------------------
+# 点云坐标系：x=前方，y=左，z=上（机器狗本体）。避障检测"前方扇形区域"内
+# 最近障碍物距离，供运动执行前拦截 + 前端提示。
+
+@app.get("/api/lidar/obstacle")
+def api_lidar_obstacle(
+    min_dist: float = 0.6,
+    fov_half: float = 0.5,
+    z_min: float = -0.15,
+    z_max: float = 0.8,
+):
+    """检测机器狗前进方向的最近障碍物。
+
+    在 x>0、|y|<=fov_half、z_min<=z<=z_max 的前方扇形区域内找最近点，
+    返回 {online, blocked, min_dist, count}。blocked = min_dist < min_dist 阈值。
+
+    Args:
+        min_dist: 避障触发距离阈值(米)，默认 0.6
+        fov_half: 前方扇形半宽(米)，默认 0.5（|y| 范围）
+        z_min/z_max: 障碍高度范围(米)，过滤地面/低处与过高点
+    """
+    cache = _read_pc_cache()
+    pts = cache.get("points") or []
+    if not cache.get("online") or not pts:
+        return JSONResponse({"online": False, "blocked": False, "min_dist": None,
+                             "count": 0, "reason": "no point cloud"})
+    nearest = None
+    cnt = 0
+    for p in pts:
+        x, y, z = p[0], p[1], p[2]
+        if x <= 0.02:
+            continue
+        if abs(y) > fov_half:
+            continue
+        if z < z_min or z > z_max:
+            continue
+        cnt += 1
+        if nearest is None or x < nearest:
+            nearest = x
+    blocked = nearest is not None and nearest < min_dist
+    return JSONResponse({
+        "online": True,
+        "blocked": blocked,
+        "min_dist": round(nearest, 3) if nearest is not None else None,
+        "count": cnt,
+        "threshold": min_dist,
+        "ts": cache.get("ts", 0),
+    })
+
+
+# ---------------------------------------------------------------------------
 # 文字交互（复用已部署的 voice_agent/text_service，做同源代理避免跨域）
 # ---------------------------------------------------------------------------
 # 前端「文字交互」标签页：用户打字 → 本代理转发给 text_service(8787) →

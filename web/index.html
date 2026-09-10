@@ -587,6 +587,10 @@
           <h2>机器狗状态 <span class="hint">Robot Status</span></h2>
           <table><tbody id="agentStateBody"></tbody></table>
         </div>
+        <div class="card" style="margin-top:12px;">
+          <h2>避障检测 <span class="hint">Obstacle · 前方点云</span></h2>
+          <div style="font-size:13px;" id="agentObstacle">检测中…</div>
+        </div>
       </div>
     </div>
     <div class="card" style="margin-top:12px;width:100%;">
@@ -1316,13 +1320,29 @@ let agentCamTimer = null, agentHealthTimer = null, agentBusy = false;
 // 切到本 tab 时启动：相机轮询 + 服务健康探测 + 状态表刷新
 function startAgentView(){
   resetAgentFlow();
-  refreshAgentCam(); pollAgentHealth(); renderAgentState();
+  refreshAgentCam(); pollAgentHealth(); renderAgentState(); pollObstacle();
   if(!agentCamTimer) agentCamTimer = setInterval(refreshAgentCam, 1000);
-  if(!agentHealthTimer) agentHealthTimer = setInterval(()=>{ pollAgentHealth(); renderAgentState(); }, 2000);
+  if(!agentHealthTimer) agentHealthTimer = setInterval(()=>{ pollAgentHealth(); renderAgentState(); pollObstacle(); }, 2000);
 }
 function stopAgentView(){
   if(agentCamTimer){ clearInterval(agentCamTimer); agentCamTimer = null; }
   if(agentHealthTimer){ clearInterval(agentHealthTimer); agentHealthTimer = null; }
+}
+// 避障检测：轮询 /api/lidar/obstacle
+async function pollObstacle(){
+  const d = await fetchJSON('/api/lidar/obstacle');
+  const el = $('agentObstacle');
+  if(!el) return;
+  if(!d || !d.online){ el.innerHTML = '<span style="color:var(--muted)">无点云数据（LiDAR 未开或无数据）</span>'; return; }
+  if(d.blocked){
+    el.innerHTML = `<span style="color:var(--red);font-weight:600;">⛔ 前方有障碍 ${d.min_dist} m</span>
+      <span style="color:var(--muted);font-size:11px;">（<${d.threshold}m 触发避障）</span>`;
+  } else if(d.min_dist !== null){
+    el.innerHTML = `<span style="color:var(--green);font-weight:600;">✅ 前方通畅</span>
+      <span style="color:var(--muted);font-size:11px;">最近 ${d.min_dist} m（${d.count} 点）</span>`;
+  } else {
+    el.innerHTML = '<span style="color:var(--muted)">前方无检测点</span>';
+  }
 }
 // 第一人称前置相机
 async function refreshAgentCam(){
