@@ -49,6 +49,9 @@ SCHEDULE_FILE = BASE_DIR / "schedule.json"   # 定时规则文件
 # 文字指令服务（voice_agent/text_service，复用已部署服务；改端口只需改这一处）
 AGENT_CMD_URL = "http://127.0.0.1:8787"
 
+# 机器狗清单（群体管理）：robot.yaml 的 robot_addresses 是权威源
+ROBOT_CONFIG_FILE = "/home/dell/go2w_vla/config/robot.yaml"
+
 app = FastAPI(title="Go2-W Monitor", version="2.0.0")
 _scheduler = ScheduleManager(str(SCHEDULE_FILE))
 
@@ -864,6 +867,83 @@ def api_lidar_obstacle(
         "count": cnt,
         "threshold": min_dist,
         "ts": cache.get("ts", 0),
+    })
+
+
+# ---------------------------------------------------------------------------
+# SLAM 可视化：读取 slam_worker.py 写入的建图缓存
+# ---------------------------------------------------------------------------
+SLAM_CACHE_FILE = BASE_DIR / "slam_cache.json"
+
+
+@app.get("/api/slam/map")
+def api_slam_map():
+    """返回机器狗 LiDAR 建图结果（2D 栅格地图 + 机器人位姿），供前端可视化。
+
+    slam_worker.py 订阅 /utlidar/grid_map + /utlidar/robot_pose 写 slam_cache.json。
+    建图开关由部署侧控制（LiDAR switch 命令）；未开建图时返回 online=False。
+    """
+    if not SLAM_CACHE_FILE.exists():
+        return JSONResponse({"online": False, "grid": [], "pose": None,
+                             "reason": "no slam cache"})
+    try:
+        return JSONResponse(json.loads(SLAM_CACHE_FILE.read_text("utf-8")))
+    except Exception:
+        return JSONResponse({"online": False, "grid": [], "pose": None,
+                             "reason": "slam cache unreadable"})
+
+
+# ---------------------------------------------------------------------------
+# 机器狗群体管理：清单 + 状态聚合
+# ---------------------------------------------------------------------------
+
+def _read_robot_list() -> list:
+    """读 robot.yaml 的 robot_addresses 列表，返回机器狗地址清单。"""
+    try:
+        import yaml
+        with open(ROBOT_CONFIG_FILE, "r", encoding="utf-8") as fh:
+            cfg = yaml.safe_load(fh) or {}
+        return [str(a) for a in (cfg.get("robot_addresses") or [])]
+    except Exception:
+        return []
+
+
+def _probe_robot(ip: str, port: int = 9991) -> bool:
+    """TCP 握手探测机器狗 WebRTC 信令端口是否可达（轻量，不建语音连接）。"""
+    import socket
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.settimeout(1.5)
+    try:
+        s.connect((ip, port))
+        return True
+    except Exception:
+        return False
+    finally:
+        s.close()
+
+
+@app.get("/api/robots")
+def api_robots():
+    """返回机器狗群体清单及在线状态（供群体管理页）。"""
+    addrs = _read_robot_list()
+    # 当前主机器狗（单机）状态来自 collector 的 state.json
+    st = read_state()
+    robots = []
+    for i, ip in enumerate(addrs):
+        # 本机（当前控制的狗）是列表中首个可达且与 state 匹配的；其余为待接入
+        robots.append({
+            "index": i,
+            "ip": ip,
+            "online": _probe_robot(ip),
+            "is_primary": i == 0,
+            "battery": (st.get("battery") or {}).get("soc") if i == 0 else None,
+            "mode": st.get("sport_mode", {}).get("mode") if i == 0 else None,
+            "last_seen_s": st.get("last_seen_s") if i == 0 else None,
+        })
+    return JSONResponse({
+        "robots": robots,
+        "primary_online": st.get("online", False),
+        "count": len(robots),
     })
 
 

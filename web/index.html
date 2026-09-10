@@ -270,6 +270,8 @@
     <div class="tab" data-tab="vision" onclick="switchTab('vision')">视觉与点云</div>
     <div class="tab" data-tab="annotate" onclick="switchTab('annotate')">标注工作台</div>
     <div class="tab" data-tab="agent" onclick="switchTab('agent')">文字交互</div>
+    <div class="tab" data-tab="slam" onclick="switchTab('slam')">SLAM 探索</div>
+    <div class="tab" data-tab="robots" onclick="switchTab('robots')">群体管理</div>
   </div>
   <div class="spacer"></div>
   <div class="conn">
@@ -600,10 +602,37 @@
     </div>
   </div>
 
+  <!-- ============ TAB6 SLAM 探索 ============ -->
+  <div class="tabview" id="tv-slam">
+    <div class="card" style="margin-bottom:12px;">
+      <h2>SLAM 建图可视化 <span class="hint">LiDAR 栅格地图 + 机器人位姿</span></h2>
+      <div class="ctrl-row">
+        <span class="badge" id="slamStatus">加载中…</span>
+        <span class="badge accent" id="slamPose">位姿: -</span>
+        <button class="sm" onclick="refreshSlam()">🔄 刷新</button>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">💡 展示机器狗 LiDAR 固件建图结果（/utlidar/grid_map 栅格地图 + /utlidar/robot_pose 位姿）。建图开关由部署侧 LiDAR 命令控制；未开启建图时无地图数据。</div>
+      <canvas id="slamCanvas" style="width:100%;height:520px;background:#0e1f36;border-radius:8px;border:1px solid var(--border);"></canvas>
+    </div>
+  </div>
+
+  <!-- ============ TAB7 群体管理 ============ -->
+  <div class="tabview" id="tv-robots">
+    <div class="card">
+      <h2>机器狗群体管理 <span class="hint">Robot Fleet</span></h2>
+      <div class="ctrl-row">
+        <span class="badge" id="robotsStatus">加载中…</span>
+        <button class="sm" onclick="loadRobots()">🔄 刷新</button>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">💡 机器清单来自 <code>robot.yaml</code> 的 <code>robot_addresses</code>。当前主机器狗（index 0）状态来自 collector 实时采集；其余为待接入节点（在线状态为信令端口探测）。多机运动实例化需 VLA 侧支持，本页先做清单+状态聚合。</div>
+      <table>
+        <thead><tr><th>序号</th><th>IP</th><th>状态</th><th>电量</th><th>运动模式</th><th>最后更新</th></tr></thead>
+        <tbody id="robotsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
 </div>
-
-
-<!-- ============ 帧详情弹窗（标注工作台双击帧触发） ============ -->
 <div class="modal-overlay" id="frameModal">
   <div class="modal">
     <div class="mhead">
@@ -715,6 +744,88 @@ function switchTab(name) {
     refreshCam(); refreshPc();
   }
   if (name==='agent') { startAgentView(); } else { stopAgentView(); }
+  if (name==='slam') { startSlamView(); } else { stopSlamView(); }
+  if (name==='robots') { loadRobots(); }
+}
+
+// ---- 群体管理：机器狗清单 + 状态聚合 ----
+async function loadRobots(){
+  const d = await fetchJSON('/api/robots');
+  const st = $('robotsStatus'), tb = $('robotsBody');
+  if(!st || !tb) return;
+  if(!d || !d.robots || !d.robots.length){
+    st.textContent = '● 无机器清单（robot.yaml robot_addresses 为空）';
+    st.className = 'badge amber';
+    tb.innerHTML = '<tr><td colspan="6" style="color:var(--muted)">无机器狗</td></tr>';
+    return;
+  }
+  st.textContent = '● ' + d.count + ' 台机器狗 · 主机器狗 ' + (d.primary_online ? '在线' : '离线');
+  st.className = 'badge ' + (d.primary_online ? 'green' : 'red');
+  tb.innerHTML = d.robots.map(r=>{
+    const badge = r.online ? '<span class="badge green">● 在线</span>' : '<span class="badge red">○ 离线</span>';
+    const primary = r.is_primary ? ' 👑主' : '';
+    return `<tr>
+      <td class="num">${r.index}${primary}</td>
+      <td class="num">${r.ip}</td>
+      <td>${badge}</td>
+      <td class="num">${r.battery!==null && r.battery!==undefined ? r.battery+' %' : '-'}</td>
+      <td class="num">${r.mode!==null && r.mode!==undefined ? r.mode : '-'}</td>
+      <td class="num">${fmtTime(r.last_seen_s)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ---- SLAM 探索：2D 栅格地图 + 机器人位姿 canvas 可视化 ----
+let slamTimer = null;
+function startSlamView(){
+  refreshSlam();
+  if(!slamTimer) slamTimer = setInterval(refreshSlam, 2000);
+}
+function stopSlamView(){ if(slamTimer){ clearInterval(slamTimer); slamTimer = null; } }
+async function refreshSlam(){
+  const d = await fetchJSON('/api/slam/map');
+  const st = $('slamStatus'), pp = $('slamPose');
+  if(!st || !pp) return;
+  if(!d || !d.online || !d.grid || !d.grid.length){
+    st.textContent = '● 无建图数据（LiDAR 建图未开启）';
+    st.className = 'badge amber';
+    pp.textContent = '位姿: -';
+    return;
+  }
+  st.textContent = '● 建图中 · ' + d.grid.length.toLocaleString() + ' 栅格点';
+  st.className = 'badge green';
+  if(d.pose){ pp.textContent = '位姿: (' + d.pose.x + ', ' + d.pose.y + ')'; }
+  drawSlamGrid(d.grid, d.pose);
+}
+function drawSlamGrid(grid, pose){
+  const cv = $('slamCanvas');
+  if(!cv) return;
+  const ctx = cv.getContext('2d');
+  const W = cv.clientWidth || 800, H = cv.clientHeight || 520;
+  if(cv.width !== W * devicePixelRatio){ cv.width = W * devicePixelRatio; cv.height = H * devicePixelRatio; }
+  ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+  ctx.fillStyle = '#0e1f36'; ctx.fillRect(0, 0, W, H);
+  // 计算范围
+  let minX=Infinity, maxX=-Infinity, minY=Infinity, maxY=-Infinity;
+  for(const p of grid){ if(p[0]<minX)minX=p[0]; if(p[0]>maxX)maxX=p[0]; if(p[1]<minY)minY=p[1]; if(p[1]>maxY)maxY=p[1]; }
+  const spanX = Math.max(maxX-minX, 1), spanY = Math.max(maxY-minY, 1);
+  const scale = Math.min(W/spanX, H/spanY) * 0.92;
+  const ox = W/2 - (minX+maxX)/2 * scale, oy = H/2 - (minY+maxY)/2 * scale;
+  const sx = x => ox + x*scale, sy = y => oy + y*scale;
+  // 栅格点（强度→占用色）
+  for(const p of grid){
+    const v = Math.max(0, Math.min(1, p[3] || 0));
+    const r = 20 + v*200, g = 30 + (1-v)*120, b = 70 + (1-v)*180;
+    ctx.fillStyle = `rgb(${r|0},${g|0},${b|0})`;
+    ctx.fillRect(sx(p[0])-0.5, sy(p[1])-0.5, 1.5, 1.5);
+  }
+  // 机器人位姿
+  if(pose){
+    const px = sx(pose.x), py = sy(pose.y);
+    ctx.beginPath(); ctx.arc(px, py, 6, 0, Math.PI*2);
+    ctx.fillStyle = '#34d399'; ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
+  }
 }
 
 // ================= ECharts 图表 =================
