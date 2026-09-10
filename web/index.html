@@ -557,6 +557,7 @@
         </div>
         <div class="ctrl-row">
           <span class="badge" id="agentHealth">服务探测中…</span>
+          <button class="sm violet" onclick="agentQuick('你看到了什么')" title="用前置相机画面问 VLM 视觉模型">🖼 看图说话</button>
           <button class="sm green" onclick="agentQuick('站起来')">站起来</button>
           <button class="sm green" onclick="agentQuick('趴下')">趴下</button>
           <button class="sm" onclick="agentQuick('前进')">前进</button>
@@ -1377,7 +1378,7 @@ function setAgentMode(m){
   if(tip){ tip.textContent = isCmd ? '🤖 指令模式 · 打字执行动作（自动加 #指令）' : '💬 对话模式 · 打字问答（自动加 #对话）'; tip.className = 'badge ' + (isCmd ? 'green' : 'violet'); }
 }
 // 快捷动作按钮：一律按指令模式执行
-function agentQuick(text){ doSendAgent('#指令 ' + text); }
+function agentQuick(text){ if(text==='你看到了什么'){ doSendVision(text); } else { doSendAgent('#指令 ' + text); } }
 // 追加一条对话气泡
 function agentLogMsg(role, text, meta){
   const log = $('agentLog');
@@ -1431,6 +1432,29 @@ async function doSendAgent(text){
   }
 }
 function clearAgentLog(){ $('agentLog').innerHTML = ''; }
+// 视觉问答：走 /api/agent/vision（后端取前置相机帧→VLM 看图回答）
+async function doSendVision(text){
+  if(!text || agentBusy) return;
+  agentBusy = true;
+  agentLogMsg('user', '🖼 ' + text);
+  try{
+    const d = await fetchJSON('/api/agent/vision?text=' + encodeURIComponent(text));
+    if(!d || d.detail){
+      agentLogMsg('robot', '视觉服务未响应（' + ((d&&d.detail)||'未知') + '）');
+      return;
+    }
+    if(d.error){
+      agentLogMsg('robot', '视觉服务返回错误：' + d.error);
+      return;
+    }
+    agentLogMsg('robot', d.reply || '(无回复)', '🖼 视觉回答');
+    if(d.trace) replayAgentFlow(d.trace);
+  }catch(e){
+    agentLogMsg('robot', '视觉请求失败：' + (e.message||e));
+  }finally{
+    agentBusy = false;
+  }
+}
 // 语音回复开关（🔊 checkbox）
 function speakOn(){ const el = $('agentSpeak'); return !el || el.checked; }
 // 打断机器狗正在播放的喇叭语音

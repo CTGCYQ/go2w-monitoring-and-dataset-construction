@@ -16,6 +16,7 @@
 
 from __future__ import annotations
 
+import base64  # 前置相机帧转 base64 喂 VLM
 import json    # 会话元信息 / 标注 JSON 读写
 import shutil  # 导出目录打包 zip（下载到本地）
 import time    # 轮询等待 collector 确认命令
@@ -888,6 +889,35 @@ def api_agent_interrupt():
         if r.status_code == 200:
             return JSONResponse(r.json())
         return JSONResponse({"error": f"agent http {r.status_code}"}, status_code=502)
+    except requests.exceptions.ConnectionError:
+        raise HTTPException(503, "agent service offline")
+    except Exception as e:
+        raise HTTPException(502, f"agent service error: {e}")
+
+
+@app.post("/api/agent/vision")
+def api_agent_vision(text: str = ""):
+    """视觉问答：取最新前置相机帧 → base64 → 转发 text_service /vision（VLM 看图）。
+
+    前端只传文字，图像由本后端统一读取 latest_front.jpg 转 base64，避免跨域。
+    """
+    text = (text or "").strip()
+    if not text:
+        raise HTTPException(400, "text required")
+    latest_front = BASE_DIR / "latest_front.jpg"
+    if not latest_front.exists():
+        return JSONResponse({"error": "no front camera frame", "reply": ""}, status_code=404)
+    image_b64 = base64.b64encode(latest_front.read_bytes()).decode("ascii")
+    try:
+        r = requests.post(
+            f"{AGENT_CMD_URL}/vision",
+            json={"text": text, "image_b64": image_b64},
+            timeout=120,
+        )
+        if r.status_code == 200:
+            return JSONResponse(r.json())
+        return JSONResponse({"error": f"agent http {r.status_code}", "reply": ""},
+                            status_code=502)
     except requests.exceptions.ConnectionError:
         raise HTTPException(503, "agent service offline")
     except Exception as e:
