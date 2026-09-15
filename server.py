@@ -1014,7 +1014,7 @@ def api_agent_health():
 
 
 @app.get("/api/agent/cmd")
-def api_agent_cmd(text: str = "", speak: str = "1", obstacle_dist: str = "0.8"):
+def api_agent_cmd(text: str = "", speak: str = "1", obstacle_dist: str = "0.2"):
     """把文字指令转发给 text_service，返回其结构化结果。
 
     text_service 返回 {"text","reply","accepted","spoken","trace"}：
