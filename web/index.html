@@ -117,6 +117,7 @@
     text-shadow: 0 0 18px rgba(37,99,235,0.25);
   }
   .kpi .sub { font-size: 10px; color: var(--muted); margin-top: 2px; font-family: var(--mono); }
+  .kpi .kpi-note { font-size: 9px; color: var(--muted); margin-top: 3px; opacity: .8; line-height: 1.3; }
   /* ---------- 徽章 ---------- */
   .badge {
     display: inline-block; padding: 4px 10px; border-radius: 999px;
@@ -293,10 +294,10 @@
       <span class="badge">电池电量 <span id="battSoc" class="num">-</span>%</span>
     </div>
     <div class="grid g4" style="margin-bottom:12px;">
-      <div class="kpi"><div class="label">电压 / Voltage</div><div class="val" id="powerV">-</div><div class="sub" id="powerA">电流 -</div></div>
-      <div class="kpi"><div class="label">横滚 Roll</div><div class="val" id="rpyRoll">-</div><div class="sub">度 deg</div></div>
-      <div class="kpi"><div class="label">俯仰 Pitch</div><div class="val" id="rpyPitch">-</div><div class="sub">度 deg</div></div>
-      <div class="kpi"><div class="label">偏航 Yaw</div><div class="val" id="rpyYaw">-</div><div class="sub">度 deg</div></div>
+      <div class="kpi" title="机器狗整机供电电压，反映电池输出电压；随电量下降而降低，正常满电约33V，电量低时约22V"><div class="label">电压 / Voltage</div><div class="val" id="powerV">-</div><div class="sub" id="powerA">电流 -</div><div class="kpi-note">整机供电电压，随电量下降</div></div>
+      <div class="kpi" title="绕前后轴的左右侧倾角；正值=右倾，负值=左倾，静止时接近0°"><div class="label">横滚 Roll</div><div class="val" id="rpyRoll">-</div><div class="sub">度 deg</div><div class="kpi-note">左右侧倾，静止≈0°</div></div>
+      <div class="kpi" title="绕左右轴的前后俯仰角；正值=抬头，负值=低头，爬坡/加减速时变化明显"><div class="label">俯仰 Pitch</div><div class="val" id="rpyPitch">-</div><div class="sub">度 deg</div><div class="kpi-note">前后俯仰，爬坡时变化</div></div>
+      <div class="kpi" title="绕垂直轴的水平航向角（相对开机朝向，非绝对方位），原地转向时连续变化"><div class="label">偏航 Yaw</div><div class="val" id="rpyYaw">-</div><div class="sub">度 deg</div><div class="kpi-note">航向角，相对开机朝向</div></div>
     </div>
     <div class="grid g2">
       <div class="card">

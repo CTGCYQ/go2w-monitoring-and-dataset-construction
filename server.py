@@ -1120,6 +1120,14 @@ app.mount("/static", StaticFiles(directory=str(WEB_DIR)), name="static")
 
 
 if __name__ == "__main__":
+    import os
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    # HTTPS 自签名证书（解决浏览器录音 getUserMedia 非安全上下文限制）
+    SSL_CERT = os.environ.get("SSL_CERT", "/home/dell/go2w-ssl/cert.pem")
+    SSL_KEY = os.environ.get("SSL_KEY", "/home/dell/go2w-ssl/key.pem")
+    ssl_kwargs = {}
+    if os.path.exists(SSL_CERT) and os.path.exists(SSL_KEY):
+        ssl_kwargs = {"ssl_certfile": SSL_CERT, "ssl_keyfile": SSL_KEY}
+        print(f"[server] HTTPS enabled cert={SSL_CERT}", flush=True)
+    uvicorn.run(app, host="0.0.0.0", port=8000, **ssl_kwargs)
