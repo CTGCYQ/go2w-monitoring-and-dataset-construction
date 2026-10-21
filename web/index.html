@@ -402,8 +402,24 @@
   <!-- ============ TAB3 视觉与点云 ============ -->
   <div class="tabview" id="tv-vision">
     <div class="card" style="margin-bottom:12px;">
-      <h2>激光雷达点云 3D <span class="hint">LiDAR Point Cloud · 时间聚合重构</span></h2>
+      <h2>激光雷达三维重建 <span class="hint">LiDAR 世界地图 · 走一圈环境重建</span></h2>
       <div class="ctrl-row">
+        <span style="font-size:12px;color:var(--muted);">显示模式:</span>
+        <select id="pcViewMode" class="refresh" onchange="switchPcViewMode()">
+          <option value="map" selected>🗺 世界地图重建</option>
+          <option value="frame">🔄 实时帧/时间聚合</option>
+        </select>
+        <span style="font-size:12px;color:var(--muted);margin-left:8px;">着色:</span>
+        <select id="mapColorMode" class="refresh" onchange="applyMapColorMode()">
+          <option value="height" selected>高度分层</option>
+          <option value="intensity">反射强度</option>
+          <option value="hybrid">强度+高度混合</option>
+        </select>
+        <button class="sm" onclick="clearWorldMap()">🗑 清空重建</button>
+        <button class="sm" onclick="fitWorldMap()">🎯 自动取景</button>
+        <span class="badge" id="mapStatus" style="margin-left:8px;">未开始</span>
+      </div>
+      <div class="ctrl-row" style="margin-top:6px;" id="pcFrameCtrls">
         <span style="font-size:12px;color:var(--muted);">刷新间隔(s):</span>
         <input type="number" id="pcInterval" class="refresh" value="0.5" min="0.5" step="0.5" list="pcIntervalList" onchange="applyPcInterval()" style="width:70px">
         <datalist id="pcIntervalList">
@@ -429,9 +445,14 @@
         <button class="sm" onclick="clearPcBuffer()">🗑 清空</button>
         <button class="sm" style="border-color:var(--amber);color:var(--amber);" onclick="updatePcHeading()">🧭 刷新朝向</button>
       </div>
-      <div class="ctrl-row" style="margin-top:6px;">
+      <div class="ctrl-row" style="margin-top:6px;" id="pcMapStatusRow">
         <span class="badge" id="pcStatus">加载中…</span>
-        <span class="badge accent" id="pcCountdown" style="font-family:var(--mono);">下次刷新 -s</span>
+        <span class="badge accent" id="mapCount" style="font-family:var(--mono);">0 点</span>
+        <span class="badge" id="mapTrajCount" style="font-family:var(--mono);">轨迹 0 点</span>
+        <span class="badge" id="mapCalib" style="font-family:var(--mono);">范围: 0 m</span>
+      </div>
+      <div class="ctrl-row" id="pcFrameStatusRow" style="margin-top:6px;display:none;">
+        <span class="badge" id="pcCountdown" style="font-family:var(--mono);">下次刷新 -s</span>
         <span class="badge" id="pcAccumCount" style="font-family:var(--mono);">已累积 0 帧</span>
         <span class="badge" id="pcPointsCount" style="font-family:var(--mono);">0 点</span>
         <span class="badge" id="pcCalib" style="font-family:var(--mono);">方向: 未校准</span>
@@ -439,9 +460,9 @@
       <div style="height:6px;background:rgba(37,99,235,0.09);border-radius:3px;margin:8px 0;overflow:hidden;">
         <div id="pcAccumBar" style="height:100%;width:0%;background:linear-gradient(90deg,#2563eb,#16a34a);border-radius:3px;transition:width .3s;"></div>
       </div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;" id="pcAccumInfo">每 2 秒刷新一帧点云，累积窗口 30 秒内所有帧合并重构，越累积越完整（滚动窗口）。</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;" id="pcAccumInfo">🗺 世界地图重建模式：机器人移动时，LiDAR 点云经 Point-LIO 位姿对齐，环境持续累积生长。带狗走一圈即可重建周围场景。切换到「实时帧」模式可看单帧点云。</div>
       <div id="pointcloud3d"></div>
-      <p class="pc-status" id="pcInfo">鼠标拖动旋转 / 滚轮缩放（Drag to rotate, scroll to zoom）</p>
+      <p class="pc-status" id="pcInfo">鼠标拖动旋转 / 滚轮缩放 / 右键平移（Drag to rotate, scroll to zoom, right-drag to pan）</p>
     </div>
     <div class="grid g3">
       <div class="card">
@@ -1195,6 +1216,8 @@ function ensurePcCapacity(n) {
 }
 function animate() {
   requestAnimationFrame(animate);
+  // 仅实时帧模式下渲染（世界地图模式由 wmAnimate 接管渲染）
+  if(wmActive) return;
   controls.update();
   renderer.render(scene, camera);
 }
@@ -1440,7 +1463,197 @@ function startPcCountdown() {
   }, 100);
 }
 
-// ================= 文字交互（打字→机器狗语音回复/执行）=================
+// ================= 世界地图重建（走一圈环境重建，读 /api/map）=================
+// 复用同一个 #pointcloud3d 容器，但与「实时帧」模式互斥显示。
+// 数据由 map_worker.py 累积（Point-LIO 位姿 + 体素降采样），此处只渲染 + 着色 + 轨迹。
+let wmScene=null, wmCamera=null, wmRenderer=null, wmControls=null, wmPoints=null, wmTrajLine=null, wmRobot=null;
+let wmActive=false, wmTimer=null, wmFitted=false, wmExtent=10;
+const WM_TERRAIN = [
+  [0.18,0.40,0.22], [0.28,0.52,0.26], [0.52,0.58,0.28], [0.72,0.62,0.34],
+  [0.62,0.50,0.36], [0.55,0.46,0.40], [0.62,0.60,0.55], [0.78,0.78,0.74],
+  [0.92,0.92,0.90], [0.55,0.70,0.86], [0.38,0.52,0.78],
+];
+function wmTerrain(t){ const li=WM_TERRAIN.length-1, idx=Math.min(li,Math.max(0,t*li));
+  const i=Math.floor(idx), f=idx-i, a=WM_TERRAIN[i], b=WM_TERRAIN[Math.min(i+1,li)];
+  return [a[0]+(b[0]-a[0])*f, a[1]+(b[1]-a[1])*f, a[2]+(b[2]-a[2])*f]; }
+function wmInit3D(){
+  if(wmScene) return;
+  const el=$('pointcloud3d');
+  wmScene=new THREE.Scene(); wmScene.background=new THREE.Color(0x0a1420);
+  wmCamera=new THREE.PerspectiveCamera(60, el.clientWidth/el.clientHeight, 0.01, 400);
+  wmCamera.position.set(0, 20, -20); wmCamera.up.set(0,1,0);
+  wmRenderer=new THREE.WebGLRenderer({antialias:true});
+  wmRenderer.setSize(el.clientWidth, el.clientHeight);
+  wmRenderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  wmControls=new THREE.OrbitControls(wmCamera, wmRenderer.domElement);
+  wmControls.enableDamping=true; wmControls.dampingFactor=0.12;
+  wmControls.target.set(0,0,0);
+  // 地面网格（固定范围，俯视参考，随地图自动重放置）
+  const grid=new THREE.GridHelper(20, 20, 0x1c3a52, 0x0e2233); grid.position.y=0.0;
+  wmScene.add(grid); wmGrid=grid;
+  // 点云（世界系已由后端累积）
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(3),3));
+  geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(3),3));
+  const gaussTex=makeGaussTexture();
+  const mat=new THREE.PointsMaterial({size:0.12, map:gaussTex, vertexColors:true, transparent:true, opacity:0.9, depthWrite:false, blending:THREE.AdditiveBlending, sizeAttenuation:true});
+  wmPoints=new THREE.Points(geo, mat);
+  wmPoints.frustumCulled=false;
+  wmScene.add(wmPoints);
+  // 轨迹线
+  const tgeo=new THREE.BufferGeometry();
+  tgeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(3),3));
+  const tmat=new THREE.LineBasicMaterial({color:0xffa726, linewidth:2});
+  wmTrajLine=new THREE.Line(tgeo, tmat); wmScene.add(wmTrajLine);
+  // 机器狗当前位置标记（原点小圆盘 + 箭头）
+  const disc=new THREE.Mesh(new THREE.CircleGeometry(0.4,32), new THREE.MeshBasicMaterial({color:0xff4d4d, transparent:true, opacity:0.7, side:THREE.DoubleSide}));
+  disc.rotation.x=-Math.PI/2; disc.position.y=0.03; wmRobot=disc;
+  wmScene.add(disc);
+  const arrow=new THREE.ArrowHelper(new THREE.Vector3(0,0,-1), new THREE.Vector3(0,0.3,0), 1.0, 0xff4d4d, 0.3, 0.2);
+  wmRobot.arrow=arrow; wmScene.add(arrow);
+  el.appendChild(wmRenderer.domElement);
+  wmAnimate();
+}
+let wmGrid=null;
+function wmAnimate(){
+  requestAnimationFrame(wmAnimate);
+  if(!wmActive || !wmRenderer) return;
+  wmControls.update(); wmRenderer.render(wmScene, wmCamera);
+}
+function wmTransform(p){ // 世界系(x前,y左,z上) → Three.js(左→+x,上→+y,前→-z)
+  return [-p[1], p[2], -p[0]];
+}
+function wmSetPoints(pts){
+  const n=pts.length;
+  const pos=wmPoints.geometry.attributes.position, col=wmPoints.geometry.attributes.color;
+  if(pos.array.length < n*3){ wmPoints.geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n*3),3));
+    wmPoints.geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(n*3),3)); }
+  const pa=wmPoints.geometry.attributes.position.array, ca=wmPoints.geometry.attributes.color.array;
+  // 统计高度与强度范围用于着色
+  let zmin=Infinity,zmax=-Infinity,imin=Infinity,imax=-Infinity;
+  const mode=$('mapColorMode').value;
+  for(const p of pts){ if(p[2]<zmin)zmin=p[2]; if(p[2]>zmax)zmax=p[2];
+    if(p[3]!==undefined){ if(p[3]<imin)imin=p[3]; if(p[3]>imax)imax=p[3]; } }
+  if(!isFinite(zmin))zmin=0; if(!isFinite(zmax))zmax=1; if(zmax<=zmin)zmax=zmin+0.1;
+  if(!isFinite(imin))imin=0; if(!isFinite(imax))imax=1; if(imax<=imin)imax=imin+0.1;
+  // 范围统计同时用于取景
+  let mx=Infinity,Mx=-Infinity,my=Infinity,My=-Infinity,mz=Infinity,Mz=-Infinity;
+  for(let i=0;i<n;i++){
+    const p=pts[i], t=wmTransform(p);
+    pa[i*3]=t[0]; pa[i*3+1]=t[1]; pa[i*3+2]=t[2];
+    if(t[0]<mx)mx=t[0]; if(t[0]>Mx)Mx=t[0]; if(t[1]<my)my=t[1]; if(t[1]>My)My=t[1]; if(t[2]<mz)mz=t[2]; if(t[2]>Mz)Mz=t[2];
+    let c;
+    if(mode==='height'){ c=wmTerrain((p[2]-zmin)/(zmax-zmin)); }
+    else if(mode==='intensity'){ const t2=(p[3]-imin)/(imax-imin); c=[0.2+0.8*t2,0.15+0.75*t2,1-0.85*t2]; }
+    else { // hybrid：高度定基调 + 强度调亮度
+      const th=(p[2]-zmin)/(zmax-zmin), ti=(p[3]-imin)/(imax-imin);
+      const base=wmTerrain(th); const lum=0.65+0.5*ti;
+      c=[base[0]*lum, base[1]*lum, base[2]*lum];
+    }
+    ca[i*3]=c[0]; ca[i*3+1]=c[1]; ca[i*3+2]=c[2];
+  }
+  wmPoints.geometry.setDrawRange(0,n);
+  wmPoints.geometry.attributes.position.needsUpdate=true;
+  wmPoints.geometry.attributes.color.needsUpdate=true;
+  wmPoints.geometry.computeBoundingSphere();
+  const ex=Math.max(Mx-mx, My-my, Mz-mz, 0.5); wmExtent=ex;
+  if(!wmFitted){ fitWorldMap(); wmFitted=true; }
+  updateWmStatus(n, ex);
+}
+function wmSetTrajectory(traj){
+  if(!traj || !traj.length){ wmTrajLine.geometry.setDrawRange(0,0); return; }
+  const n=traj.length;
+  if(wmTrajLine.geometry.attributes.position.array.length < n*3)
+    wmTrajLine.geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n*3),3));
+  const pa=wmTrajLine.geometry.attributes.position.array;
+  for(let i=0;i<n;i++){ const t=wmTransform(traj[i]); pa[i*3]=t[0]; pa[i*3+1]=t[1]; pa[i*3+2]=t[2]; }
+  wmTrajLine.geometry.setDrawRange(0,n);
+  wmTrajLine.geometry.attributes.position.needsUpdate=true;
+  wmTrajLine.geometry.computeBoundingSphere();
+  // 机器狗标记移到轨迹末端（当前位置）
+  const end=wmTransform(traj[n-1]); wmRobot.position.set(end[0],0.03,end[2]);
+  wmRobot.arrow.position.set(end[0],0.3,end[2]);
+  $('mapTrajCount').textContent='轨迹 '+n.toLocaleString()+' 点';
+}
+function updateWmStatus(n, extent){
+  $('mapCount').textContent=n.toLocaleString()+' 点';
+  $('mapCalib').textContent='范围 '+extent.toFixed(1)+' m';
+}
+function fitWorldMap(){
+  if(!wmCamera) return;
+  const ex=wmExtent||10, dist=ex*2.2;
+  wmControls.target.set(0,0,0);
+  wmCamera.position.set(dist*0.4, dist*0.7, dist);
+  wmCamera.near=Math.max(0.01, ex/50); wmCamera.far=ex*30;
+  wmCamera.updateProjectionMatrix(); wmControls.update();
+  // 点大小随范围缩放
+  wmPoints.material.size=Math.max(0.06, ex/60);
+  // 地面网格随范围重放置（网格保持原点）
+  if(wmGrid){ const g=Math.ceil(ex/10)*10; wmGrid.scale.set(Math.max(1,g/20),1,Math.max(1,g/20)); }
+}
+function applyMapColorMode(){ if(wmActive && lastMapPts) wmSetPoints(lastMapPts); }
+let lastMapPts=null, lastMapTraj=null;
+async function refreshWorldMap(){
+  if(!wmActive) return;
+  const st=$('mapStatus');
+  try{
+    const d=await fetchJSON('/api/map');
+    if(d && d.online && d.points && d.points.length){
+      lastMapPts=d.points; lastMapTraj=d.trajectory||[];
+      wmSetPoints(d.points); wmSetTrajectory(d.trajectory||[]);
+      st.textContent='● 重建中 · '+d.count.toLocaleString()+' 点';
+      st.className='badge green';
+    } else if(d && d.anchored===false){
+      st.textContent='⏳ 等待位姿初始化…'; st.className='badge amber';
+    } else {
+      st.textContent='● 无重建数据（机器人移动后开始累积）'; st.className='badge';
+      // 保留已有地图不清理
+    }
+  }catch(e){
+    st.textContent='地图加载失败 '+(e.message||''); st.className='badge red';
+  }
+}
+function clearWorldMap(){
+  lastMapPts=null; lastMapTraj=null;
+  if(wmPoints) wmPoints.geometry.setDrawRange(0,0);
+  if(wmTrajLine) wmTrajLine.geometry.setDrawRange(0,0);
+  $('mapCount').textContent='0 点'; $('mapTrajCount').textContent='轨迹 0 点';
+  $('mapStatus').textContent='已清空（后端仍在累积，下次轮询会重新拉取）'; $('mapStatus').className='badge';
+}
+function switchPcViewMode(){
+  const m=$('pcViewMode').value;
+  const isMap = m==='map';
+  $('pcFrameCtrls').style.display = isMap ? 'none':'flex';
+  $('pcFrameStatusRow').style.display = isMap ? 'none':'flex';
+  $('pcMapStatusRow').style.display = isMap ? 'flex':'none';
+  if(isMap){ startWorldMap(); } else { stopWorldMap(); startFrameView(); }
+}
+function startWorldMap(){
+  wmActive=true;
+  // 先清空容器（移除实时帧模式的 canvas），再初始化地图渲染器
+  $('pointcloud3d').innerHTML='';
+  wmInit3D();
+  if(scene) scene.visible=false;
+  // 确保地图 canvas 挂载
+  const el=$('pointcloud3d');
+  if(wmRenderer && wmRenderer.domElement.parentNode!==el){ el.appendChild(wmRenderer.domElement); }
+  if(!wmTimer) wmTimer=setInterval(refreshWorldMap, 1500);
+  refreshWorldMap();
+}
+function stopWorldMap(){
+  wmActive=false;
+  if(wmTimer){ clearInterval(wmTimer); wmTimer=null; }
+}
+function startFrameView(){
+  // 恢复实时帧模式的场景渲染：重新挂载 frame 渲染器 canvas，关闭地图渲染
+  if(scene) scene.visible=true;
+  if(wmRenderer && wmRenderer.domElement.parentNode){ wmRenderer.domElement.parentNode.removeChild(wmRenderer.domElement); }
+  const el=$('pointcloud3d');
+  if(renderer && renderer.domElement.parentNode!==el){ el.appendChild(renderer.domElement); }
+}
+
+
+
 let agentCamTimer = null, agentHealthTimer = null, agentBusy = false;
 // 切到本 tab 时启动：相机轮询 + 服务健康探测 + 状态表刷新
 function startAgentView(){
@@ -2022,11 +2235,17 @@ applyPcInterval();
 startPcCountdown();
 applyDepthColorInterval();
 applyDepthDepthInterval();
+// 默认进入世界地图重建模式
+switchPcViewMode();
 // 窗口尺寸变化时重算图表与点云
 window.addEventListener('resize', ()=>{
   Object.values(charts).forEach(c=>c.ch.resize());
-  if(renderer){
-    const el=$('pointcloud3d');
+  const el=$('pointcloud3d');
+  if(wmActive && wmRenderer){
+    wmRenderer.setSize(el.clientWidth, el.clientHeight);
+    wmCamera.aspect = el.clientWidth/el.clientHeight;
+    wmCamera.updateProjectionMatrix();
+  } else if(renderer){
     renderer.setSize(el.clientWidth, el.clientHeight);
     camera.aspect = el.clientWidth/el.clientHeight;
     camera.updateProjectionMatrix();

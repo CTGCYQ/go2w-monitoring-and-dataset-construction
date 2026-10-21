@@ -702,7 +702,6 @@ def api_depth_raw():
                     headers={"Cache-Control": "no-store"})
 
 
-
 def _pull_dock_image(filename: str) -> Optional[bytes]:
     """从机器狗扩展坞拉取一张最新的 RealSense 图像（SFTP）。
 
@@ -924,6 +923,44 @@ def api_slam_map():
     except Exception:
         return JSONResponse({"online": False, "grid": [], "pose": None,
                              "reason": "slam cache unreadable"})
+
+
+# ---------------------------------------------------------------------------
+# 世界地图重建：读取 map_worker.py 写入的累积全局地图缓存
+# ---------------------------------------------------------------------------
+MAP_CACHE_FILE = BASE_DIR / "map_cache.json"
+
+
+@app.get("/api/map")
+def api_map(max_points: int = 60000):
+    """返回 map_worker.py 累积重建的全局环境地图（世界系点云 + 机器人轨迹）。
+
+    数据源：map_worker.py 订阅 /utlidar/cloud + /odom_corrected（Point-LIO 位姿），
+    把每帧点云经相对位姿变换到统一世界系，体素降采样累积，写 map_cache.json。
+    供前端「走一圈重建」：机器人移动时环境实时"生长"出来。
+
+    Args:
+        max_points: 返回的最大点数（默认 60000，体素已降采样，通常远小于此）
+
+    Returns:
+        {"points": [[x,y,z,intensity], ...], "trajectory": [[x,y,z], ...],
+         "count": N, "online": bool, "anchored": bool, "voxel": 体素尺寸}
+    """
+    max_points = max(1000, min(max_points, 500000))
+    if not MAP_CACHE_FILE.exists():
+        return JSONResponse({"online": False, "reason": "no map cache yet",
+                             "points": [], "trajectory": [], "count": 0})
+    try:
+        cache = json.loads(MAP_CACHE_FILE.read_text("utf-8"))
+    except Exception:
+        return JSONResponse({"online": False, "reason": "map cache unreadable",
+                             "points": [], "trajectory": [], "count": 0})
+    pts = cache.get("points") or []
+    if len(pts) > max_points:
+        step = len(pts) // max_points
+        cache["points"] = pts[::step]
+        cache["count"] = len(cache["points"])
+    return JSONResponse(cache)
 
 
 # ---------------------------------------------------------------------------

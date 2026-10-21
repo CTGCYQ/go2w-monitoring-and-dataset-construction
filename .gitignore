@@ -30,3 +30,7 @@ Thumbs.db
 
 # pytest
 .pytest_cache/
+
+# 凭据/交接文档（含明文服务器凭据，禁止入库）
+GO2W_SYSTEM_HANDOVER.md
+docs/交接文档.md
