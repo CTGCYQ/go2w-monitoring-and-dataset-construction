@@ -14,6 +14,7 @@
 
 #include <librealsense2/rs.hpp>
 #include <opencv2/opencv.hpp>
+#include "raw_depth_stream.hpp"
 
 #include <atomic>
 #include <chrono>
@@ -95,6 +96,8 @@ int main(int argc, char** argv) {
         cfg.enable_stream(RS2_STREAM_COLOR, width, height, RS2_FORMAT_BGR8, fps);
         cfg.enable_stream(RS2_STREAM_DEPTH, width, height, RS2_FORMAT_Z16, fps);
         pipe.start(cfg);
+        rs2::align align_to_color(RS2_STREAM_COLOR);
+        RawDepthStream metric_stream;
 
         std::cout << "[rs_capture] started: " << width << "x" << height
                   << "@" << fps << "fps -> " << out_dir << std::endl;
@@ -112,6 +115,11 @@ int main(int argc, char** argv) {
             auto depth = frames.get_depth_frame();
             if (!color || !depth) continue;
             frame++;
+            auto captured = std::chrono::steady_clock::now();
+            double captured_unix = std::chrono::duration<double>(
+                std::chrono::system_clock::now().time_since_epoch()).count();
+            auto aligned = align_to_color.process(frames);
+            metric_stream.publish(aligned.get_depth_frame(), aligned.get_color_frame(), captured, captured_unix);
 
             // 彩色帧 -> JPEG
             cv::Mat bgr(cv::Size(width, height), CV_8UC3, (void*)color.get_data());

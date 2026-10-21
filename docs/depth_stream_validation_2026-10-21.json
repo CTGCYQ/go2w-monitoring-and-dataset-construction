@@ -1,0 +1,23 @@
+{
+  "samples": 30,
+  "online_samples": 30,
+  "unique_frames": 23,
+  "duration_s": 6.749,
+  "width": 640,
+  "height": 480,
+  "meters_per_unit": 0.001000000047497451,
+  "max_source_age_ms": 68.341728,
+  "max_arrival_age_s": 0.4001,
+  "raw_payload_bytes": 614400,
+  "alignment": "color",
+  "raw_http_age_ms": 397.097856,
+  "stopped_summary": {
+    "online": false,
+    "reason": "depth unavailable"
+  },
+  "stopped_raw_status": 503,
+  "restored_online": true,
+  "jpeg_decode_passes": 6,
+  "raw_depth_saved": false,
+  "motion_commands_sent": 0
+}

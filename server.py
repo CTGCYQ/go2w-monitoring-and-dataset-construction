@@ -676,6 +676,32 @@ DOCK_RS_DIR = "/home/unitree/rs_out"   # rs_capture 输出目录
 # 本地缓存目录：80服务器定时从机器狗拉取最新深度/彩色帧
 DOCK_CACHE_DIR = BASE_DIR / "rs_cache"
 
+from depth_stream import DepthReceiver, packet_with_age
+_metric_depth = DepthReceiver(DOCK_HOST, DOCK_USER, DOCK_PASS)
+
+@app.on_event("startup")
+def start_metric_depth():
+    _metric_depth.start()
+
+@app.on_event("shutdown")
+def stop_metric_depth():
+    _metric_depth.stop()
+
+@app.get("/api/depth/metric")
+def api_depth_metric():
+    summary, _ = _metric_depth.snapshot()
+    return JSONResponse(summary)
+
+@app.get("/api/depth/raw")
+def api_depth_raw():
+    summary, packet = _metric_depth.snapshot()
+    if packet is None:
+        return JSONResponse(summary, status_code=503)
+    packet = packet_with_age(packet, summary["arrival_age_s"])
+    return Response(packet, media_type="application/octet-stream",
+                    headers={"Cache-Control": "no-store"})
+
+
 
 def _pull_dock_image(filename: str) -> Optional[bytes]:
     """从机器狗扩展坞拉取一张最新的 RealSense 图像（SFTP）。
