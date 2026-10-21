@@ -1,0 +1,47 @@
+{
+  "before": {
+    "depth_image_bad": 2,
+    "depth_image_requests": 5,
+    "depth_color_bad": 1,
+    "depth_color_requests": 5
+  },
+  "after": [
+    {
+      "route": "image/latest",
+      "requests": 20,
+      "decoded": 20,
+      "errors": [],
+      "resolutions": [
+        [
+          1920,
+          1080
+        ]
+      ]
+    },
+    {
+      "route": "depth/image",
+      "requests": 20,
+      "decoded": 20,
+      "errors": [],
+      "resolutions": [
+        [
+          640,
+          480
+        ]
+      ]
+    },
+    {
+      "route": "depth/color",
+      "requests": 20,
+      "decoded": 20,
+      "errors": [],
+      "resolutions": [
+        [
+          640,
+          480
+        ]
+      ]
+    }
+  ],
+  "raw_images_saved": false
+}

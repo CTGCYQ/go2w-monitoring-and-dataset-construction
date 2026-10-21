@@ -72,8 +72,7 @@ static bool save_depth_jpeg(const rs2::depth_frame& depth, const std::string& pa
         }
     }
     try {
-        cv::imwrite(path, img);
-        return true;
+        return cv::imwrite(path, img);
     } catch (...) {
         return false;
     }
@@ -119,17 +118,21 @@ int main(int argc, char** argv) {
             char cf[512], lc[512];
             std::snprintf(cf, sizeof(cf), "%s/frame_%06ld.jpg", color_dir.c_str(), frame);
             std::snprintf(lc, sizeof(lc), "%s/latest_color.jpg", out_dir.c_str());
-            cv::imwrite(cf, bgr);
-            std::ofstream(lc).close();
-            std::rename(cf, lc);  // 覆盖最新帧
+            // rename replaces the directory entry atomically. Never truncate
+            // latest first: an SFTP reader may still hold that old inode open.
+            if (!cv::imwrite(cf, bgr) || std::rename(cf, lc) != 0) {
+                std::cerr << "[rs_capture] color publish failed" << std::endl;
+                std::remove(cf);
+            }
 
             // 深度帧 -> 伪彩色 JPEG
             char df[512], ld[512];
             std::snprintf(df, sizeof(df), "%s/frame_%06ld.jpg", depth_dir.c_str(), frame);
             std::snprintf(ld, sizeof(ld), "%s/latest_depth.jpg", out_dir.c_str());
-            save_depth_jpeg(depth, df);
-            std::ofstream(ld).close();
-            std::rename(df, ld);
+            if (!save_depth_jpeg(depth, df) || std::rename(df, ld) != 0) {
+                std::cerr << "[rs_capture] depth publish failed" << std::endl;
+                std::remove(df);
+            }
 
             if (frame % fps == 0) {
                 std::cout << "[rs_capture] frame " << frame << std::endl;
