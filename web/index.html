@@ -574,7 +574,7 @@
           <input type="text" id="agentInput" placeholder="输入/按住🎤说话，如：后退 / 今天天气…" style="flex:1;min-width:150px;" onkeydown="if(event.key==='Enter')sendAgentCmd()">
           <button id="agentMicBtn" class="sm" title="按住说话 → 语音转文字" style="font-size:18px;padding:1px 10px;user-select:none;touch-action:none;" onpointerdown="startRec()" onpointerup="stopRec()" onpointerleave="stopRec()" oncontextmenu="event.preventDefault()">🎤</button>
           <button class="violet" onclick="sendAgentCmd()">发送 ▶</button>
-          <button class="sm amber" style="border-color:rgba(217,119,6,0.35);color:var(--amber);" onclick="interruptSpeech()" title="打断正在播放的喇叭语音">⏹ 打断</button>
+          <button class="sm amber" style="border-color:rgba(217,119,6,0.35);color:var(--amber);" onclick="interruptSpeech()" title="取消待确认动作、请求停止，并打断语音">⏹ 停止/打断</button>
           <button class="sm" onclick="clearAgentLog()">清空</button>
         </div>
       </div>
@@ -1639,7 +1639,9 @@ function speakOn(){ const el = $('agentSpeak'); return !el || el.checked; }
 async function interruptSpeech(){
   try{
     const r = await fetch('/api/agent/interrupt', {method:'POST'});
-    agentLogMsg('robot', '⏹ 已发送打断，喇叭将停止播放');
+    const data = await r.json();
+    if(!r.ok) throw new Error(data.detail || data.error || ('HTTP '+r.status));
+    agentLogMsg('robot', '⏹ ' + (data.reply || (data.stop_requested ? '停止请求已发送，请确认机器狗状态。' : '停止执行器不可用，请用遥控器确认机器狗停止。')));
   }catch(e){
     agentLogMsg('robot', '打断请求失败：' + (e.message||e));
   }
