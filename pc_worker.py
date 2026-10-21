@@ -3,7 +3,7 @@
 
 独立进程运行（避免 rclpy 与 uvicorn asyncio 冲突），server.py 读缓存文件。
 """
-import json, os, struct, sys, time
+import json, os, struct, sys, time, math
 import rclpy
 from sensor_msgs.msg import PointCloud2
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
@@ -32,8 +32,12 @@ def parse_cloud(msg, max_points=4000):
             x = struct.unpack_from("<f", data, base+offsets["x"])[0]
             y = struct.unpack_from("<f", data, base+offsets["y"])[0]
             z = struct.unpack_from("<f", data, base+offsets["z"])[0]
+            if not all(math.isfinite(v) for v in (x, y, z)):
+                continue
             if has_intensity:
                 it = struct.unpack_from("<f", data, base+offsets["intensity"])[0]
+                if not math.isfinite(it):
+                    continue
                 pts.append([round(x,3), round(y,3), round(z,3), round(it,4)])
             else:
                 pts.append([round(x,3), round(y,3), round(z,3)])
@@ -47,8 +51,10 @@ def main():
     node = rclpy.create_node("go2w_pc_worker")
     def cb(msg):
         latest["msg"] = msg
-    qos = QoSProfile(depth=100, reliability=ReliabilityPolicy.RELIABLE,
-                     history=HistoryPolicy.KEEP_ALL, durability=DurabilityPolicy.VOLATILE)
+        latest["received_at"] = time.time()
+        latest["received_monotonic"] = time.monotonic()
+    qos = QoSProfile(depth=5, reliability=ReliabilityPolicy.BEST_EFFORT,
+                     history=HistoryPolicy.KEEP_LAST, durability=DurabilityPolicy.VOLATILE)
     node.create_subscription(PointCloud2, "/utlidar/cloud", cb, qos)
     executor = rclpy.executors.SingleThreadedExecutor()
     executor.add_node(node)
@@ -56,17 +62,23 @@ def main():
     last_write = 0
     while True:
         executor.spin_once(timeout_sec=0.2)
-        if "msg" in latest:
-            now = time.time()
-            if now - last_write > 0.5:  # 每 500ms 写一次缓存
-                parsed = parse_cloud(latest["msg"])
-                if parsed:
-                    payload = {"online": True, "ts": now, **parsed}
-                    tmp = CACHE_FILE + ".tmp"
-                    with open(tmp, "w") as f:
-                        json.dump(payload, f)
-                    os.replace(tmp, CACHE_FILE)
-                    last_write = now
+        now = time.time()
+        if now - last_write > 0.5:
+            fresh = ("msg" in latest and
+                     time.monotonic() - latest["received_monotonic"] <= 1.5)
+            parsed = parse_cloud(latest["msg"]) if fresh else None
+            payload = {"online": bool(parsed), "ts": latest.get("received_at", 0),
+                       "received_at": latest.get("received_at", 0),
+                       "written_at": now, "points": [], "count": 0}
+            if parsed:
+                payload.update(parsed)
+            else:
+                payload["reason"] = "sensor data missing or stale"
+            tmp = CACHE_FILE + ".tmp"
+            with open(tmp, "w") as f:
+                json.dump(payload, f, allow_nan=False)
+            os.replace(tmp, CACHE_FILE)
+            last_write = now
 
 if __name__ == "__main__":
     main()

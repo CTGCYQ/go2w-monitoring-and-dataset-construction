@@ -771,6 +771,8 @@ def api_image_latest():
 # ---------------------------------------------------------------------------
 # pc_worker.py 是独立进程，常驻订阅 ROS2 /utlidar/cloud 并每 500ms 写最新点云
 # 到 pc_cache.json。这样避免 rclpy 与 uvicorn(asyncio) 在同一进程的冲突。
+from sensor_freshness import cloud_is_fresh
+
 PC_CACHE_FILE = BASE_DIR / "pc_cache.json"
 
 
@@ -780,7 +782,10 @@ def _read_pc_cache() -> dict:
         return {}
     try:
         import json as _json
-        return _json.loads(PC_CACHE_FILE.read_text("utf-8"))
+        cache = _json.loads(PC_CACHE_FILE.read_text("utf-8"))
+        if not cloud_is_fresh(cache):
+            return {}
+        return cache
     except Exception:
         return {}
 
@@ -846,7 +851,7 @@ def api_lidar_obstacle(
     cache = _read_pc_cache()
     pts = cache.get("points") or []
     if not cache.get("online") or not pts:
-        return JSONResponse({"online": False, "blocked": False, "min_dist": None,
+        return JSONResponse({"online": False, "blocked": True, "min_dist": None,
                              "count": 0, "reason": "no point cloud"})
     nearest = None
     cnt = 0
