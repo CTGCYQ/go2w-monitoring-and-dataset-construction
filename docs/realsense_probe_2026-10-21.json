@@ -1,0 +1,92 @@
+{
+  "requested_frames": 30,
+  "measured_frames": 30,
+  "aligned_frames": 30,
+  "elapsed_s": 2.02986096,
+  "observed_fps": 14.7793374,
+  "depth_format": "Z16",
+  "meters_per_raw_unit": 0.00100000005,
+  "raw_zero_is_invalid": true,
+  "raw_depth_saved": false,
+  "images_saved": false,
+  "depth_intrinsics": {
+    "width": 640,
+    "height": 480,
+    "fx": 390.406891,
+    "fy": 390.406891,
+    "ppx": 318.860168,
+    "ppy": 240.232361,
+    "distortion_model": 4,
+    "coefficients": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "color_intrinsics": {
+    "width": 640,
+    "height": 480,
+    "fx": 606.462524,
+    "fy": 606.344177,
+    "ppx": 321.296356,
+    "ppy": 240.081543,
+    "distortion_model": 2,
+    "coefficients": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "aligned_depth_intrinsics": {
+    "width": 640,
+    "height": 480,
+    "fx": 606.462524,
+    "fy": 606.344177,
+    "ppx": 321.296356,
+    "ppy": 240.081543,
+    "distortion_model": 2,
+    "coefficients": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "aligned_intrinsics_match_color": true,
+  "depth_to_color": {
+    "rotation_row_major": [
+      0.999847233,
+      0.0113692358,
+      0.0132762128,
+      -0.0113888551,
+      0.999934137,
+      0.00140310789,
+      -0.0132593866,
+      -0.00155409437,
+      0.999910891
+    ],
+    "translation_m": [
+      0.0147453249,
+      0.000103386141,
+      0.000234164298
+    ]
+  },
+  "valid_pixel_fraction": 0.974264757,
+  "pixels_in_0_3_to_10m_fraction": 0.974176432,
+  "min_nonzero_depth_m": 0.906000043,
+  "max_nonzero_depth_m": 11.1530005,
+  "center_patch_median_range_m": [
+    2.27900011,
+    2.31300011
+  ],
+  "center_patch_missing_frames": 0,
+  "max_raw_to_sdk_difference_m": 1.139706e-07,
+  "same_timestamp_domain": true,
+  "max_depth_color_timestamp_difference_ms": 0.0441177189,
+  "passed": true
+}
