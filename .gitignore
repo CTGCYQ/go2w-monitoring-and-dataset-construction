@@ -30,3 +30,8 @@ Thumbs.db
 
 # pytest
 .pytest_cache/
+
+# ƾ��/�����ĵ��������ķ�����ƾ�ݣ���ֹ��⣩
+GO2W_SYSTEM_HANDOVER.md
+docs/交接文档.md
+docs/启动教程与接口清单.md

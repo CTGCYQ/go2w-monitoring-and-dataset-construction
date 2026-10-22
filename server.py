@@ -702,7 +702,6 @@ def api_depth_raw():
                     headers={"Cache-Control": "no-store"})
 
 
-
 def _pull_dock_image(filename: str) -> Optional[bytes]:
     """从机器狗扩展坞拉取一张最新的 RealSense 图像（SFTP）。
 

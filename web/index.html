@@ -1621,6 +1621,7 @@ applyPcInterval();
 startPcCountdown();
 applyDepthColorInterval();
 applyDepthDepthInterval();
+if(document.getElementById('tv-vision').classList.contains('active')) pcStudio?.resume();
 // 窗口尺寸变化时重算图表与点云
 window.addEventListener('resize', ()=>{
   Object.values(charts).forEach(c=>c.ch.resize());
