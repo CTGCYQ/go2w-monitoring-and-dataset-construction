@@ -1,0 +1,51 @@
+{
+  "passed": true,
+  "rotation_row_major": [
+    0.4810694201032441,
+    -0.8751914394662362,
+    0.05110926849942316,
+    -0.8703168531241265,
+    -0.4837767387791487,
+    -0.09224230149085165,
+    0.10545514785749578,
+    -0.00010630723870141222,
+    -0.9944240546613526
+  ],
+  "excursion_m": 0.6792,
+  "endpoint_displacement_m": 0.6158,
+  "cross_track_error_m": 0.0516,
+  "pose_samples": 1560,
+  "gravity_mean_mps2": [
+    1.039812525575846,
+    -0.0010482143414229973,
+    -9.805254734155646
+  ],
+  "reference_orientation_xyzw": [
+    -0.011867364065390771,
+    0.9987372825051928,
+    0.011598732813387413,
+    -0.047418093355367015
+  ],
+  "source_frame": "utlidar_lidar",
+  "calibration_id": "go2w_specific_force_forward_20261022",
+  "scope": "display_orientation_only_lidar_origin",
+  "validated": true,
+  "scale_verified": false,
+  "body_translation_verified": false,
+  "raw_data_saved": false,
+  "forward_only": true,
+  "imu_topic": "/go2w/lidar_imu_specific_force",
+  "max_lidar_gyro_rps": 0.13355760365538163,
+  "elapsed_s": 44.49232607148588,
+  "imu_acceleration_convention": "go2_firmware_gravity_vector_negated_to_specific_force",
+  "validation": {
+    "forward_direction_confirmed_by_operator": true,
+    "left_turn_confirmed_by_operator": true,
+    "gyro_left_degrees": 57.73700471088632,
+    "lio_left_degrees": 59.809775205933455,
+    "yaw_difference_degrees": 2.072770495047135,
+    "distance_scale_verified": false,
+    "full_navigation_extrinsics_verified": false
+  },
+  "profile_scope": "this Go2-W original sensor installation; recalibrate after mounting or firmware changes"
+}

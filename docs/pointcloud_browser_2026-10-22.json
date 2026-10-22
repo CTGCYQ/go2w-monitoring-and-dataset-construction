@@ -14,6 +14,8 @@
     "offline clears live drawing",
     "offline state is explicit",
     "automatic reconnect",
+    "calibrated direction shown explicitly",
+    "display alignment reaches renderer",
     "hidden tab stops acquisition",
     "legacy world map remains available",
     "offline map is clearly historical",

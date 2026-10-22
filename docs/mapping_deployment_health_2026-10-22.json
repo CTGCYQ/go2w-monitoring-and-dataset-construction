@@ -1,0 +1,63 @@
+{
+  "cloud": {
+    "online": true,
+    "ts": 1792664037.906808,
+    "received_at": 1792664037.906808,
+    "written_at": 1792664037.9068544,
+    "count": 98,
+    "total": 4105,
+    "has_intensity": true,
+    "frame_id": "utlidar_lidar",
+    "source_stamp_s": 1792664037.8144627,
+    "frame_key": "utlidar_lidar:1792664037:814462661",
+    "motion": {
+      "available": true,
+      "moving": false,
+      "angular_speed_rps": 0.0112,
+      "speed_mps": 0.0,
+      "kind": "motion_hint_only"
+    },
+    "age_s": 0.095,
+    "coordinate_convention": "source_xyz_right_handed",
+    "body_alignment_verified": false,
+    "display_direction_verified": true,
+    "display_alignment_id": "go2w_specific_force_forward_20261022",
+    "display_frame": "calibrated_forward_lidar_origin",
+    "body_translation_verified": false,
+    "max_abs_sampled_coordinate_m": 8.0102
+  },
+  "map": {
+    "count": 997,
+    "cloud_count": 6678,
+    "voxel": 0.06,
+    "anchored": true,
+    "frame_id": "initial_imu",
+    "coordinate_convention": "initial_imu_xyz",
+    "body_alignment_verified": false,
+    "mapping_version": 2,
+    "anchor_orientation_xyzw": [
+      0.16134138472876902,
+      0.9828727222989087,
+      0.0015058200396867486,
+      -0.08903876594138053
+    ],
+    "max_displacement_m": 0.0735,
+    "rejected_frames": 2690,
+    "reason_code": "ok",
+    "fault": false,
+    "deskew": "per_point_odometry_interpolation_1ms_bins",
+    "reordered_pose_samples": 0,
+    "max_pose_rollback_s": 0.0,
+    "online": true,
+    "written_at": 1792664037.0926175,
+    "received_at": 1792664037.0926178,
+    "source_stamp_s": 1792664036.7109938,
+    "geometry_valid": true,
+    "display_direction_verified": true,
+    "display_alignment_id": "go2w_specific_force_forward_20261022",
+    "display_frame": "initial_forward_gravity",
+    "body_translation_verified": false,
+    "max_abs_sampled_coordinate_m": 8.6067
+  },
+  "motion_enabled": false
+}

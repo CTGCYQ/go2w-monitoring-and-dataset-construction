@@ -825,16 +825,21 @@ def api_map(max_points: int = 60000):
         cache=json.loads(MAP_CACHE_FILE.read_text("utf-8"))
     except (OSError,ValueError):
         cache={"online":False,"points":[],"reason":"no map cache available"}
-    return JSONResponse(map_snapshot_response(cache,max_points),headers={"Cache-Control":"no-store"})
+    result=map_snapshot_response(cache,max_points)
+    result.update(display_metadata(BASE_DIR/'display_alignment.json',cache,is_map=True))
+    return JSONResponse(result,headers={"Cache-Control":"no-store"})
 
 
 from cloud_model import cloud_response, map_snapshot_response
+from display_alignment import metadata as display_metadata
 
 @app.get("/api/lidar/cloud")
 def api_lidar_cloud(max_points: int = 8000):
     """Native sensor coordinates with source identity, freshness and motion hints."""
-    return JSONResponse(cloud_response(_read_pc_cache(),max_points),
-                        headers={"Cache-Control":"no-store"})
+    cache=_read_pc_cache()
+    result=cloud_response(cache,max_points)
+    result.update(display_metadata(BASE_DIR/'display_alignment.json',cache))
+    return JSONResponse(result,headers={"Cache-Control":"no-store"})
 
 
 @app.get("/api/lidar/obstacle")

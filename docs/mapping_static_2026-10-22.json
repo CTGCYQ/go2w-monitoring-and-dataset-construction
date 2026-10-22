@@ -1,0 +1,123 @@
+{
+  "seconds": 30.0,
+  "topics": {
+    "/odom_corrected": {
+      "messages": 42796,
+      "frames": [
+        "lidar_odom"
+      ],
+      "last_stamp_s": 1792663052.1622548,
+      "hz": 1426.51,
+      "observed_hz": 1428.08,
+      "arrival_age_s": 0.033,
+      "position_samples": 42796,
+      "invalid_position_samples": 0,
+      "net_displacement_m": 0.00852,
+      "axis_ranges_m": [
+        0.04019,
+        0.03483,
+        0.01465
+      ],
+      "max_displacement_m": 0.02527,
+      "max_step_m": 0.00437,
+      "path_length_m": 14.99603
+    },
+    "/tf": {
+      "messages": 43182,
+      "frames": [],
+      "edges": [
+        "lidar_odom -> utlidar_imu"
+      ],
+      "hz": 1439.37,
+      "observed_hz": 1440.96,
+      "arrival_age_s": 0.033
+    },
+    "/utlidar/imu": {
+      "messages": 7455,
+      "frames": [
+        "utlidar_imu"
+      ],
+      "last_stamp_s": 1792663052.2268367,
+      "non_finite_messages": 0,
+      "accel_norm_mps2": 9.7493,
+      "last_accel_mps2": [
+        -0.84661,
+        0.02821,
+        9.71245
+      ],
+      "last_gyro_rps": [
+        0.02215,
+        0.00645,
+        0.00508
+      ],
+      "hz": 248.5,
+      "observed_hz": 249.11,
+      "arrival_age_s": 0.016
+    },
+    "/utlidar/cloud": {
+      "messages": 460,
+      "frames": [
+        "utlidar_lidar"
+      ],
+      "last_stamp_s": 1792663052.1644623,
+      "last_points": 4123,
+      "fields": [
+        "x",
+        "y",
+        "z",
+        "intensity",
+        "ring",
+        "time"
+      ],
+      "point_time_range": [
+        0.0,
+        0.06330130249261856
+      ],
+      "point_time_datatype": 7,
+      "hz": 15.33,
+      "observed_hz": 15.36,
+      "arrival_age_s": 0.005
+    },
+    "/utlidar/robot_odom": {
+      "messages": 0,
+      "frames": [],
+      "hz": 0.0,
+      "observed_hz": 0.0,
+      "arrival_age_s": null
+    },
+    "/utlidar/robot_pose": {
+      "messages": 0,
+      "frames": [],
+      "hz": 0.0,
+      "observed_hz": 0.0,
+      "arrival_age_s": null
+    },
+    "/tf_static": {
+      "messages": 0,
+      "frames": [],
+      "hz": 0.0,
+      "observed_hz": 0.0,
+      "arrival_age_s": null
+    }
+  },
+  "raw_data_saved": false,
+  "tf_audit": {
+    "ready": false,
+    "parent_conflicts": {},
+    "cycle_detected": false,
+    "missing_paths": [
+      [
+        "lidar_odom",
+        "base_link"
+      ],
+      [
+        "base_link",
+        "utlidar_lidar"
+      ],
+      [
+        "base_link",
+        "realsense_color_optical_frame"
+      ]
+    ]
+  }
+}

@@ -9,4 +9,7 @@ test('hard memory bound',()=>{const b=new CloudBuffer();b.mode='aggregate';b.lim
 test('drops invalid and out-of-range points',()=>{const b=new CloudBuffer();b.ingest(packet(1,[[NaN,0,0],[Infinity,0,0],[false,0,0],[99,0,0],[1,0,0]]),1);assert.equal(b.cells.size,1)});
 test('source frame changes clear aggregation',()=>{const b=new CloudBuffer();b.mode='aggregate';b.ingest(packet(1,[[1,0,0]]),1);b.ingest({...packet(2,[[2,0,0]]),frame_id:'new'},2);assert.equal(b.cells.size,1)});
 test('colors stay finite at extrema',()=>{for(const t of [-10,0,.5,1,10])assert(color(t).every(v=>Number.isFinite(v)&&v>=0&&v<=1))});
+test('display rotation changes geometry with axes',()=>{const b=new CloudBuffer();b.ingest({...packet(1,[[false,1,0],[1,0,0]]),display_direction_verified:true,display_alignment_id:'test',display_rotation_row_major:[0,-1,0,1,0,0,0,0,1]},1);const p=[...b.cells.values()][0];assert.deepEqual([p.x,p.y,p.z],[0,1,0]);});
+test('map extent not clipped around sensor origin',()=>{const b=new CloudBuffer();b.mode='map';b.ingest(packet(1,[[90,0,0]]),1);assert.equal(b.cells.size,1)});
+test('alignment changes reset accumulated points',()=>{const b=new CloudBuffer();b.mode='aggregate';b.ingest(packet(1,[[1,0,0]]),1);b.ingest({...packet(2,[[2,0,0]]),display_alignment_id:'new'},2);assert.equal(b.cells.size,1)});
 console.log(JSON.stringify({passed:true,checks}));

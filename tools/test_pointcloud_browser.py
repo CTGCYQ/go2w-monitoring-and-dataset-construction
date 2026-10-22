@@ -39,7 +39,7 @@ def main():
     p.add_argument('--output',default='tmp/pcviz_test');p.add_argument('--html');args=p.parse_args()
     from playwright.sync_api import sync_playwright
     out=Path(args.output);out.mkdir(parents=True,exist_ok=True)
-    room=make_room();control={'online':True,'moving':False,'sequence':0,'calls':0,'bad_map':False}
+    room=make_room();control={'online':True,'moving':False,'sequence':0,'calls':0,'bad_map':False,'aligned':False}
     errors=[];checks=[]
     def check(name,condition):
         if not condition:
@@ -59,6 +59,7 @@ def main():
                 data={'online':control['online'],'simulated':True,'frame_id':'utlidar_lidar','frame_key':str(control['sequence']),
                       'age_s':.03,'points':room[control['sequence']%6::6] if control['online'] else [],
                       'total':len(room)//6,'has_intensity':True,'motion':{'available':True,'moving':control['moving']}}
+                if control['aligned']:data.update(display_direction_verified=True,display_alignment_id='synthetic',display_rotation_row_major=[0,-1,0,1,0,0,0,0,1])
                 r.fulfill(json=data);return
             if path=='/api/map':
                 if control['bad_map']:
@@ -105,6 +106,9 @@ def main():
         page.locator('#pcStudio').screenshot(path=str(out/'offline.png'))
         control['online']=True;page.wait_for_function('pcStudio.geometry.drawRange.count>0',timeout=10000)
         check('automatic reconnect',page.evaluate('pcStudio.geometry.drawRange.count>0'))
+        control['aligned']=True;page.wait_for_function('pcStudio.lastPacket.display_direction_verified===true',timeout=10000)
+        check('calibrated direction shown explicitly',page.evaluate('document.getElementById("pcSourceNote").textContent.includes("前向已标定")'))
+        check('display alignment reaches renderer',page.evaluate('pcStudio.buffer.frameId.endsWith(":synthetic") && pcStudio.geometry.drawRange.count>0'))
         page.locator('.tab[data-tab="overview"]').count()  # Discover first tab instead of assuming its name.
         page.locator('.tab').first.click();page.wait_for_timeout(400);before=control['calls'];page.wait_for_timeout(500)
         check('hidden tab stops acquisition',control['calls']==before)

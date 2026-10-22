@@ -1,0 +1,40 @@
+{
+  "passed": true,
+  "scope": "display_orientation_and_mapping_not_navigation_extrinsics",
+  "monitor_python_tests": 46,
+  "pointcloud_js_tests": 11,
+  "browser_tests": 23,
+  "vla_tests": 184,
+  "manual_forward": {
+    "estimated_excursion_m": 0.6792,
+    "cross_track_error_m": 0.0516,
+    "endpoint_displacement_m": 0.6158,
+    "physical_distance_measured": false
+  },
+  "manual_left_turn": {
+    "gyro_degrees": 57.73700471088632,
+    "lio_degrees": 59.809775205933455,
+    "difference_degrees": 2.072770495047135,
+    "physical_angle_measured": false,
+    "gyro_bias_rps": 0.001090995557831704
+  },
+  "previous_attempts_not_accepted": [
+    {
+      "reason": "insufficient_observed_movement",
+      "max_displacement_m": 0.021821727553999443
+    },
+    {
+      "reason": "raw_imu_and_body_yaw_sign_conflict",
+      "gyro_degrees": -53.36080439902325,
+      "lio_degrees": -44.769173926739214
+    },
+    {
+      "reason": "map_frozen_on_pose_time_regression"
+    }
+  ],
+  "raw_data_saved": false,
+  "automatic_motion_commands": 0,
+  "motion_enabled": false,
+  "body_translation_verified": false,
+  "distance_scale_verified": false
+}

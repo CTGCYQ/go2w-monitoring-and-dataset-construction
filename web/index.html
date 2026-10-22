@@ -259,9 +259,9 @@
     #pointcloud3d { height: 340px; }
   }
 </style>
-<link rel="stylesheet" href="/static/pointcloud-studio.css?v=20261022-2">
-<script src="/static/pointcloud-core.js?v=20261022-2"></script>
-<script src="/static/pointcloud-studio.js?v=20261022-2"></script>
+<link rel="stylesheet" href="/static/pointcloud-studio.css?v=20261022-5">
+<script src="/static/pointcloud-core.js?v=20261022-5"></script>
+<script src="/static/pointcloud-studio.js?v=20261022-5"></script>
 </head>
 <body>
 
@@ -411,10 +411,10 @@
 <div class="pc-empty" id="pcEmpty"><svg viewBox="0 0 80 80" fill="none" aria-hidden="true"><circle cx="40" cy="40" r="33" stroke="#547688"/><circle cx="40" cy="40" r="22" stroke="#547688"/><circle cx="40" cy="40" r="11" stroke="#547688"/><path d="M40 7V73M7 40H73M40 40L64 17" stroke="#76c9bd"/><circle cx="40" cy="40" r="3" fill="#76c9bd"/></svg><b id="pcEmptyTitle">正在连接雷达</b><p id="pcEmptyDetail">有效点云到达后自动显示，可先调整视角和外观。</p></div>
 <div class="pc-floor-caption" id="pcFloorCaption">0.5 m 网格 / Z = 0 雷达参考面</div><div class="pc-stage-footer"><span>左键旋转 · 右键平移 · 滚轮缩放</span><span><strong id="pcRenderCount">0 点</strong> / <span id="pcFps">— Hz 更新</span></span></div></div>
 <aside class="pc-side" aria-label="点云显示设置"><div><h3 class="pc-group-title">观察视角</h3><div class="pc-view-grid"><button class="is-active" data-pc-view="iso">等轴</button><button data-pc-view="top">俯视</button><button data-pc-view="x">沿 X 观察</button><button data-pc-view="y">沿 Y 观察</button></div></div>
-<div><h3 class="pc-group-title">点云外观</h3><label class="pc-field" for="pcColor">着色方式</label><select class="pc-select" id="pcColor"><option value="height">相对高度</option><option value="range">雷达距离</option><option value="intensity">反射强度</option><option value="age">新旧帧</option></select><label class="pc-field" for="pcSize">点大小<output id="pcSizeValue">3.0 px</output></label><input id="pcSize" type="range" min="1" max="5" step="0.5" value="3"><label class="pc-field" for="pcRange">显示范围<output id="pcRangeValue">8 m</output></label><input id="pcRange" type="range" min="3" max="30" value="8"><label class="pc-field" for="pcVoxel">空间精度</label><select class="pc-select" id="pcVoxel"><option value="0.015">精细 · 1.5 cm</option><option value="0.035" selected>均衡 · 3.5 cm</option><option value="0.07">轻量 · 7 cm</option></select></div>
+<div><h3 class="pc-group-title">点云外观</h3><label class="pc-field" for="pcColor">着色方式</label><select class="pc-select" id="pcColor"><option value="height">相对高度</option><option value="range">雷达距离</option><option value="intensity">反射强度</option><option value="age">新旧帧</option></select><label class="pc-field" for="pcSize">点大小<output id="pcSizeValue">3.0 px</output></label><input id="pcSize" type="range" min="1" max="5" step="0.5" value="3"><label class="pc-field" for="pcRange">显示范围<output id="pcRangeValue">8 m</output></label><input id="pcRange" type="range" min="3" max="30" value="8"><label class="pc-field" for="pcVoxel">细节保留</label><select class="pc-select" id="pcVoxel"><option value="0.015">精细 · 1.5 cm</option><option value="0.035" selected>均衡 · 3.5 cm</option><option value="0.07">轻量 · 7 cm</option></select></div>
 <div id="pcWindowGroup" hidden><h3 class="pc-group-title">累积窗口</h3><div class="pc-window"><button data-pc-window="5">5 s</button><button class="is-active" data-pc-window="15">15 s</button><button data-pc-window="30">30 s</button><button data-pc-window="60">60 s</button></div><p class="pc-warning">仅供设备静止时观察。移动后重新积累，不作为移动建图或空间配准结果。</p></div>
 <div><h3 class="pc-group-title">辅助参照</h3><label class="pc-toggle"><input id="pcGridToggle" type="checkbox" checked>参考网格</label><label class="pc-toggle"><input id="pcAxesToggle" type="checkbox" checked>雷达原点与轴向</label></div>
-<div class="pc-metrics"><div class="pc-metric"><span>显示点</span><strong id="pcRendered">0</strong></div><div class="pc-metric"><span>原始帧点数</span><strong id="pcRawCount">—</strong></div><div class="pc-metric"><span>缓存帧</span><strong id="pcFrames">0</strong></div><div class="pc-metric"><span id="pcAgeLabel">数据年龄</span><strong id="pcAge">—</strong></div><div class="pc-metric"><span>体素边长</span><strong id="pcVoxelValue">3.5 cm</strong></div></div></aside></div>
+<div class="pc-metrics"><div class="pc-metric"><span>显示点</span><strong id="pcRendered">0</strong></div><div class="pc-metric"><span>原始帧点数</span><strong id="pcRawCount">—</strong></div><div class="pc-metric"><span>缓存帧</span><strong id="pcFrames">0</strong></div><div class="pc-metric"><span id="pcAgeLabel">数据年龄</span><strong id="pcAge">—</strong></div><div class="pc-metric"><span>显示体素</span><strong id="pcVoxelValue">3.5 cm</strong></div></div></aside></div>
 <footer class="pc-foot"><div class="pc-legend"><span id="pcLegendTitle">相对高度 Z</span><span id="pcLegendLow">−1.5 m</span><span class="pc-ramp"></span><span id="pcLegendHigh">+2.5 m</span></div><div class="pc-status-note" id="pcModeNote"><b>实时帧</b> · 仅显示最新有效扫描。</div></footer></section>
 
     <div class="grid g3">

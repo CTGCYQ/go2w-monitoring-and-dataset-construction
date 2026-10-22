@@ -2,23 +2,29 @@
   "passed": true,
   "browser_errors": [],
   "realtime": {
-    "points": 1712,
+    "points": 1675,
     "frame": "utlidar_lidar",
     "up": [
       0,
       0,
       1
     ],
-    "age": 0.1625
+    "age": 0.2242,
+    "display_direction_verified": true,
+    "display_frame": "calibrated_forward_lidar_origin"
   },
   "aggregate": {
-    "points": 14351,
+    "points": 14505,
     "frames": 16,
     "moving": false
   },
   "world_map": {
-    "points": 0,
-    "status": "\u5386\u53f2\u5730\u56fe\u5750\u6807\u5f02\u5e38"
+    "points": 26781,
+    "status": "\u96f7\u8fbe\u5728\u7ebf",
+    "version": 2,
+    "fault": false,
+    "trajectory": 56,
+    "display_direction_verified": true
   },
   "real_motion_commands_sent": 0,
   "raw_sensor_data_saved": false,

@@ -16,6 +16,22 @@ class CloudTests(unittest.TestCase):
    result=parse_cloud(self.message(big))
    self.assertEqual(result['points'][3],[2.,3.,.5,.8]);self.assertEqual(result['total'],4)
    self.assertEqual(result['frame_id'],'utlidar_lidar')
+ def test_point_time_uses_same_indices_as_valid_points(self):
+  m=self.message();m.fields[-1].name='time';data=bytearray(m.data);struct.pack_into('<f',data,0,float('nan'));m.data=data
+  result=parse_cloud(m,max_points=4,include_point_times=True)
+  self.assertEqual(len(result['points']),3);self.assertEqual(len(result['point_offsets_s']),3)
+  self.assertAlmostEqual(result['point_offsets_s'][0],.8,places=5)
+ def test_missing_time_fails_mapping_not_live_display(self):
+  self.assertIsNone(parse_cloud(self.message(),include_point_times=True))
+  self.assertIsNotNone(parse_cloud(self.message()))
+ def test_bad_map_types_and_stale_online(self):
+  self.assertFalse(map_snapshot_response([])['online'])
+  self.assertEqual(map_snapshot_response({'points':'bad'})['reason_code'],'map_geometry_invalid')
+  self.assertEqual(map_snapshot_response({'points':[[1,2,3]],'trajectory':{}})['reason_code'],'map_geometry_invalid')
+  self.assertFalse(map_snapshot_response({'online':True,'written_at':1,'points':[[1,2,3]]})['online'])
+ def test_nonfinite_trajectory_rejected(self):
+  result=map_snapshot_response({'points':[[1,2,3]],'trajectory':[[float('nan'),0,0]]})
+  self.assertEqual(result['reason_code'],'map_geometry_invalid')
  def test_truncation_rejected(self):
   m=self.message();m.data=m.data[:50];self.assertIsNone(parse_cloud(m))
  def test_missing_coordinates_rejected(self):

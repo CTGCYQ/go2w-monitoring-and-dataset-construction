@@ -28,7 +28,7 @@ def upgrade(source,template):
     hook="  if (name==='agent') { startAgentView(); } else { stopAgentView(); }"
     source=source.replace(hook,"  if(name!=='vision') pcStudio?.suspend();\n"+hook)
     source=source.replace('    renderer.setSize(el.clientWidth, el.clientHeight);\n    camera.aspect = el.clientWidth/el.clientHeight;\n    camera.updateProjectionMatrix();','    pcStudio?.resize();')
-    assets='<link rel="stylesheet" href="/static/pointcloud-studio.css?v=20261022-2">\n<script src="/static/pointcloud-core.js?v=20261022-2"></script>\n<script src="/static/pointcloud-studio.js?v=20261022-2"></script>\n'
+    assets='<link rel="stylesheet" href="/static/pointcloud-studio.css?v=20261022-5">\n<script src="/static/pointcloud-core.js?v=20261022-5"></script>\n<script src="/static/pointcloud-studio.js?v=20261022-5"></script>\n'
     source=source.replace('</head>',assets+'</head>')
     return source
 
