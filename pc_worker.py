@@ -11,39 +11,7 @@ from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPo
 CACHE_FILE = "/mnt/85ee0fe8-b944-40f5-8474-40cc274f0cef/go2w-monitor/pc_cache.json"
 latest = {}
 
-def parse_cloud(msg, max_points=4000):
-    offsets = {}
-    has_intensity = False
-    for f in msg.fields:
-        if f.name in ("x","y","z","intensity"):
-            offsets[f.name] = f.offset
-            if f.name == "intensity":
-                has_intensity = True
-    if not all(k in offsets for k in ("x","y","z")):
-        return None
-    data = msg.data
-    ps = msg.point_step or 32
-    n = msg.width
-    step = max(1, n // max_points)
-    pts = []
-    for i in range(0, n, step):
-        base = i * ps
-        try:
-            x = struct.unpack_from("<f", data, base+offsets["x"])[0]
-            y = struct.unpack_from("<f", data, base+offsets["y"])[0]
-            z = struct.unpack_from("<f", data, base+offsets["z"])[0]
-            if not all(math.isfinite(v) for v in (x, y, z)):
-                continue
-            if has_intensity:
-                it = struct.unpack_from("<f", data, base+offsets["intensity"])[0]
-                if not math.isfinite(it):
-                    continue
-                pts.append([round(x,3), round(y,3), round(z,3), round(it,4)])
-            else:
-                pts.append([round(x,3), round(y,3), round(z,3)])
-        except struct.error:
-            break
-    return {"points": pts, "count": len(pts), "total": n, "has_intensity": has_intensity}
+from cloud_model import parse_cloud, motion_hint
 
 def main():
     print("[pc_worker] starting", flush=True)
@@ -63,7 +31,7 @@ def main():
     while True:
         executor.spin_once(timeout_sec=0.2)
         now = time.time()
-        if now - last_write > 0.5:
+        if now - last_write > 0.2:
             fresh = ("msg" in latest and
                      time.monotonic() - latest["received_monotonic"] <= 1.5)
             parsed = parse_cloud(latest["msg"]) if fresh else None
@@ -72,6 +40,11 @@ def main():
                        "written_at": now, "points": [], "count": 0}
             if parsed:
                 payload.update(parsed)
+                try:
+                    with open(os.path.join(os.path.dirname(CACHE_FILE),"state.json")) as stream:
+                        payload['motion']=motion_hint(json.load(stream),now)
+                except (OSError,ValueError):
+                    payload['motion']={'available':False,'moving':None,'kind':'motion_hint_only'}
             else:
                 payload["reason"] = "sensor data missing or stale"
             tmp = CACHE_FILE + ".tmp"

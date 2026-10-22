@@ -816,44 +816,27 @@ def _read_pc_cache() -> dict:
         return {}
 
 
+MAP_CACHE_FILE = BASE_DIR / "map_cache.json"
+
+
+@app.get("/api/map")
+def api_map(max_points: int = 60000):
+    """Existing relative-map cache with bounded responses and explicit geometry validation."""
+    try:
+        cache=json.loads(MAP_CACHE_FILE.read_text("utf-8"))
+    except (OSError,ValueError):
+        cache={"online":False,"points":[],"reason":"no map cache available"}
+    return JSONResponse(map_snapshot_response(cache,max_points),headers={"Cache-Control":"no-store"})
+
+
+from cloud_model import cloud_response, map_snapshot_response
+
 @app.get("/api/lidar/cloud")
-def api_lidar_cloud(max_points: int = 3000):
-    """返回最新一帧激光点云（由独立采集进程持续写入缓存）。
+def api_lidar_cloud(max_points: int = 8000):
+    """Native sensor coordinates with source identity, freshness and motion hints."""
+    return JSONResponse(cloud_response(_read_pc_cache(),max_points),
+                        headers={"Cache-Control":"no-store"})
 
-    数据源为 ROS2 话题 /utlidar/cloud（sensor_msgs/PointCloud2），由独立进程
-    pc_worker.py 常驻订阅并写缓存，API 直接读取，快且稳定。
-
-    Args:
-        max_points: 返回的最大点数（默认 3000，控制浏览器渲染压力）
-
-    Returns:
-        {"points": [[x,y,z,(intensity)], ...], "count": N, "total": 总数,
-         "online": bool, "has_intensity": 是否有反射强度}
-    """
-    max_points = max(100, min(max_points, 20000))
-    cache = _read_pc_cache()
-    pts = cache.get("points") or []
-    if not cache.get("online") or not pts:
-        return JSONResponse({"online": False, "reason": "no point cloud yet",
-                             "points": [], "count": 0, "has_intensity": False})
-    # 从完整缓存降采样到请求点数
-    step = max(1, len(pts) // max_points)
-    sampled = pts[::step]
-    return JSONResponse({
-        "online": True,
-        "points": sampled,
-        "count": len(sampled),
-        "total": cache.get("total", len(pts)),
-        "has_intensity": cache.get("has_intensity", False),
-        "ts": cache.get("ts", 0),
-    })
-
-
-# ---------------------------------------------------------------------------
-# 避障：基于最新点云检测机器狗前进方向上的障碍
-# ---------------------------------------------------------------------------
-# 点云坐标系：x=前方，y=左，z=上（机器狗本体）。避障检测"前方扇形区域"内
-# 最近障碍物距离，供运动执行前拦截 + 前端提示。
 
 @app.get("/api/lidar/obstacle")
 def api_lidar_obstacle(

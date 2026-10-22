@@ -1,0 +1,31 @@
+{
+  "passed": true,
+  "checks": [
+    "native Z-up camera",
+    "renderer has actual draw data",
+    "no fake camera RGB mode",
+    "fullscreen enabled",
+    "aggregation receives distinct frames",
+    "aggregation builds detail",
+    "top preset preserves Z-up",
+    "point colors finite",
+    "pause stops requests",
+    "motion clears old aggregation",
+    "offline clears live drawing",
+    "offline state is explicit",
+    "automatic reconnect",
+    "hidden tab stops acquisition",
+    "legacy world map remains available",
+    "offline map is clearly historical",
+    "map has no fabricated per-point age",
+    "corrupt map is blocked explicitly",
+    "mobile has no page overflow",
+    "mobile renderer nonzero",
+    "no browser or shader errors"
+  ],
+  "browser_errors": [],
+  "synthetic_test_data": true,
+  "screenshots_saved": true,
+  "real_sensor_data_saved": false,
+  "fixture_point_count": 26121
+}

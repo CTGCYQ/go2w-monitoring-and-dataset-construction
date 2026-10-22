@@ -259,6 +259,9 @@
     #pointcloud3d { height: 340px; }
   }
 </style>
+<link rel="stylesheet" href="/static/pointcloud-studio.css?v=20261022-2">
+<script src="/static/pointcloud-core.js?v=20261022-2"></script>
+<script src="/static/pointcloud-studio.js?v=20261022-2"></script>
 </head>
 <body>
 
@@ -401,48 +404,19 @@
 
   <!-- ============ TAB3 视觉与点云 ============ -->
   <div class="tabview" id="tv-vision">
-    <div class="card" style="margin-bottom:12px;">
-      <h2>激光雷达点云 3D <span class="hint">LiDAR Point Cloud · 时间聚合重构</span></h2>
-      <div class="ctrl-row">
-        <span style="font-size:12px;color:var(--muted);">刷新间隔(s):</span>
-        <input type="number" id="pcInterval" class="refresh" value="0.5" min="0.5" step="0.5" list="pcIntervalList" onchange="applyPcInterval()" style="width:70px">
-        <datalist id="pcIntervalList">
-          <option value="0.5"><option value="1"><option value="2"><option value="5">
-        </datalist>
-        <span style="font-size:12px;color:var(--muted);">单帧点数:</span>
-        <input type="number" id="pcPoints" class="refresh" value="5000" min="500" step="500" list="pcPointsList" onchange="applyPcInterval()" style="width:80px">
-        <datalist id="pcPointsList">
-          <option value="1000"><option value="3000"><option value="5000"><option value="8000"><option value="15000">
-        </datalist>
-        <span style="font-size:12px;color:var(--muted);">累积窗口(s):</span>
-        <input type="number" id="pcAccum" class="refresh" value="60" min="5" step="5" list="pcAccumList" onchange="applyPcAccum()" style="width:70px">
-        <datalist id="pcAccumList">
-          <option value="10"><option value="20"><option value="30"><option value="60"><option value="120"><option value="180"><option value="300">
-        </datalist>
-        <span style="font-size:12px;color:var(--muted);">着色:</span>
-        <select id="pcColorMode" class="refresh" onchange="applyPcAccum()">
-          <option value="height" selected>高度</option>
-          <option value="intensity">强度</option>
-          <option value="time">时间</option>
-          <option value="camera">RGB</option>
-        </select>
-        <button class="sm" onclick="clearPcBuffer()">🗑 清空</button>
-        <button class="sm" style="border-color:var(--amber);color:var(--amber);" onclick="updatePcHeading()">🧭 刷新朝向</button>
-      </div>
-      <div class="ctrl-row" style="margin-top:6px;">
-        <span class="badge" id="pcStatus">加载中…</span>
-        <span class="badge accent" id="pcCountdown" style="font-family:var(--mono);">下次刷新 -s</span>
-        <span class="badge" id="pcAccumCount" style="font-family:var(--mono);">已累积 0 帧</span>
-        <span class="badge" id="pcPointsCount" style="font-family:var(--mono);">0 点</span>
-        <span class="badge" id="pcCalib" style="font-family:var(--mono);">方向: 未校准</span>
-      </div>
-      <div style="height:6px;background:rgba(37,99,235,0.09);border-radius:3px;margin:8px 0;overflow:hidden;">
-        <div id="pcAccumBar" style="height:100%;width:0%;background:linear-gradient(90deg,#2563eb,#16a34a);border-radius:3px;transition:width .3s;"></div>
-      </div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;" id="pcAccumInfo">每 2 秒刷新一帧点云，累积窗口 30 秒内所有帧合并重构，越累积越完整（滚动窗口）。</div>
-      <div id="pointcloud3d"></div>
-      <p class="pc-status" id="pcInfo">鼠标拖动旋转 / 滚轮缩放（Drag to rotate, scroll to zoom）</p>
-    </div>
+<section class="card pc-studio" id="pcStudio" aria-label="激光雷达空间观测台">
+<header class="pc-head"><div><div class="pc-eyebrow"><i class="pc-radar-icon"></i>LIDAR / SPATIAL OBSERVATORY</div><h2>激光雷达<span>·</span>空间重建</h2><p class="pc-subtitle" id="pcSourceNote">雷达源坐标 · 机身方向待标定</p></div><div class="pc-mode" role="group" aria-label="点云显示模式"><button class="is-active" data-pc-mode="frame">实时帧</button><button data-pc-mode="aggregate">静态聚合</button><button data-pc-mode="map">世界地图</button></div></header>
+<div class="pc-body"><div class="pc-stage"><div id="pointcloud3d"></div><div class="pc-hud"><div><span class="pc-live" id="pcLive" data-state="offline"><i></i><span id="pcLiveText">等待连接</span></span><div class="pc-frame-label" id="pcFrameLabel">SOURCE / —</div></div></div><canvas class="pc-axis" id="pcAxisCanvas" width="104" height="104" aria-label="XYZ方向导航"></canvas>
+<div class="pc-actionbar"><button id="pcPause" aria-pressed="false" title="只暂停当前画面，不控制机器狗">暂停</button><button id="pcFit" title="F · 聚焦点云范围">聚焦</button><button id="pcClear" title="清除当前显示缓存，保留后端地图">清空显示</button><button id="pcFullscreen">全屏</button></div>
+<div class="pc-empty" id="pcEmpty"><svg viewBox="0 0 80 80" fill="none" aria-hidden="true"><circle cx="40" cy="40" r="33" stroke="#547688"/><circle cx="40" cy="40" r="22" stroke="#547688"/><circle cx="40" cy="40" r="11" stroke="#547688"/><path d="M40 7V73M7 40H73M40 40L64 17" stroke="#76c9bd"/><circle cx="40" cy="40" r="3" fill="#76c9bd"/></svg><b id="pcEmptyTitle">正在连接雷达</b><p id="pcEmptyDetail">有效点云到达后自动显示，可先调整视角和外观。</p></div>
+<div class="pc-floor-caption" id="pcFloorCaption">0.5 m 网格 / Z = 0 雷达参考面</div><div class="pc-stage-footer"><span>左键旋转 · 右键平移 · 滚轮缩放</span><span><strong id="pcRenderCount">0 点</strong> / <span id="pcFps">— Hz 更新</span></span></div></div>
+<aside class="pc-side" aria-label="点云显示设置"><div><h3 class="pc-group-title">观察视角</h3><div class="pc-view-grid"><button class="is-active" data-pc-view="iso">等轴</button><button data-pc-view="top">俯视</button><button data-pc-view="x">沿 X 观察</button><button data-pc-view="y">沿 Y 观察</button></div></div>
+<div><h3 class="pc-group-title">点云外观</h3><label class="pc-field" for="pcColor">着色方式</label><select class="pc-select" id="pcColor"><option value="height">相对高度</option><option value="range">雷达距离</option><option value="intensity">反射强度</option><option value="age">新旧帧</option></select><label class="pc-field" for="pcSize">点大小<output id="pcSizeValue">3.0 px</output></label><input id="pcSize" type="range" min="1" max="5" step="0.5" value="3"><label class="pc-field" for="pcRange">显示范围<output id="pcRangeValue">8 m</output></label><input id="pcRange" type="range" min="3" max="30" value="8"><label class="pc-field" for="pcVoxel">空间精度</label><select class="pc-select" id="pcVoxel"><option value="0.015">精细 · 1.5 cm</option><option value="0.035" selected>均衡 · 3.5 cm</option><option value="0.07">轻量 · 7 cm</option></select></div>
+<div id="pcWindowGroup" hidden><h3 class="pc-group-title">累积窗口</h3><div class="pc-window"><button data-pc-window="5">5 s</button><button class="is-active" data-pc-window="15">15 s</button><button data-pc-window="30">30 s</button><button data-pc-window="60">60 s</button></div><p class="pc-warning">仅供设备静止时观察。移动后重新积累，不作为移动建图或空间配准结果。</p></div>
+<div><h3 class="pc-group-title">辅助参照</h3><label class="pc-toggle"><input id="pcGridToggle" type="checkbox" checked>参考网格</label><label class="pc-toggle"><input id="pcAxesToggle" type="checkbox" checked>雷达原点与轴向</label></div>
+<div class="pc-metrics"><div class="pc-metric"><span>显示点</span><strong id="pcRendered">0</strong></div><div class="pc-metric"><span>原始帧点数</span><strong id="pcRawCount">—</strong></div><div class="pc-metric"><span>缓存帧</span><strong id="pcFrames">0</strong></div><div class="pc-metric"><span id="pcAgeLabel">数据年龄</span><strong id="pcAge">—</strong></div><div class="pc-metric"><span>体素边长</span><strong id="pcVoxelValue">3.5 cm</strong></div></div></aside></div>
+<footer class="pc-foot"><div class="pc-legend"><span id="pcLegendTitle">相对高度 Z</span><span id="pcLegendLow">−1.5 m</span><span class="pc-ramp"></span><span id="pcLegendHigh">+2.5 m</span></div><div class="pc-status-note" id="pcModeNote"><b>实时帧</b> · 仅显示最新有效扫描。</div></footer></section>
+
     <div class="grid g3">
       <div class="card">
         <h2>前置相机 <span class="hint">Front Camera (RGB)</span></h2>
@@ -757,6 +731,7 @@ function switchTab(name) {
     }
     refreshCam(); refreshPc();
   }
+  if(name!=='vision') pcStudio?.suspend();
   if (name==='agent') { startAgentView(); } else { stopAgentView(); }
   if (name==='slam') { startSlamView(); } else { stopSlamView(); }
   if (name==='robots') { loadRobots(); }
@@ -1057,389 +1032,13 @@ async function refreshDepthDepth() {
   }
 }
 
-// ================= 激光点云 3D（Three.js）=================
-// 机器狗坐标系(x前,y左,z上) → Three.js 坐标转换
-// 基础映射：左→+x, 上→+y, 前→-z
-// 方向箭头根据机器狗姿态(IMU yaw)旋转，始终指向真实正前方
-let pcFwdArrow = null;   // 前方箭头（随姿态更新）
-let pcDirLabels = [];    // 方位标签（前/后/左/右）
-function pcTransform(p){
-  // 基础：左(y)→x, 上(z)→y, 前(x)→-z
-  return [-p[1], p[2], -p[0]];
-}
-// 根据机器狗 IMU yaw 更新方向箭头和标签（机器狗本体朝向，非点云）
-function updatePcHeading(){
-  if(!pcFwdArrow || !lastState) return;
-  const rpy = lastState.imu?.rpy_deg;
-  if(!rpy) return;
-  const yaw = rpy[2];   // 机器狗偏航角（度）
-  // 机器狗前方 = 雷达 +x。俯视图中前方映射到 -z。
-  // 机器狗相对初始方向偏转 yaw，箭头和标签应随之旋转（绕 y 轴）
-  const ang = -yaw * Math.PI / 180;
-  pcFwdArrow.rotation.y = ang;
-  // 方向标签也旋转（前在 -z 方向，随 yaw 转）
-  const labels = [
-    {sprite: pcDirLabels[0], dx: 0, dz: -2.2},  // 前
-    {sprite: pcDirLabels[1], dx: 0, dz: 2.2},   // 后
-    {sprite: pcDirLabels[2], dx: -2.2, dz: 0},  // 左
-    {sprite: pcDirLabels[3], dx: 2.2, dz: 0},   // 右
-  ];
-  const c = Math.cos(ang), s = Math.sin(ang);
-  for(const lb of labels){
-    // 绕 y 轴旋转标签位置
-    const x = lb.dx*c + lb.dz*s;
-    const z = -lb.dx*s + lb.dz*c;
-    lb.sprite.position.set(x, 0.6, z);
-  }
-  $('pcCalib').textContent = '朝向 ' + Math.round(yaw) + '°';
-}
-let pcTimer = null;
-let scene, camera, renderer, pointsMesh, controls;
-let pcExtent = 5;   // 点云当前范围（用于自适应相机和点大小）
-let pcFitted = false;  // 是否已完成首次相机自适应
-function initPc3D() {
-  const el = $('pointcloud3d');
-  scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x0e1f36);
-  camera = new THREE.PerspectiveCamera(60, el.clientWidth/el.clientHeight, 0.01, 200);
-  camera.position.set(0, 10, -6);   // 机器狗后上方俯视：前方(-z)朝屏幕上方，地图式
-  camera.up.set(0, 1, 0);
-  renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setSize(el.clientWidth, el.clientHeight);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // 限制像素比防卡顿
-  el.appendChild(renderer.domElement);
-  controls = new THREE.OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true;
-  controls.dampingFactor = 0.1;
-  // 网格参考（水平面 y=0，俯视时清晰）
-  const grid = new THREE.GridHelper(12, 24, 0x00d4ff, 0x1a2a3a);
-  scene.add(grid);
-  // 机器狗位置标记：原点小圆盘
-  const disc = new THREE.Mesh(
-    new THREE.CircleGeometry(0.3, 24),
-    new THREE.MeshBasicMaterial({color: 0xff4d4d, transparent: true, opacity: 0.6, side: THREE.DoubleSide})
-  );
-  disc.rotation.x = -Math.PI/2;   // 平放地面
-  disc.position.set(0, 0.02, 0);
-  scene.add(disc);
-  // 红色箭头指向机器狗前方（pcTransform 中前方 x+ → -z，即屏幕上方）
-  pcFwdArrow = new THREE.ArrowHelper(new THREE.Vector3(0,0,-1), new THREE.Vector3(0,0.3,0), 1.0, 0xff4d4d, 0.3, 0.2);
-  scene.add(pcFwdArrow);
-  // 方向标签随机器狗姿态更新（前/后/左/右）
-  pcDirLabels = [];
-  pcDirLabels.push(addDirLabel('前 FRONT', new THREE.Vector3(0, 0.6, -2.2), 0xff4d4d));
-  pcDirLabels.push(addDirLabel('后 BACK', new THREE.Vector3(0, 0.6, 2.2), 0x4d7bff));
-  pcDirLabels.push(addDirLabel('左 LEFT', new THREE.Vector3(-2.2, 0.6, 0), 0x4dff8a));
-  pcDirLabels.push(addDirLabel('右 RIGHT', new THREE.Vector3(2.2, 0.6, 0), 0xffaa4d));
-  // 点云几何体（预分配，超出时自动扩容）
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(8000*3), 3));
-  geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(8000*3), 3));
-  // 高斯软点纹理：模拟 3D 高斯泼溅的软核视觉效果（浏览器实时渲染，无需训练）
-  const gaussTex = makeGaussTexture();
-  const mat = new THREE.PointsMaterial({
-    size: 0.08, map: gaussTex, vertexColors: true,
-    transparent: true, opacity: 0.9,
-    depthWrite: false, blending: THREE.AdditiveBlending,
-    sizeAttenuation: true,
-  });
-  pointsMesh = new THREE.Points(geo, mat);
-  scene.add(pointsMesh);
-  pcCapacity = 8000;
-  animate();
-}
-// 生成高斯径向渐变圆纹理（中心亮→边缘透明，模拟高斯核）
-function makeGaussTexture() {
-  const c = document.createElement('canvas');
-  c.width = c.height = 64;
-  const ctx = c.getContext('2d');
-  const g = ctx.createRadialGradient(32,32,0, 32,32,32);
-  g.addColorStop(0,'rgba(255,255,255,1)');
-  g.addColorStop(0.4,'rgba(255,255,255,0.8)');
-  g.addColorStop(1,'rgba(255,255,255,0)');
-  ctx.fillStyle = g;
-  ctx.fillRect(0,0,64,64);
-  const tex = new THREE.CanvasTexture(c);
-  tex.needsUpdate = true;
-  return tex;
-}
-// 生成方向文字标签（前/后/左/右），用于校验坐标系
-function addDirLabel(text, pos, color) {
-  const cv = document.createElement('canvas');
-  cv.width = 256; cv.height = 64;
-  const ctx = cv.getContext('2d');
-  ctx.fillStyle = 'rgba(0,0,0,0)';
-  ctx.fillRect(0,0,256,64);
-  ctx.font = 'bold 28px sans-serif';
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#' + new THREE.Color(color).getHexString();
-  ctx.fillText(text, 128, 32);
-  const tex = new THREE.CanvasTexture(cv);
-  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
-  const sprite = new THREE.Sprite(mat);
-  sprite.position.copy(pos);
-  sprite.scale.set(2.0, 0.5, 1);
-  scene.add(sprite);
-  return sprite;
-}
-let pcCapacity = 8000;
-function ensurePcCapacity(n) {
-  // 点数量超过预分配容量时动态扩容，避免越界写入
-  if (n > pcCapacity) {
-    const cap = Math.max(n, pcCapacity * 2);
-    const geo = pointsMesh.geometry;
-    geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(cap*3), 3));
-    geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(cap*3), 3));
-    pcCapacity = cap;
-  }
-}
-function animate() {
-  requestAnimationFrame(animate);
-  controls.update();
-  renderer.render(scene, camera);
-}
-function autoFitCamera(pts) {
-  // 根据点云实际范围自适应相机位置、朝向和点大小（用转换后坐标）
-  if(!pts.length) return;
-  let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity,minZ=Infinity,maxZ=-Infinity;
-  for(let i=0;i<pts.length;i++){
-    const t = pcTransform(pts[i]);
-    if(t[0]<minX)minX=t[0]; if(t[0]>maxX)maxX=t[0];
-    if(t[1]<minY)minY=t[1]; if(t[1]>maxY)maxY=t[1];
-    if(t[2]<minZ)minZ=t[2]; if(t[2]>maxZ)maxZ=t[2];
-  }
-  const cx=(minX+maxX)/2, cy=(minY+maxY)/2, cz=(minZ+maxZ)/2;
-  const extent = Math.max(maxX-minX, maxY-minY, maxZ-minZ, 0.5);
-  pcExtent = extent;
-  controls.target.set(cx, cy, cz);
-  // 相机放在中心斜上方俯视，距离约 2.5 * extent
-  const dist = extent * 2.5;
-  camera.position.set(cx + dist*0.4, cy + dist*0.7, cz + dist);
-  camera.near = Math.max(0.01, extent/50);
-  camera.far = extent*25;
-  camera.updateProjectionMatrix();
-  controls.update();
-  // 点大小随范围缩放（加密显示）
-  pointsMesh.material.size = Math.max(0.04, extent/40);
-}
-let pcMaxPoints = 3000;
-// 点云时间聚合缓冲：每帧记录 {ts, points}，渲染时累积窗口内的所有帧
-let pcBuffer = [];
-let pcAccumSecs = 10;
-// 地形伪彩色色表（11色）：绿→黄→棕→灰→白→蓝，模拟实景地形
-const TERRAIN_COLORS = [
-  [0.20,0.45,0.25], [0.25,0.55,0.25], [0.55,0.60,0.30], [0.75,0.65,0.35],
-  [0.70,0.55,0.35], [0.65,0.50,0.40], [0.70,0.68,0.62], [0.85,0.85,0.82],
-  [0.95,0.95,0.95], [0.60,0.75,0.90], [0.40,0.55,0.80],
-];
-function terrainColor(t) {
-  // t in [0,1] → 在色表中插值
-  const idx = Math.min(TERRAIN_COLORS.length-1, Math.max(0, t*(TERRAIN_COLORS.length-1)));
-  const i = Math.floor(idx), frac = idx - i;
-  const c0 = TERRAIN_COLORS[i], c1 = TERRAIN_COLORS[Math.min(i+1, TERRAIN_COLORS.length-1)];
-  return [c0[0]+(c1[0]-c0[0])*frac, c0[1]+(c1[1]-c0[1])*frac, c0[2]+(c1[2]-c0[2])*frac];
-}
-function applyPcAccum() {
-  // 累积窗口：每次刷新把新帧压入缓冲，窗口内所有帧叠加显示完整环境。
-  // 合理默认：刷新间隔 2s + 累积窗口 30s（雷达 4.5Hz，30s 足够覆盖全向环境）。
-  let acc = parseInt($('pcAccum').value) || 30;
-  acc = Math.max(2, Math.min(acc, 300));
-  pcAccumSecs = acc;
-  updatePcInfo();
-  if(pcBuffer.length) renderPcBuffer();
-}
-function clearPcBuffer() {
-  pcBuffer = [];
-  pcBufferStartTs = Date.now();
-  pointsMesh.geometry.setDrawRange(0, 0);
-  const st = $('pcStatus');
-  st.textContent = '已清空';
-  st.className = 'badge';
-  updatePcInfo();
-}
-// 更新累积信息文本 + 进度条 + 计数
-function updatePcInfo() {
-  const interval = parseFloat($('pcInterval').value) || 2;
-  const frames = Math.ceil(pcAccumSecs / Math.max(0.5, interval));
-  $('pcAccumInfo').textContent =
-    `每 ${interval}s 刷新一帧 → 加入累积窗口（${pcAccumSecs}s，约 ${frames} 帧）。` +
-    `窗口内所有帧合并重构，越累积越完整（滚动窗口，始终保留最近 ${pcAccumSecs}s 的数据）。`;
-  $('pcAccumCount').textContent = `已累积 ${pcBuffer.length} 帧`;
-  // 进度条：当前已累积时间 / 目标窗口
-  const elapsed = (Date.now() - pcBufferStartTs) / 1000;
-  const pct = Math.min(100, (elapsed / pcAccumSecs) * 100);
-  const bar = $('pcAccumBar');
-  if(bar) bar.style.width = pct.toFixed(1) + '%';
-  // 点数统计
-  let total = 0;
-  for(const f of pcBuffer) total += f.points.length;
-  $('pcPointsCount').textContent = total.toLocaleString() + ' 点';
-}
-function renderPcBuffer() {
-  // 合并窗口内所有帧的点云 → 体素降采样去重 → 高斯软点渲染
-  const mode = $('pcColorMode').value;
-  const now = Date.now();
-  pcBuffer = pcBuffer.filter(f => now - f.ts <= pcAccumSecs*1000);
-  if(!pcBuffer.length){ pointsMesh.geometry.setDrawRange(0,0); updatePcInfo(); return; }
-  // 合并所有点
-  const allPts = [], allTs = [], allInt = [];
-  for(const f of pcBuffer){ for(const p of f.points){ allPts.push(p); allTs.push(f.ts); allInt.push(p[3]!==undefined ? p[3] : NaN); } }
-  // 体素降采样：按体素网格去重（保留每格一个代表点），避免重复点堆积成"糊"
-  const pts = voxelDownsample(allPts, allInt, allTs);
-  const dPts = pts.pts, dInt = pts.int, dTs = pts.ts;
-  ensurePcCapacity(dPts.length);
-  const pos = pointsMesh.geometry.attributes.position.array;
-  const col = pointsMesh.geometry.attributes.color.array;
-  // 高度范围
-  let zmin=Infinity, zmax=-Infinity;
-  if(mode!=='time' && mode!=='intensity'){
-    for(const p of dPts){ if(p[2]<zmin)zmin=p[2]; if(p[2]>zmax)zmax=p[2]; }
-  }
-  // 强度范围
-  let imin=Infinity, imax=-Infinity;
-  if(mode==='intensity'){
-    for(const it of dInt){ if(!isNaN(it)){ if(it<imin)imin=it; if(it>imax)imax=it; } }
-    if(!isFinite(imin)){ imin=0; imax=1; }
-    if(imax<=imin) imax=imin+1;
-  }
-  const tMin = now - pcAccumSecs*1000, tMax = now;
-  for(let i=0;i<dPts.length;i++){
-    const t = pcTransform(dPts[i]);   // 机器狗坐标 → Three.js 坐标（z高度→y轴）
-    pos[i*3]=t[0]; pos[i*3+1]=t[1]; pos[i*3+2]=t[2];
-    if(mode==='height'){
-      const tz = (zmax>zmin) ? (dPts[i][2]-zmin)/(zmax-zmin) : 0.5;
-      const c = terrainColor(tz);
-      col[i*3]=c[0]; col[i*3+1]=c[1]; col[i*3+2]=c[2];
-    } else if(mode==='intensity'){
-      const t2 = isNaN(dInt[i]) ? 0 : (dInt[i]-imin)/(imax-imin);
-      col[i*3]=0.2+0.8*t2; col[i*3+1]=0.1+0.8*t2; col[i*3+2]=1-0.9*t2;
-    } else if(mode==='time'){
-      const t2 = (tMax>tMin) ? (dTs[i]-tMin)/(tMax-tMin) : 0.5;
-      col[i*3]=0.2+0.8*t2; col[i*3+1]=0.3+0.3*(1-Math.abs(t2-0.5)*2); col[i*3+2]=1-t2;
-    } else { // camera RGB
-      const tz = (zmax>zmin) ? (dPts[i][2]-zmin)/(zmax-zmin) : 0.5;
-      col[i*3]=0.5+0.4*Math.sin(dPts[i][0]*2); col[i*3+1]=0.4+0.4*Math.cos(dPts[i][1]*2); col[i*3+2]=0.3+0.6*tz;
-    }
-  }
-  pointsMesh.geometry.setDrawRange(0, dPts.length);
-  pointsMesh.geometry.attributes.position.needsUpdate = true;
-  pointsMesh.geometry.attributes.color.needsUpdate = true;
-  // 相机自适应：首次或范围显著变化时重新 fit
-  const needFit = !pcFitted || rangeChanged(dPts);
-  if(needFit){ autoFitCamera(dPts); pcFitted = true; }
-  $('pcInfo').textContent = `已重构 ${dPts.length.toLocaleString()} 点 (累积 ${allPts.length.toLocaleString()}) / ${pcBuffer.length} 帧 · 窗口 ${pcAccumSecs}s · 拖动旋转 / 滚轮缩放`;
-  updatePcInfo();
-}
-// 体素降采样：把空间划分为格子，每格保留一个代表点（减少重复，重构更清晰）
-function voxelDownsample(pts, ints, ts) {
-  const n = pts.length;
-  if(!n) return {pts:[], int:[], ts:[]};
-  if(n <= 6000) return {pts, int:ints, ts:ts};  // 点不多时跳过降采样，保留细节
-  // 估算体素大小（按点云范围）
-  let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity,minZ=Infinity,maxZ=-Infinity;
-  for(const p of pts){
-    if(p[0]<minX)minX=p[0]; if(p[0]>maxX)maxX=p[0];
-    if(p[1]<minY)minY=p[1]; if(p[1]>maxY)maxY=p[1];
-    if(p[2]<minZ)minZ=p[2]; if(p[2]>maxZ)maxZ=p[2];
-  }
-  const extent = Math.max(maxX-minX, maxY-minY, maxZ-minZ, 0.5);
-  const voxel = Math.max(0.01, extent/600);   // 体素更小，保留更多点（加密）
-  const keyFn = (x,y,z)=>Math.floor(x/voxel)+'_'+Math.floor(y/voxel)+'_'+Math.floor(z/voxel);
-  const seen = new Set();
-  const outPts=[], outInt=[], outTs=[];
-  for(let i=0;i<n;i++){
-    const k = keyFn(pts[i][0], pts[i][1], pts[i][2]);
-    if(seen.has(k)) continue;   // 同一体素已有点则跳过
-    seen.add(k);
-    outPts.push(pts[i]); outInt.push(ints[i]); outTs.push(ts[i]);
-  }
-  return {pts:outPts, int:outInt, ts:outTs};
-}
-// 判断点云范围是否显著变化（>40% 才重配相机，避免频繁跳动）
-function rangeChanged(pts) {
-  if(!pts.length) return false;
-  let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
-  for(const p of pts){
-    const t = pcTransform(p);
-    if(t[0]<minX)minX=t[0]; if(t[0]>maxX)maxX=t[0];
-    if(t[1]<minY)minY=t[1]; if(t[1]>maxY)maxY=t[1];
-  }
-  const ex = Math.max(maxX-minX, maxY-minY, 0.5);
-  return Math.abs(ex - pcExtent) / Math.max(pcExtent, 0.5) > 0.4;
-}
-let pcBufferStartTs = Date.now();
-let pcPrevCentroid = null;   // 上一帧点云质心（用于运动检测）
-let pcMoving = false;        // 是否检测到机器狗运动
-// 计算点云质心（x,y 平面）
-function pcCentroid(pts){
-  let sx=0, sy=0, n=0;
-  for(const p of pts){ sx+=p[0]; sy+=p[1]; n++; }
-  return n ? [sx/n, sy/n] : [0,0];
-}
-async function refreshPc() {
-  pcMaxPoints = parseInt($('pcPoints').value);
-  const st = $('pcStatus');
-  try {
-    const d = await fetchJSON('/api/lidar/cloud?max_points='+pcMaxPoints);
-    if(d && d.online && d.points && d.points.length){
-      // 运动检测：比较相邻帧点云质心偏移（机器狗移动时点云整体平移）
-      const c = pcCentroid(d.points);
-      if(pcPrevCentroid){
-        const dx = c[0]-pcPrevCentroid[0], dy = c[1]-pcPrevCentroid[1];
-        pcMoving = (dx*dx + dy*dy) > 0.02;   // 阈值：约 0.14m 位移
-      }
-      pcPrevCentroid = c;
-      // 静止时才累积（运动时保持上次重构，避免错位）
-      if(!pcMoving){
-        if(!pcBuffer.length) pcBufferStartTs = Date.now();
-        pcBuffer.push({ ts: Date.now(), points: d.points });
-        // 缓冲容量：窗口内帧数 + 余量，防内存膨胀
-        const interval = parseFloat($('pcInterval').value) || 2;
-        const framesNeeded = Math.ceil(pcAccumSecs / Math.max(0.5, interval));
-        const maxFrames = Math.min(framesNeeded + 5, 200);
-        if(pcBuffer.length > maxFrames) pcBuffer.shift();
-      }
-      renderPcBuffer();
-      const hasInt = d.has_intensity ? ' +强度' : '';
-      const movingTag = pcMoving ? ' 🚫运动检测中(暂停累积)' : '';
-      st.textContent = `● 在线 · ${d.total||0}点/帧${hasInt}${movingTag}`;
-      st.className = pcMoving ? 'badge amber' : 'badge green';
-    } else {
-      st.textContent = '点云离线或暂无数据（机器人离线）';
-      st.className = 'badge red';
-      pointsMesh.geometry.setDrawRange(0, 0);
-      updatePcInfo();
-    }
-  } catch(e){
-    st.textContent = '点云加载失败 ' + (e.message||'');
-    st.className = 'badge red';
-  }
-}
-function applyPcInterval() {
-  // 刷新间隔变化时，保持累积窗口合理（累积 >= 刷新）
-  const interval = parseFloat($('pcInterval').value) || 2;
-  let acc = parseInt($('pcAccum').value) || 30;
-  if(acc < interval) { acc = interval; $('pcAccum').value = acc; }
-  pcAccumSecs = acc;
-  if(pcTimer) clearInterval(pcTimer);
-  pcCountdownRemaining = interval;
-  refreshPc();
-  pcTimer = setInterval(refreshPc, interval*1000);
-  updatePcInfo();
-}
-// 刷新倒计时 + 累积进度（每 100ms 更新）
-let pcCountdownRemaining = 2;
-let pcCountdownTimer = null;
-function startPcCountdown() {
-  if(pcCountdownTimer) clearInterval(pcCountdownTimer);
-  pcCountdownTimer = setInterval(()=>{
-    pcCountdownRemaining -= 0.1;
-    if(pcCountdownRemaining <= 0) pcCountdownRemaining = parseFloat($('pcInterval').value) || 2;
-    $('pcCountdown').textContent = `下次刷新 ${pcCountdownRemaining.toFixed(1)}s`;
-    updatePcInfo();
-  }, 100);
-}
-
+// Point-cloud module owns rendering and acquisition independently.
+let pcStudio=null,renderer=null,camera=null;
+function initPc3D(){try{pcStudio=new PointCloudStudio();renderer=pcStudio.renderer;camera=pcStudio.camera;}catch(error){console.error('PointCloudStudio',error);document.getElementById('pcEmptyTitle').textContent='无法启动三维渲染';document.getElementById('pcEmptyDetail').textContent='请检查浏览器硬件加速是否启用。';}}
+function updatePcHeading(){}
+function refreshPc(){pcStudio?.resume();}
+function applyPcInterval(){}
+function startPcCountdown(){}
 // ================= 文字交互（打字→机器狗语音回复/执行）=================
 let agentCamTimer = null, agentHealthTimer = null, agentBusy = false;
 // 切到本 tab 时启动：相机轮询 + 服务健康探测 + 状态表刷新
@@ -2027,9 +1626,7 @@ window.addEventListener('resize', ()=>{
   Object.values(charts).forEach(c=>c.ch.resize());
   if(renderer){
     const el=$('pointcloud3d');
-    renderer.setSize(el.clientWidth, el.clientHeight);
-    camera.aspect = el.clientWidth/el.clientHeight;
-    camera.updateProjectionMatrix();
+    pcStudio?.resize();
   }
 });
 </script>
