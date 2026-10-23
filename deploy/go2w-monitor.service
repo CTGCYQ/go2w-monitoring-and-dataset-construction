@@ -1,0 +1,16 @@
+[Unit]
+Description=Go2-W monitor recovery supervisor (no motion control)
+After=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+WorkingDirectory=/mnt/85ee0fe8-b944-40f5-8474-40cc274f0cef/go2w-monitor
+ExecStart=/usr/bin/python3 /mnt/85ee0fe8-b944-40f5-8474-40cc274f0cef/go2w-monitor/monitor_supervisor.py
+KillMode=process
+Restart=always
+RestartSec=3
+TimeoutStopSec=40
+
+[Install]
+WantedBy=default.target

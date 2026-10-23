@@ -1,0 +1,5258 @@
+{
+  "passed": true,
+  "failure_reasons": [],
+  "duration_s": 602.783,
+  "sample_count": 61,
+  "healthy_ratio": 1.0,
+  "source_frame_advances": 60,
+  "browser_errors": [],
+  "http_errors": [],
+  "browser_gc_heap": [
+    {
+      "elapsed_s": 0.002,
+      "heap_bytes": 13747611
+    },
+    {
+      "elapsed_s": 300.493,
+      "heap_bytes": 18426303
+    },
+    {
+      "elapsed_s": 600.917,
+      "heap_bytes": 21081932
+    },
+    {
+      "elapsed_s": 602.775,
+      "heap_bytes": 14814428
+    }
+  ],
+  "webgl_geometry_range": [
+    7,
+    8
+  ],
+  "webgl_texture_range": [
+    3,
+    3
+  ],
+  "process_resources": {
+    "go2wweb": {
+      "first_rss_mib": 122.2,
+      "last_rss_mib": 148.07,
+      "peak_rss_mib": 150.24,
+      "rss_growth_mib": 25.87,
+      "first_fds": 15,
+      "last_fds": 12,
+      "peak_fds": 15,
+      "average_cpu_percent": 24.01,
+      "peak_threads": 73
+    },
+    "pcworker": {
+      "first_rss_mib": 55.67,
+      "last_rss_mib": 57.49,
+      "peak_rss_mib": 57.49,
+      "rss_growth_mib": 1.82,
+      "first_fds": 11,
+      "last_fds": 10,
+      "peak_fds": 11,
+      "average_cpu_percent": 25.73,
+      "peak_threads": 74
+    },
+    "imuadapter": {
+      "first_rss_mib": 50.4,
+      "last_rss_mib": 51.66,
+      "peak_rss_mib": 51.66,
+      "rss_growth_mib": 1.26,
+      "first_fds": 10,
+      "last_fds": 10,
+      "peak_fds": 10,
+      "average_cpu_percent": 35.15,
+      "peak_threads": 74
+    },
+    "go2wcol": {
+      "first_rss_mib": 80.91,
+      "last_rss_mib": 82.12,
+      "peak_rss_mib": 82.12,
+      "rss_growth_mib": 1.22,
+      "first_fds": 11,
+      "last_fds": 11,
+      "peak_fds": 11,
+      "average_cpu_percent": 75.3,
+      "peak_threads": 74
+    },
+    "frontcam": {
+      "first_rss_mib": 34.63,
+      "last_rss_mib": 36.48,
+      "peak_rss_mib": 39.65,
+      "rss_growth_mib": 1.85,
+      "first_fds": 10,
+      "last_fds": 10,
+      "peak_fds": 10,
+      "average_cpu_percent": 10.0,
+      "peak_threads": 9
+    },
+    "pointlio": {
+      "first_rss_mib": 255.45,
+      "last_rss_mib": 258.98,
+      "peak_rss_mib": 258.98,
+      "rss_growth_mib": 3.54,
+      "first_fds": 10,
+      "last_fds": 10,
+      "peak_fds": 10,
+      "average_cpu_percent": 67.55,
+      "peak_threads": 12
+    },
+    "mapworker": {
+      "first_rss_mib": 75.7,
+      "last_rss_mib": 93.64,
+      "peak_rss_mib": 93.64,
+      "rss_growth_mib": 17.94,
+      "first_fds": 10,
+      "last_fds": 10,
+      "peak_fds": 11,
+      "average_cpu_percent": 113.75,
+      "peak_threads": 74
+    }
+  },
+  "samples": [
+    {
+      "elapsed_s": 0.002,
+      "time_utc": "2026-10-23T07:59:26Z",
+      "healthy": true,
+      "latencies_s": [
+        0.07146409999404568,
+        0.036504000003333203,
+        0.10474629999953322,
+        0.02437139999528881
+      ],
+      "cloud_age_s": 0.1259,
+      "map_cells": 20326,
+      "map_cloud_frames": 330,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 125136,
+          "threads": 73,
+          "fds": 15,
+          "cpu_s": 34.4
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 57004,
+          "threads": 74,
+          "fds": 11,
+          "cpu_s": 38.12
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 51608,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 42.51
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 82848,
+          "threads": 74,
+          "fds": 11,
+          "cpu_s": 66.9
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 35460,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 9.0
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 261576,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 23.6
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 77512,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 42.53
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 15151553,
+        "points": 7313,
+        "voxels": 7313,
+        "position_capacity": 360000,
+        "geometries": 7,
+        "textures": 3,
+        "mode": "aggregate"
+      }
+    },
+    {
+      "elapsed_s": 10.029,
+      "time_utc": "2026-10-23T07:59:36Z",
+      "healthy": true,
+      "latencies_s": [
+        0.018956499989144504,
+        0.03471160000481177,
+        0.10451689999899827,
+        0.040435799994156696
+      ],
+      "cloud_age_s": 0.0631,
+      "map_cells": 21722,
+      "map_cloud_frames": 450,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 126908,
+          "threads": 70,
+          "fds": 13,
+          "cpu_s": 36.77
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 56164,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 40.58
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 51664,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 45.98
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 82908,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 74.04
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 38004,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 9.95
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 261632,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 30.31
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 79184,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 53.91
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 39697858,
+        "points": 21661,
+        "voxels": 21661,
+        "position_capacity": 360000,
+        "geometries": 7,
+        "textures": 3,
+        "mode": "aggregate"
+      }
+    },
+    {
+      "elapsed_s": 20.045,
+      "time_utc": "2026-10-23T07:59:46Z",
+      "healthy": true,
+      "latencies_s": [
+        0.018414299993310124,
+        0.06752029999915976,
+        0.1070705000020098,
+        0.020456299986108206
+      ],
+      "cloud_age_s": 0.2683,
+      "map_cells": 22872,
+      "map_cloud_frames": 568,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 127276,
+          "threads": 70,
+          "fds": 13,
+          "cpu_s": 38.93
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 56208,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 43.14
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 51712,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 49.48
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 82952,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 80.97
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 38052,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 10.9
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 261680,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 37.13
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 81240,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 65.34
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 34161260,
+        "points": 24329,
+        "voxels": 24329,
+        "position_capacity": 360000,
+        "geometries": 7,
+        "textures": 3,
+        "mode": "aggregate"
+      }
+    },
+    {
+      "elapsed_s": 30.054,
+      "time_utc": "2026-10-23T07:59:56Z",
+      "healthy": true,
+      "latencies_s": [
+        0.02907520000007935,
+        0.03950080000504386,
+        0.11361119999492075,
+        0.015873099997406825
+      ],
+      "cloud_age_s": 0.1869,
+      "map_cells": 23734,
+      "map_cloud_frames": 683,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 128524,
+          "threads": 71,
+          "fds": 13,
+          "cpu_s": 41.19
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 56260,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 45.64
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 51760,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 53.02
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 83004,
+          "threads": 74,
+          "fds": 11,
+          "cpu_s": 88.26
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 37928,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 11.88
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 261728,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 43.96
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 84852,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 76.75
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 28768503,
+        "points": 25741,
+        "voxels": 25741,
+        "position_capacity": 360000,
+        "geometries": 7,
+        "textures": 3,
+        "mode": "aggregate"
+      }
+    },
+    {
+      "elapsed_s": 40.073,
+      "time_utc": "2026-10-23T08:00:06Z",
+      "healthy": true,
+      "latencies_s": [
+        0.015957499999785796,
+        0.05169529998966027,
+        0.13631770000210963,
+        0.015321700004278682
+      ],
+      "cloud_age_s": 0.1264,
+      "map_cells": 24362,
+      "map_cloud_frames": 796,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 129908,
+          "threads": 71,
+          "fds": 13,
+          "cpu_s": 43.48
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 56308,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 48.12
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 50916,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 56.5
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 83052,
+          "threads": 74,
+          "fds": 11,
+          "cpu_s": 95.7
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 37980,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 12.83
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 261780,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 50.74
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 85664,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 88.19
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 22968151,
+        "points": 25602,
+        "voxels": 25602,
+        "position_capacity": 360000,
+        "geometries": 7,
+        "textures": 3,
+        "mode": "aggregate"
+      }
+    },
+    {
+      "elapsed_s": 50.09,
+      "time_utc": "2026-10-23T08:00:16Z",
+      "healthy": true,
+      "latencies_s": [
+        0.017629599999054335,
+        0.02861359999224078,
+        0.14199609999195673,
+        0.020365600008517504
+      ],
+      "cloud_age_s": 0.2966,
+      "map_cells": 24941,
+      "map_cloud_frames": 912,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 129656,
+          "threads": 70,
+          "fds": 13,
+          "cpu_s": 45.64
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 56360,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 50.57
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 50972,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 60.04
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 83104,
+          "threads": 74,
+          "fds": 11,
+          "cpu_s": 103.21
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 38028,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 13.81
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 261836,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 57.49
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 86596,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 99.56
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 40694464,
+        "points": 26245,
+        "voxels": 26245,
+        "position_capacity": 360000,
+        "geometries": 7,
+        "textures": 3,
+        "mode": "aggregate"
+      }
+    },
+    {
+      "elapsed_s": 60.102,
+      "time_utc": "2026-10-23T08:00:26Z",
+      "healthy": true,
+      "latencies_s": [
+        0.04915360000450164,
+        0.026604700004099868,
+        0.10916429999633692,
+        0.015997200011042878
+      ],
+      "cloud_age_s": 0.075,
+      "map_cells": 25485,
+      "map_cloud_frames": 1025,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 129272,
+          "threads": 70,
+          "fds": 12,
+          "cpu_s": 47.89
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 56404,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 53.05
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 51020,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 63.63
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 83148,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 110.7
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 38232,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 14.9
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 261880,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 64.32
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 86708,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 110.96
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 64717468,
+        "points": 26429,
+        "voxels": 26429,
+        "position_capacity": 360000,
+        "geometries": 7,
+        "textures": 3,
+        "mode": "aggregate"
+      }
+    },
+    {
+      "elapsed_s": 70.123,
+      "time_utc": "2026-10-23T08:00:36Z",
+      "healthy": true,
+      "latencies_s": [
+        0.039481600004364736,
+        0.06019830000877846,
+        0.11798430001363158,
+        0.019683499995153397
+      ],
+      "cloud_age_s": 0.0719,
+      "map_cells": 25825,
+      "map_cloud_frames": 1137,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 128860,
+          "threads": 70,
+          "fds": 12,
+          "cpu_s": 50.2
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 56452,
+          "threads": 74,
+          "fds": 11,
+          "cpu_s": 55.56
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 51068,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 67.23
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 82308,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 118.35
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 35972,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 15.99
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 261940,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 71.08
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 87064,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 122.39
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 39091491,
+        "points": 26565,
+        "voxels": 26565,
+        "position_capacity": 360000,
+        "geometries": 7,
+        "textures": 3,
+        "mode": "aggregate"
+      }
+    },
+    {
+      "elapsed_s": 80.141,
+      "time_utc": "2026-10-23T08:00:46Z",
+      "healthy": true,
+      "latencies_s": [
+        0.02514569999766536,
+        0.07116479999967851,
+        0.12539640000613872,
+        0.03864620000240393
+      ],
+      "cloud_age_s": 0.279,
+      "map_cells": 26253,
+      "map_cloud_frames": 1236,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 129468,
+          "threads": 70,
+          "fds": 12,
+          "cpu_s": 52.48
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 56496,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 58.17
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 51116,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 70.82
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 82352,
+          "threads": 74,
+          "fds": 11,
+          "cpu_s": 125.98
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 38300,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 17.02
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 261984,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 77.84
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 87748,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 133.81
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 37285528,
+        "points": 24881,
+        "voxels": 24881,
+        "position_capacity": 360000,
+        "geometries": 7,
+        "textures": 3,
+        "mode": "aggregate"
+      }
+    },
+    {
+      "elapsed_s": 90.149,
+      "time_utc": "2026-10-23T08:00:56Z",
+      "healthy": true,
+      "latencies_s": [
+        0.017883100008475594,
+        0.05238850000023376,
+        0.15114070000709035,
+        0.03476039999804925
+      ],
+      "cloud_age_s": 0.233,
+      "map_cells": 26574,
+      "map_cloud_frames": 1345,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 130892,
+          "threads": 70,
+          "fds": 13,
+          "cpu_s": 54.72
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 56548,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 60.74
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 51172,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 74.29
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 82404,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 133.51
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 37324,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 17.98
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 262040,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 84.62
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 87804,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 145.2
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 58873260,
+        "points": 25239,
+        "voxels": 25239,
+        "position_capacity": 360000,
+        "geometries": 7,
+        "textures": 3,
+        "mode": "aggregate"
+      }
+    },
+    {
+      "elapsed_s": 100.165,
+      "time_utc": "2026-10-23T08:01:06Z",
+      "healthy": true,
+      "latencies_s": [
+        0.01929510000627488,
+        0.02720680000493303,
+        0.11553169999388047,
+        0.013539199993829243
+      ],
+      "cloud_age_s": 0.1069,
+      "map_cells": 26953,
+      "map_cloud_frames": 1457,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 132400,
+          "threads": 70,
+          "fds": 13,
+          "cpu_s": 56.97
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 56596,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 63.27
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 51220,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 77.76
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 82456,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 140.87
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 38232,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 18.92
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 262092,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 91.3
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 88076,
+          "threads": 74,
+          "fds": 11,
+          "cpu_s": 156.55
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 26170687,
+        "points": 26219,
+        "voxels": 26219,
+        "position_capacity": 360000,
+        "geometries": 7,
+        "textures": 3,
+        "mode": "aggregate"
+      }
+    },
+    {
+      "elapsed_s": 110.177,
+      "time_utc": "2026-10-23T08:01:16Z",
+      "healthy": true,
+      "latencies_s": [
+        0.020813399998587556,
+        0.03052179999940563,
+        0.11861470001167618,
+        0.018192300005466677
+      ],
+      "cloud_age_s": 0.3126,
+      "map_cells": 27253,
+      "map_cloud_frames": 1566,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 132540,
+          "threads": 70,
+          "fds": 12,
+          "cpu_s": 59.29
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 56640,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 65.75
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 51268,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 81.24
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 82500,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 148.39
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 37412,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 19.87
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 262140,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 98.07
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 88392,
+          "threads": 74,
+          "fds": 11,
+          "cpu_s": 167.97
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 63510116,
+        "points": 26732,
+        "voxels": 26732,
+        "position_capacity": 360000,
+        "geometries": 7,
+        "textures": 3,
+        "mode": "aggregate"
+      }
+    },
+    {
+      "elapsed_s": 120.194,
+      "time_utc": "2026-10-23T08:01:26Z",
+      "healthy": true,
+      "latencies_s": [
+        0.040118300006724894,
+        0.029162699996959418,
+        0.1402005999989342,
+        0.059831700011272915
+      ],
+      "cloud_age_s": 0.2275,
+      "map_cells": 27521,
+      "map_cloud_frames": 1677,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 133124,
+          "threads": 70,
+          "fds": 12,
+          "cpu_s": 61.61
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 56688,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 68.25
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 51316,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 84.79
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 82548,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 156.08
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 37624,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 20.82
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 262188,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 104.85
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 88956,
+          "threads": 74,
+          "fds": 11,
+          "cpu_s": 179.49
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 35249052,
+        "points": 27010,
+        "voxels": 27010,
+        "position_capacity": 360000,
+        "geometries": 7,
+        "textures": 3,
+        "mode": "aggregate"
+      }
+    },
+    {
+      "elapsed_s": 130.211,
+      "time_utc": "2026-10-23T08:01:36Z",
+      "healthy": true,
+      "latencies_s": [
+        0.07029689999762923,
+        0.02808530000038445,
+        0.14132019999669865,
+        0.046375599995371886
+      ],
+      "cloud_age_s": 0.1269,
+      "map_cells": 27821,
+      "map_cloud_frames": 1787,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 133204,
+          "threads": 70,
+          "fds": 12,
+          "cpu_s": 63.91
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 56740,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 70.75
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 51372,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 88.29
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 82604,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 163.68
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 37512,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 21.86
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 262244,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 111.67
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 89012,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 190.94
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 66497262,
+        "points": 25622,
+        "voxels": 25622,
+        "position_capacity": 360000,
+        "geometries": 7,
+        "textures": 3,
+        "mode": "aggregate"
+      }
+    },
+    {
+      "elapsed_s": 140.238,
+      "time_utc": "2026-10-23T08:01:46Z",
+      "healthy": true,
+      "latencies_s": [
+        0.03839940000034403,
+        0.02716139999392908,
+        0.15159639999910723,
+        0.03153419999580365
+      ],
+      "cloud_age_s": 0.3264,
+      "map_cells": 28078,
+      "map_cloud_frames": 1898,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 134196,
+          "threads": 70,
+          "fds": 14,
+          "cpu_s": 66.26
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 56788,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 73.24
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 51420,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 91.74
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 82652,
+          "threads": 74,
+          "fds": 11,
+          "cpu_s": 170.82
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 38420,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 22.8
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 262296,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 118.41
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 89160,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 202.3
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 25281708,
+        "points": 26045,
+        "voxels": 26045,
+        "position_capacity": 360000,
+        "geometries": 7,
+        "textures": 3,
+        "mode": "aggregate"
+      }
+    },
+    {
+      "elapsed_s": 150.262,
+      "time_utc": "2026-10-23T08:01:56Z",
+      "healthy": true,
+      "latencies_s": [
+        0.017985799990128726,
+        0.052922100003343076,
+        0.1369284999964293,
+        0.02022459999716375
+      ],
+      "cloud_age_s": 0.0971,
+      "map_cells": 28277,
+      "map_cloud_frames": 2006,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 133692,
+          "threads": 71,
+          "fds": 14,
+          "cpu_s": 68.52
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 56832,
+          "threads": 74,
+          "fds": 11,
+          "cpu_s": 75.71
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 51468,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 95.24
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 82700,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 178.0
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 38460,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 23.92
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 262336,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 125.19
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 89392,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 213.71
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 47521301,
+        "points": 26439,
+        "voxels": 26439,
+        "position_capacity": 360000,
+        "geometries": 7,
+        "textures": 3,
+        "mode": "aggregate"
+      }
+    },
+    {
+      "elapsed_s": 160.273,
+      "time_utc": "2026-10-23T08:02:06Z",
+      "healthy": true,
+      "latencies_s": [
+        0.014752000002772547,
+        0.023225899989483878,
+        0.13669489999301732,
+        0.028572200011694804
+      ],
+      "cloud_age_s": 0.0651,
+      "map_cells": 28500,
+      "map_cloud_frames": 2113,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 133708,
+          "threads": 70,
+          "fds": 13,
+          "cpu_s": 70.74
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 56876,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 78.19
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 51520,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 98.71
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 82744,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 185.54
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 38500,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 24.93
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 262388,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 131.96
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 88720,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 225.05
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 25366096,
+        "points": 25741,
+        "voxels": 25741,
+        "position_capacity": 360000,
+        "geometries": 7,
+        "textures": 3,
+        "mode": "aggregate"
+      }
+    },
+    {
+      "elapsed_s": 170.302,
+      "time_utc": "2026-10-23T08:02:16Z",
+      "healthy": true,
+      "latencies_s": [
+        0.025422799997613765,
+        0.03646040000603534,
+        0.15256269999372307,
+        0.0178367999906186
+      ],
+      "cloud_age_s": 0.0728,
+      "map_cells": 28703,
+      "map_cloud_frames": 2223,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 135644,
+          "threads": 71,
+          "fds": 13,
+          "cpu_s": 72.99
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 56928,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 80.67
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 51568,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 102.23
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 82800,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 193.11
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 38560,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 25.91
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 262440,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 138.74
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 88920,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 236.5
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 50959701,
+        "points": 26522,
+        "voxels": 26522,
+        "position_capacity": 360000,
+        "geometries": 7,
+        "textures": 3,
+        "mode": "aggregate"
+      }
+    },
+    {
+      "elapsed_s": 180.31,
+      "time_utc": "2026-10-23T08:02:26Z",
+      "healthy": true,
+      "latencies_s": [
+        0.020070000013220124,
+        0.048499500000616536,
+        0.11288479999348056,
+        0.03136429999722168
+      ],
+      "cloud_age_s": 0.2216,
+      "map_cells": 28870,
+      "map_cloud_frames": 2328,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 137152,
+          "threads": 70,
+          "fds": 13,
+          "cpu_s": 75.15
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 56976,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 83.16
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 51624,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 105.66
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 82848,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 200.58
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 38608,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 26.98
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 262496,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 145.59
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 89376,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 247.87
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 40742551,
+        "points": 26694,
+        "voxels": 26694,
+        "position_capacity": 360000,
+        "geometries": 7,
+        "textures": 3,
+        "mode": "aggregate"
+      }
+    },
+    {
+      "elapsed_s": 190.328,
+      "time_utc": "2026-10-23T08:02:36Z",
+      "healthy": true,
+      "latencies_s": [
+        0.04494920000433922,
+        0.027687900001183152,
+        0.14675749999878462,
+        0.023005700000794604
+      ],
+      "cloud_age_s": 0.1454,
+      "map_cells": 29055,
+      "map_cloud_frames": 2434,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 138280,
+          "threads": 71,
+          "fds": 13,
+          "cpu_s": 77.36
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 57028,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 85.66
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 51668,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 109.1
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 82896,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 208.24
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 38652,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 27.91
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 262544,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 152.34
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 89420,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 259.32
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 39180523,
+        "points": 26891,
+        "voxels": 26891,
+        "position_capacity": 360000,
+        "geometries": 7,
+        "textures": 3,
+        "mode": "aggregate"
+      }
+    },
+    {
+      "elapsed_s": 200.347,
+      "time_utc": "2026-10-23T08:02:46Z",
+      "healthy": true,
+      "latencies_s": [
+        0.016133900004206225,
+        0.029602300011902116,
+        0.1461416999954963,
+        0.021122099991771393
+      ],
+      "cloud_age_s": 0.1301,
+      "map_cells": 29217,
+      "map_cloud_frames": 2545,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 138528,
+          "threads": 70,
+          "fds": 13,
+          "cpu_s": 79.61
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 57072,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 88.2
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 51716,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 112.58
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 82944,
+          "threads": 74,
+          "fds": 11,
+          "cpu_s": 215.8
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 38692,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 28.85
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 262592,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 159.08
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 89468,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 270.7
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 53907008,
+        "points": 27566,
+        "voxels": 27566,
+        "position_capacity": 360000,
+        "geometries": 7,
+        "textures": 3,
+        "mode": "aggregate"
+      }
+    },
+    {
+      "elapsed_s": 210.373,
+      "time_utc": "2026-10-23T08:02:56Z",
+      "healthy": true,
+      "latencies_s": [
+        0.0210326999949757,
+        0.02426940000441391,
+        0.11609780001163017,
+        0.03432690000045113
+      ],
+      "cloud_age_s": 0.28,
+      "map_cells": 29378,
+      "map_cloud_frames": 2651,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 138540,
+          "threads": 70,
+          "fds": 13,
+          "cpu_s": 81.9
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 57124,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 90.67
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 51772,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 116.03
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 82996,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 223.33
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 38756,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 29.8
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 262920,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 165.88
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 89648,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 282.09
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 48573805,
+        "points": 26768,
+        "voxels": 26768,
+        "position_capacity": 360000,
+        "geometries": 7,
+        "textures": 3,
+        "mode": "aggregate"
+      }
+    },
+    {
+      "elapsed_s": 220.392,
+      "time_utc": "2026-10-23T08:03:06Z",
+      "healthy": true,
+      "latencies_s": [
+        0.04198910000559408,
+        0.02529149998736102,
+        0.11583229999814648,
+        0.03803199999674689
+      ],
+      "cloud_age_s": 0.1105,
+      "map_cells": 29528,
+      "map_cloud_frames": 2761,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 138320,
+          "threads": 70,
+          "fds": 12,
+          "cpu_s": 84.18
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 57172,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 93.19
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 51820,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 119.55
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 83044,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 230.84
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 38096,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 30.76
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 262968,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 172.72
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 89812,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 293.55
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 44958908,
+        "points": 27257,
+        "voxels": 27257,
+        "position_capacity": 360000,
+        "geometries": 7,
+        "textures": 3,
+        "mode": "aggregate"
+      }
+    },
+    {
+      "elapsed_s": 230.406,
+      "time_utc": "2026-10-23T08:03:16Z",
+      "healthy": true,
+      "latencies_s": [
+        0.06807750000734814,
+        0.027356100006727502,
+        0.12251720001222566,
+        0.03586780000478029
+      ],
+      "cloud_age_s": 0.1186,
+      "map_cells": 29673,
+      "map_cloud_frames": 2870,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 138876,
+          "threads": 70,
+          "fds": 12,
+          "cpu_s": 86.52
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 57216,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 95.74
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 50972,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 123.05
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 83088,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 238.43
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 35728,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 31.71
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 263016,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 179.44
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 90004,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 304.97
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 84171786,
+        "points": 28112,
+        "voxels": 28112,
+        "position_capacity": 360000,
+        "geometries": 7,
+        "textures": 3,
+        "mode": "aggregate"
+      }
+    },
+    {
+      "elapsed_s": 240.413,
+      "time_utc": "2026-10-23T08:03:26Z",
+      "healthy": true,
+      "latencies_s": [
+        0.02191290000337176,
+        0.056600299998535775,
+        0.13855049999256153,
+        0.06135570000333246
+      ],
+      "cloud_age_s": 0.1906,
+      "map_cells": 29946,
+      "map_cloud_frames": 2979,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 138436,
+          "threads": 71,
+          "fds": 13,
+          "cpu_s": 88.83
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 57268,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 98.38
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 51024,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 126.54
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 83140,
+          "threads": 74,
+          "fds": 11,
+          "cpu_s": 245.95
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 35724,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 32.62
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 263072,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 186.24
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 90296,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 316.43
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 64027476,
+        "points": 27665,
+        "voxels": 27665,
+        "position_capacity": 360000,
+        "geometries": 7,
+        "textures": 3,
+        "mode": "aggregate"
+      }
+    },
+    {
+      "elapsed_s": 250.423,
+      "time_utc": "2026-10-23T08:03:36Z",
+      "healthy": true,
+      "latencies_s": [
+        0.042424999992363155,
+        0.02536590000090655,
+        0.1768646999989869,
+        0.0193342999991728
+      ],
+      "cloud_age_s": 0.1824,
+      "map_cells": 30371,
+      "map_cloud_frames": 3076,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 139620,
+          "threads": 70,
+          "fds": 13,
+          "cpu_s": 91.13
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 57320,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 100.86
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 51076,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 130.05
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 83188,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 253.51
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 39100,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 33.55
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 263124,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 192.98
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 90732,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 327.83
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 31876027,
+        "points": 27977,
+        "voxels": 27977,
+        "position_capacity": 360000,
+        "geometries": 7,
+        "textures": 3,
+        "mode": "aggregate"
+      }
+    },
+    {
+      "elapsed_s": 260.432,
+      "time_utc": "2026-10-23T08:03:46Z",
+      "healthy": true,
+      "latencies_s": [
+        0.025230600003851578,
+        0.04774939999333583,
+        0.12402779998956248,
+        0.02865959999326151
+      ],
+      "cloud_age_s": 0.1659,
+      "map_cells": 30725,
+      "map_cloud_frames": 3183,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 140120,
+          "threads": 70,
+          "fds": 13,
+          "cpu_s": 93.37
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 57364,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 103.37
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 51120,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 133.53
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 82348,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 261.16
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 38984,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 34.49
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 263172,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 199.64
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 90972,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 339.22
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 43008014,
+        "points": 27418,
+        "voxels": 27418,
+        "position_capacity": 360000,
+        "geometries": 7,
+        "textures": 3,
+        "mode": "aggregate"
+      }
+    },
+    {
+      "elapsed_s": 270.443,
+      "time_utc": "2026-10-23T08:03:56Z",
+      "healthy": true,
+      "latencies_s": [
+        0.04129389999434352,
+        0.04883839999092743,
+        0.13103010000486393,
+        0.03233109999564476
+      ],
+      "cloud_age_s": 0.2591,
+      "map_cells": 30960,
+      "map_cloud_frames": 3289,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 138912,
+          "threads": 70,
+          "fds": 13,
+          "cpu_s": 95.67
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 57412,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 105.92
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 51172,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 137.02
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 82400,
+          "threads": 74,
+          "fds": 11,
+          "cpu_s": 268.71
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 39028,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 35.43
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 263224,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 206.48
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 91196,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 350.66
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 42274424,
+        "points": 27164,
+        "voxels": 27164,
+        "position_capacity": 360000,
+        "geometries": 7,
+        "textures": 3,
+        "mode": "aggregate"
+      }
+    },
+    {
+      "elapsed_s": 280.456,
+      "time_utc": "2026-10-23T08:04:06Z",
+      "healthy": true,
+      "latencies_s": [
+        0.0199780999973882,
+        0.050892200000816956,
+        0.14756739999575075,
+        0.05247720000625122
+      ],
+      "cloud_age_s": 0.0833,
+      "map_cells": 31172,
+      "map_cloud_frames": 3394,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 139548,
+          "threads": 70,
+          "fds": 13,
+          "cpu_s": 98.03
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 57520,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 108.77
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 51304,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 140.71
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 82496,
+          "threads": 74,
+          "fds": 11,
+          "cpu_s": 276.44
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 39132,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 36.54
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 263360,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 213.48
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 92228,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 362.09
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 61199956,
+        "points": 27210,
+        "voxels": 27210,
+        "position_capacity": 360000,
+        "geometries": 7,
+        "textures": 3,
+        "mode": "aggregate"
+      }
+    },
+    {
+      "elapsed_s": 290.48,
+      "time_utc": "2026-10-23T08:04:16Z",
+      "healthy": true,
+      "latencies_s": [
+        0.021655300006386824,
+        0.05587029999878723,
+        0.15712709999934305,
+        0.04129379999358207
+      ],
+      "cloud_age_s": 0.3007,
+      "map_cells": 31412,
+      "map_cloud_frames": 3501,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 140148,
+          "threads": 70,
+          "fds": 13,
+          "cpu_s": 100.37
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 57572,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 112.62
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 51360,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 145.22
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 82556,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 285.05
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 39184,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 38.55
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 263784,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 221.61
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 92436,
+          "threads": 74,
+          "fds": 11,
+          "cpu_s": 373.78
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 50664575,
+        "points": 28030,
+        "voxels": 28030,
+        "position_capacity": 360000,
+        "geometries": 7,
+        "textures": 3,
+        "mode": "aggregate"
+      }
+    },
+    {
+      "elapsed_s": 300.493,
+      "time_utc": "2026-10-23T08:04:26Z",
+      "healthy": true,
+      "latencies_s": [
+        0.04207900000619702,
+        0.02626459999009967,
+        0.1848868999950355,
+        0.021990399996866472
+      ],
+      "cloud_age_s": 0.1899,
+      "map_cells": 31577,
+      "map_cloud_frames": 3610,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 140156,
+          "threads": 70,
+          "fds": 12,
+          "cpu_s": 102.7
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 57628,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 116.02
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 51420,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 149.73
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 82620,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 293.36
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 39232,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 40.44
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 263864,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 229.48
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 92800,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 385.45
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 58392435,
+        "points": 26297,
+        "voxels": 26297,
+        "position_capacity": 360000,
+        "geometries": 7,
+        "textures": 3,
+        "mode": "aggregate"
+      }
+    },
+    {
+      "elapsed_s": 310.506,
+      "time_utc": "2026-10-23T08:04:36Z",
+      "healthy": true,
+      "latencies_s": [
+        0.01847799999814015,
+        0.02744920000259299,
+        0.1564453000028152,
+        0.1559908000053838
+      ],
+      "cloud_age_s": 0.1647,
+      "map_cells": 31762,
+      "map_cloud_frames": 3715,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 140152,
+          "threads": 70,
+          "fds": 12,
+          "cpu_s": 105.44
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 57672,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 118.64
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 51472,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 153.23
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 82664,
+          "threads": 74,
+          "fds": 11,
+          "cpu_s": 300.95
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 39284,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 41.38
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 263916,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 236.29
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 92864,
+          "threads": 74,
+          "fds": 11,
+          "cpu_s": 396.93
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 47724427,
+        "points": 29838,
+        "voxels": 29838,
+        "position_capacity": 360000,
+        "geometries": 8,
+        "textures": 3,
+        "mode": "map"
+      }
+    },
+    {
+      "elapsed_s": 320.528,
+      "time_utc": "2026-10-23T08:04:46Z",
+      "healthy": true,
+      "latencies_s": [
+        0.020025699996040203,
+        0.04391399999440182,
+        0.1466357000026619,
+        0.014795900002354756
+      ],
+      "cloud_age_s": 0.0717,
+      "map_cells": 31902,
+      "map_cloud_frames": 3819,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 141952,
+          "threads": 71,
+          "fds": 13,
+          "cpu_s": 107.9
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 57716,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 121.21
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 51516,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 156.57
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 82712,
+          "threads": 74,
+          "fds": 11,
+          "cpu_s": 308.39
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 39328,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 42.34
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 263960,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 242.79
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 92996,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 408.21
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 77126159,
+        "points": 29996,
+        "voxels": 29996,
+        "position_capacity": 360000,
+        "geometries": 8,
+        "textures": 3,
+        "mode": "map"
+      }
+    },
+    {
+      "elapsed_s": 330.546,
+      "time_utc": "2026-10-23T08:04:56Z",
+      "healthy": true,
+      "latencies_s": [
+        0.025943000000552274,
+        0.02584970000316389,
+        0.41634789999807253,
+        0.051371100009419024
+      ],
+      "cloud_age_s": 0.1373,
+      "map_cells": 32063,
+      "map_cloud_frames": 3923,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 141808,
+          "threads": 70,
+          "fds": 13,
+          "cpu_s": 110.55
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 57772,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 123.9
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 51572,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 160.13
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 82764,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 316.27
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 39380,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 43.37
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 264020,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 249.66
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 93180,
+          "threads": 74,
+          "fds": 11,
+          "cpu_s": 419.99
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 76512540,
+        "points": 30106,
+        "voxels": 30106,
+        "position_capacity": 360000,
+        "geometries": 8,
+        "textures": 3,
+        "mode": "map"
+      }
+    },
+    {
+      "elapsed_s": 340.551,
+      "time_utc": "2026-10-23T08:05:06Z",
+      "healthy": true,
+      "latencies_s": [
+        0.03901029999542516,
+        0.03508230000443291,
+        0.18396639999991748,
+        0.0373976999981096
+      ],
+      "cloud_age_s": 0.3403,
+      "map_cells": 32169,
+      "map_cloud_frames": 4028,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 142856,
+          "threads": 70,
+          "fds": 12,
+          "cpu_s": 113.08
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 57816,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 126.51
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 51620,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 163.62
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 82812,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 323.63
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 38132,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 44.33
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 264076,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 256.19
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 93324,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 431.12
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 39569984,
+        "points": 30211,
+        "voxels": 30211,
+        "position_capacity": 360000,
+        "geometries": 8,
+        "textures": 3,
+        "mode": "map"
+      }
+    },
+    {
+      "elapsed_s": 350.562,
+      "time_utc": "2026-10-23T08:05:16Z",
+      "healthy": true,
+      "latencies_s": [
+        0.017817600004491396,
+        0.028685900004347786,
+        0.16601689999515656,
+        0.021746800004621036
+      ],
+      "cloud_age_s": 0.3173,
+      "map_cells": 32304,
+      "map_cloud_frames": 4129,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 145472,
+          "threads": 70,
+          "fds": 15,
+          "cpu_s": 115.67
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 57860,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 129.13
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 51668,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 167.05
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 82856,
+          "threads": 74,
+          "fds": 11,
+          "cpu_s": 331.04
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 38608,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 45.3
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 264120,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 262.77
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 93480,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 442.47
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 85190748,
+        "points": 30372,
+        "voxels": 30372,
+        "position_capacity": 360000,
+        "geometries": 8,
+        "textures": 3,
+        "mode": "map"
+      }
+    },
+    {
+      "elapsed_s": 360.579,
+      "time_utc": "2026-10-23T08:05:26Z",
+      "healthy": true,
+      "latencies_s": [
+        0.10234919999493286,
+        0.06897640001261607,
+        0.14109789999201894,
+        0.015234799997415394
+      ],
+      "cloud_age_s": 0.2178,
+      "map_cells": 32475,
+      "map_cloud_frames": 4234,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 149388,
+          "threads": 70,
+          "fds": 13,
+          "cpu_s": 118.27
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 57908,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 131.62
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 51720,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 170.58
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 82912,
+          "threads": 74,
+          "fds": 11,
+          "cpu_s": 338.75
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 38660,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 46.31
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 264172,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 269.4
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 93660,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 454.02
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 40402027,
+        "points": 30519,
+        "voxels": 30519,
+        "position_capacity": 360000,
+        "geometries": 8,
+        "textures": 3,
+        "mode": "map"
+      }
+    },
+    {
+      "elapsed_s": 370.584,
+      "time_utc": "2026-10-23T08:05:36Z",
+      "healthy": true,
+      "latencies_s": [
+        0.01982040000439156,
+        0.04960139999457169,
+        0.17857370000274386,
+        0.04515659999742638
+      ],
+      "cloud_age_s": 0.2731,
+      "map_cells": 32557,
+      "map_cloud_frames": 4339,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 149988,
+          "threads": 70,
+          "fds": 12,
+          "cpu_s": 120.75
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 57960,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 134.15
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 51772,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 174.03
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 82964,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 346.32
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 38708,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 47.29
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 264228,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 275.97
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 93796,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 465.33
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 86074716,
+        "points": 30583,
+        "voxels": 30583,
+        "position_capacity": 360000,
+        "geometries": 8,
+        "textures": 3,
+        "mode": "map"
+      }
+    },
+    {
+      "elapsed_s": 380.594,
+      "time_utc": "2026-10-23T08:05:46Z",
+      "healthy": true,
+      "latencies_s": [
+        0.03962090000277385,
+        0.048467600005096756,
+        0.1534146000049077,
+        0.0165493999957107
+      ],
+      "cloud_age_s": 0.1602,
+      "map_cells": 32672,
+      "map_cloud_frames": 4441,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 147996,
+          "threads": 70,
+          "fds": 12,
+          "cpu_s": 123.37
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 58012,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 136.69
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 51820,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 177.47
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 83012,
+          "threads": 74,
+          "fds": 11,
+          "cpu_s": 353.97
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 38752,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 48.2
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 264276,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 282.7
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 93916,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 476.69
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 77959636,
+        "points": 30672,
+        "voxels": 30672,
+        "position_capacity": 360000,
+        "geometries": 8,
+        "textures": 3,
+        "mode": "map"
+      }
+    },
+    {
+      "elapsed_s": 390.607,
+      "time_utc": "2026-10-23T08:05:56Z",
+      "healthy": true,
+      "latencies_s": [
+        0.019731500011403114,
+        0.059062800006358884,
+        0.1176947000058135,
+        0.019390500005101785
+      ],
+      "cloud_age_s": 0.253,
+      "map_cells": 32757,
+      "map_cloud_frames": 4548,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 150036,
+          "threads": 70,
+          "fds": 13,
+          "cpu_s": 125.86
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 58060,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 139.29
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 51868,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 180.96
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 83064,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 361.47
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 38960,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 49.15
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 264512,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 289.35
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 94036,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 488.04
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 42448056,
+        "points": 30753,
+        "voxels": 30753,
+        "position_capacity": 360000,
+        "geometries": 8,
+        "textures": 3,
+        "mode": "map"
+      }
+    },
+    {
+      "elapsed_s": 400.616,
+      "time_utc": "2026-10-23T08:06:06Z",
+      "healthy": true,
+      "latencies_s": [
+        0.09737450000829995,
+        0.08099879999645054,
+        0.13163280001026578,
+        0.014581700001144782
+      ],
+      "cloud_age_s": 0.2777,
+      "map_cells": 32860,
+      "map_cloud_frames": 4650,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 151084,
+          "threads": 70,
+          "fds": 13,
+          "cpu_s": 128.52
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 58108,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 141.88
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 51920,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 184.51
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 83108,
+          "threads": 74,
+          "fds": 11,
+          "cpu_s": 368.89
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 38848,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 50.11
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 264568,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 296.39
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 94304,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 499.6
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 78099536,
+        "points": 30890,
+        "voxels": 30890,
+        "position_capacity": 360000,
+        "geometries": 8,
+        "textures": 3,
+        "mode": "map"
+      }
+    },
+    {
+      "elapsed_s": 410.627,
+      "time_utc": "2026-10-23T08:06:16Z",
+      "healthy": true,
+      "latencies_s": [
+        0.023274399994988926,
+        0.047501299995929,
+        0.1309060000057798,
+        0.021602499997243285
+      ],
+      "cloud_age_s": 0.2696,
+      "map_cells": 32954,
+      "map_cloud_frames": 4741,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 151776,
+          "threads": 70,
+          "fds": 13,
+          "cpu_s": 130.99
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 58156,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 144.35
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 51972,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 187.97
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 83160,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 376.47
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 39048,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 51.05
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 264624,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 303.08
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 94360,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 510.89
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 44237692,
+        "points": 30952,
+        "voxels": 30952,
+        "position_capacity": 360000,
+        "geometries": 8,
+        "textures": 3,
+        "mode": "map"
+      }
+    },
+    {
+      "elapsed_s": 420.635,
+      "time_utc": "2026-10-23T08:06:26Z",
+      "healthy": true,
+      "latencies_s": [
+        0.026586899999529123,
+        0.038153400004375726,
+        0.14847840000584256,
+        0.170053599998937
+      ],
+      "cloud_age_s": 0.1055,
+      "map_cells": 33050,
+      "map_cloud_frames": 4841,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 151796,
+          "threads": 70,
+          "fds": 12,
+          "cpu_s": 133.61
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 58204,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 146.91
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 52024,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 191.48
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 83208,
+          "threads": 74,
+          "fds": 11,
+          "cpu_s": 384.2
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 39108,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 52.0
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 264672,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 309.91
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 94432,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 522.47
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 48770973,
+        "points": 31057,
+        "voxels": 31057,
+        "position_capacity": 360000,
+        "geometries": 8,
+        "textures": 3,
+        "mode": "map"
+      }
+    },
+    {
+      "elapsed_s": 430.65,
+      "time_utc": "2026-10-23T08:06:36Z",
+      "healthy": true,
+      "latencies_s": [
+        0.11632600000302773,
+        0.048544199991738424,
+        0.14011069999833126,
+        0.028260699997190386
+      ],
+      "cloud_age_s": 0.0809,
+      "map_cells": 33134,
+      "map_cloud_frames": 4947,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 151824,
+          "threads": 70,
+          "fds": 12,
+          "cpu_s": 136.05
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 58252,
+          "threads": 74,
+          "fds": 11,
+          "cpu_s": 149.43
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 52072,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 194.96
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 83256,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 391.8
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 39148,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 52.96
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 264720,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 316.63
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 94560,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 533.8
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 84354381,
+        "points": 31143,
+        "voxels": 31143,
+        "position_capacity": 360000,
+        "geometries": 8,
+        "textures": 3,
+        "mode": "map"
+      }
+    },
+    {
+      "elapsed_s": 440.664,
+      "time_utc": "2026-10-23T08:06:47Z",
+      "healthy": true,
+      "latencies_s": [
+        0.027646000002278015,
+        0.039032000000588596,
+        0.1487141999969026,
+        0.02462700000614859
+      ],
+      "cloud_age_s": 0.2556,
+      "map_cells": 33189,
+      "map_cloud_frames": 5050,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 152204,
+          "threads": 71,
+          "fds": 14,
+          "cpu_s": 138.53
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 58296,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 151.9
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 52120,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 198.44
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 83300,
+          "threads": 74,
+          "fds": 11,
+          "cpu_s": 399.35
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 36584,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 53.89
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 264772,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 323.37
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 94652,
+          "threads": 74,
+          "fds": 11,
+          "cpu_s": 545.11
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 51137306,
+        "points": 31178,
+        "voxels": 31178,
+        "position_capacity": 360000,
+        "geometries": 8,
+        "textures": 3,
+        "mode": "map"
+      }
+    },
+    {
+      "elapsed_s": 450.675,
+      "time_utc": "2026-10-23T08:06:57Z",
+      "healthy": true,
+      "latencies_s": [
+        0.040878100000554696,
+        0.023738200005027466,
+        0.3400413000053959,
+        0.10053389999666251
+      ],
+      "cloud_age_s": 0.1543,
+      "map_cells": 33251,
+      "map_cloud_frames": 5155,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 150596,
+          "threads": 70,
+          "fds": 14,
+          "cpu_s": 141.32
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 58348,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 154.51
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 52176,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 202.0
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 83360,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 407.24
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 38120,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 54.9
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 264828,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 330.29
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 94756,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 556.82
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 51088490,
+        "points": 31239,
+        "voxels": 31239,
+        "position_capacity": 360000,
+        "geometries": 8,
+        "textures": 3,
+        "mode": "map"
+      }
+    },
+    {
+      "elapsed_s": 460.68,
+      "time_utc": "2026-10-23T08:07:07Z",
+      "healthy": true,
+      "latencies_s": [
+        0.041916000001947396,
+        0.0343126000079792,
+        0.12682789999234956,
+        0.028445000003557652
+      ],
+      "cloud_age_s": 0.2856,
+      "map_cells": 33312,
+      "map_cloud_frames": 5259,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 150348,
+          "threads": 71,
+          "fds": 13,
+          "cpu_s": 143.84
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 58392,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 156.98
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 52220,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 205.35
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 83408,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 414.65
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 36680,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 55.86
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 264876,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 336.72
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 94832,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 567.9
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 85162507,
+        "points": 31262,
+        "voxels": 31262,
+        "position_capacity": 360000,
+        "geometries": 8,
+        "textures": 3,
+        "mode": "map"
+      }
+    },
+    {
+      "elapsed_s": 470.691,
+      "time_utc": "2026-10-23T08:07:17Z",
+      "healthy": true,
+      "latencies_s": [
+        0.02874990001146216,
+        0.03803189999598544,
+        0.14570129998901393,
+        0.028665299993008375
+      ],
+      "cloud_age_s": 0.3018,
+      "map_cells": 33365,
+      "map_cloud_frames": 5366,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 149272,
+          "threads": 70,
+          "fds": 12,
+          "cpu_s": 146.41
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 58440,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 159.5
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 52272,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 208.86
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 83456,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 422.31
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 36732,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 56.89
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 264928,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 343.24
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 94948,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 579.29
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 51624563,
+        "points": 31335,
+        "voxels": 31335,
+        "position_capacity": 360000,
+        "geometries": 8,
+        "textures": 3,
+        "mode": "map"
+      }
+    },
+    {
+      "elapsed_s": 480.701,
+      "time_utc": "2026-10-23T08:07:27Z",
+      "healthy": true,
+      "latencies_s": [
+        0.12041959998896345,
+        0.1051590999995824,
+        0.1714425999962259,
+        0.016538199997739866
+      ],
+      "cloud_age_s": 0.2383,
+      "map_cells": 33424,
+      "map_cloud_frames": 5472,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 150888,
+          "threads": 70,
+          "fds": 12,
+          "cpu_s": 149.11
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 58488,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 162.08
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 52320,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 212.39
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 83508,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 430.08
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 39224,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 57.96
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 264980,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 349.92
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 95040,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 590.9
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 40843180,
+        "points": 31366,
+        "voxels": 31366,
+        "position_capacity": 360000,
+        "geometries": 8,
+        "textures": 3,
+        "mode": "map"
+      }
+    },
+    {
+      "elapsed_s": 490.716,
+      "time_utc": "2026-10-23T08:07:37Z",
+      "healthy": true,
+      "latencies_s": [
+        0.016726300003938377,
+        0.05116950000228826,
+        0.16197460000694264,
+        0.018081999995047227
+      ],
+      "cloud_age_s": 0.2127,
+      "map_cells": 33491,
+      "map_cloud_frames": 5576,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 151012,
+          "threads": 70,
+          "fds": 13,
+          "cpu_s": 151.58
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 58536,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 164.57
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 52372,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 215.81
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 83556,
+          "threads": 74,
+          "fds": 11,
+          "cpu_s": 437.55
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 40132,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 58.9
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 265028,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 356.37
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 95136,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 602.14
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 83503061,
+        "points": 31420,
+        "voxels": 31420,
+        "position_capacity": 360000,
+        "geometries": 8,
+        "textures": 3,
+        "mode": "map"
+      }
+    },
+    {
+      "elapsed_s": 500.732,
+      "time_utc": "2026-10-23T08:07:47Z",
+      "healthy": true,
+      "latencies_s": [
+        0.01666930000646971,
+        0.02596889999404084,
+        0.22073539999837521,
+        0.11264479999954347
+      ],
+      "cloud_age_s": 0.2523,
+      "map_cells": 33551,
+      "map_cloud_frames": 5681,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 150252,
+          "threads": 70,
+          "fds": 12,
+          "cpu_s": 154.2
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 58584,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 167.14
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 52424,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 219.28
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 83604,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 445.23
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 40184,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 59.87
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 265080,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 363.13
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 95260,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 613.75
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 67613172,
+        "points": 31464,
+        "voxels": 31464,
+        "position_capacity": 360000,
+        "geometries": 8,
+        "textures": 3,
+        "mode": "map"
+      }
+    },
+    {
+      "elapsed_s": 510.738,
+      "time_utc": "2026-10-23T08:07:57Z",
+      "healthy": true,
+      "latencies_s": [
+        0.05074060001061298,
+        0.02974890000768937,
+        0.14706499999738298,
+        0.023286399999051355
+      ],
+      "cloud_age_s": 0.2828,
+      "map_cells": 33622,
+      "map_cloud_frames": 5781,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 150588,
+          "threads": 70,
+          "fds": 13,
+          "cpu_s": 156.47
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 58632,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 169.64
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 52472,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 222.85
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 83656,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 452.88
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 39352,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 60.89
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 265128,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 369.76
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 95360,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 625.09
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 47487722,
+        "points": 31530,
+        "voxels": 31530,
+        "position_capacity": 360000,
+        "geometries": 8,
+        "textures": 3,
+        "mode": "map"
+      }
+    },
+    {
+      "elapsed_s": 520.752,
+      "time_utc": "2026-10-23T08:08:07Z",
+      "healthy": true,
+      "latencies_s": [
+        0.044454000002588145,
+        0.0365412999963155,
+        0.15100120000715833,
+        0.013301399987540208
+      ],
+      "cloud_age_s": 0.0809,
+      "map_cells": 33710,
+      "map_cloud_frames": 5883,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 152504,
+          "threads": 70,
+          "fds": 12,
+          "cpu_s": 158.99
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 58676,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 172.26
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 52520,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 226.4
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 83700,
+          "threads": 74,
+          "fds": 11,
+          "cpu_s": 460.51
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 39572,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 61.82
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 265168,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 376.54
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 95492,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 636.56
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 46584677,
+        "points": 31639,
+        "voxels": 31639,
+        "position_capacity": 360000,
+        "geometries": 8,
+        "textures": 3,
+        "mode": "map"
+      }
+    },
+    {
+      "elapsed_s": 530.77,
+      "time_utc": "2026-10-23T08:08:17Z",
+      "healthy": true,
+      "latencies_s": [
+        0.04144390000146814,
+        0.02420999998867046,
+        0.3540047999995295,
+        0.017213700004504062
+      ],
+      "cloud_age_s": 0.2601,
+      "map_cells": 33742,
+      "map_cloud_frames": 5988,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 153844,
+          "threads": 70,
+          "fds": 12,
+          "cpu_s": 161.63
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 58728,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 174.84
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 52572,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 230.04
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 83752,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 468.35
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 39616,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 62.78
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 265172,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 383.5
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 95568,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 648.36
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 88643300,
+        "points": 31636,
+        "voxels": 31636,
+        "position_capacity": 360000,
+        "geometries": 8,
+        "textures": 3,
+        "mode": "map"
+      }
+    },
+    {
+      "elapsed_s": 540.781,
+      "time_utc": "2026-10-23T08:08:27Z",
+      "healthy": true,
+      "latencies_s": [
+        0.026228600007016212,
+        0.028374799992889166,
+        0.1706523000029847,
+        0.03338350000558421
+      ],
+      "cloud_age_s": 0.1371,
+      "map_cells": 33822,
+      "map_cloud_frames": 6082,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 152956,
+          "threads": 70,
+          "fds": 13,
+          "cpu_s": 164.12
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 58776,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 177.37
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 52624,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 233.42
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 83800,
+          "threads": 74,
+          "fds": 11,
+          "cpu_s": 475.76
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 40108,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 63.7
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 265176,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 390.12
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 95620,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 659.54
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 78761364,
+        "points": 31705,
+        "voxels": 31705,
+        "position_capacity": 360000,
+        "geometries": 8,
+        "textures": 3,
+        "mode": "map"
+      }
+    },
+    {
+      "elapsed_s": 550.801,
+      "time_utc": "2026-10-23T08:08:37Z",
+      "healthy": true,
+      "latencies_s": [
+        0.03936920000705868,
+        0.027560399990761653,
+        0.15575259999604896,
+        0.017472299994551577
+      ],
+      "cloud_age_s": 0.1249,
+      "map_cells": 33884,
+      "map_cloud_frames": 6186,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 152068,
+          "threads": 70,
+          "fds": 13,
+          "cpu_s": 166.64
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 58820,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 180.09
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 52668,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 236.9
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 83848,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 482.98
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 39544,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 64.64
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 265180,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 396.83
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 95668,
+          "threads": 74,
+          "fds": 11,
+          "cpu_s": 670.93
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 45629421,
+        "points": 31751,
+        "voxels": 31751,
+        "position_capacity": 360000,
+        "geometries": 8,
+        "textures": 3,
+        "mode": "map"
+      }
+    },
+    {
+      "elapsed_s": 560.818,
+      "time_utc": "2026-10-23T08:08:47Z",
+      "healthy": true,
+      "latencies_s": [
+        0.016648499993607402,
+        0.021699399992940016,
+        0.15055360000405926,
+        0.03396539999812376
+      ],
+      "cloud_age_s": 0.1815,
+      "map_cells": 33930,
+      "map_cloud_frames": 6287,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 152124,
+          "threads": 70,
+          "fds": 14,
+          "cpu_s": 169.03
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 58868,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 182.6
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 52720,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 240.38
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 83896,
+          "threads": 74,
+          "fds": 11,
+          "cpu_s": 490.47
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 37160,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 65.56
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 265180,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 403.57
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 95716,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 682.39
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 22516968,
+        "points": 31787,
+        "voxels": 31787,
+        "position_capacity": 360000,
+        "geometries": 8,
+        "textures": 3,
+        "mode": "map"
+      }
+    },
+    {
+      "elapsed_s": 570.854,
+      "time_utc": "2026-10-23T08:08:57Z",
+      "healthy": true,
+      "latencies_s": [
+        0.01972179999575019,
+        0.03609570000844542,
+        0.17100999999092892,
+        0.15979320000042208
+      ],
+      "cloud_age_s": 0.2073,
+      "map_cells": 33972,
+      "map_cloud_frames": 6388,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 150408,
+          "threads": 70,
+          "fds": 12,
+          "cpu_s": 171.64
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 58868,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 185.16
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 52776,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 243.96
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 83948,
+          "threads": 74,
+          "fds": 11,
+          "cpu_s": 498.12
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 40504,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 66.52
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 265188,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 410.47
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 95756,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 694.05
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 95240330,
+        "points": 31864,
+        "voxels": 31864,
+        "position_capacity": 360000,
+        "geometries": 8,
+        "textures": 3,
+        "mode": "map"
+      }
+    },
+    {
+      "elapsed_s": 580.868,
+      "time_utc": "2026-10-23T08:09:07Z",
+      "healthy": true,
+      "latencies_s": [
+        0.015395800000987947,
+        0.029320500005269423,
+        0.1652343000023393,
+        0.024489499992341734
+      ],
+      "cloud_age_s": 0.2726,
+      "map_cells": 34037,
+      "map_cloud_frames": 6491,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 150432,
+          "threads": 70,
+          "fds": 13,
+          "cpu_s": 173.98
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 58868,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 187.6
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 52820,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 247.4
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 84000,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 505.48
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 39428,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 67.44
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 265188,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 417.12
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 95792,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 705.26
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 49871065,
+        "points": 31903,
+        "voxels": 31903,
+        "position_capacity": 360000,
+        "geometries": 8,
+        "textures": 3,
+        "mode": "map"
+      }
+    },
+    {
+      "elapsed_s": 590.897,
+      "time_utc": "2026-10-23T08:09:17Z",
+      "healthy": true,
+      "latencies_s": [
+        0.021883499997784384,
+        0.032461399998283014,
+        0.1724553000094602,
+        0.03480700000363868
+      ],
+      "cloud_age_s": 0.2904,
+      "map_cells": 34076,
+      "map_cloud_frames": 6591,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 151636,
+          "threads": 70,
+          "fds": 12,
+          "cpu_s": 176.53
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 58868,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 190.19
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 52868,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 250.91
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 84044,
+          "threads": 74,
+          "fds": 11,
+          "cpu_s": 513.09
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 40604,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 68.35
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 265192,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 424.01
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 95828,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 716.73
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 48091981,
+        "points": 31943,
+        "voxels": 31943,
+        "position_capacity": 360000,
+        "geometries": 8,
+        "textures": 3,
+        "mode": "map"
+      }
+    },
+    {
+      "elapsed_s": 600.917,
+      "time_utc": "2026-10-23T08:09:27Z",
+      "healthy": true,
+      "latencies_s": [
+        0.022366400007740594,
+        0.031936799990944564,
+        0.20928870000352617,
+        0.018946399999549612
+      ],
+      "cloud_age_s": 0.161,
+      "map_cells": 34115,
+      "map_cloud_frames": 6696,
+      "map_max_displacement_m": 0.0393,
+      "process_restarts": {
+        "go2wweb": 0,
+        "pcworker": 0,
+        "imuadapter": 0,
+        "go2wcol": 0,
+        "frontcam": 0
+      },
+      "mapping_epochs": 1,
+      "processes": {
+        "go2wweb": {
+          "pid": 1454295,
+          "rss_kib": 151624,
+          "threads": 70,
+          "fds": 12,
+          "cpu_s": 179.11
+        },
+        "pcworker": {
+          "pid": 1454384,
+          "rss_kib": 58868,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 193.24
+        },
+        "imuadapter": {
+          "pid": 1454837,
+          "rss_kib": 52900,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 254.38
+        },
+        "go2wcol": {
+          "pid": 1455178,
+          "rss_kib": 84096,
+          "threads": 74,
+          "fds": 11,
+          "cpu_s": 520.77
+        },
+        "frontcam": {
+          "pid": 1455147,
+          "rss_kib": 37356,
+          "threads": 9,
+          "fds": 10,
+          "cpu_s": 69.29
+        },
+        "pointlio": {
+          "pid": 1455783,
+          "rss_kib": 265200,
+          "threads": 12,
+          "fds": 10,
+          "cpu_s": 430.76
+        },
+        "mapworker": {
+          "pid": 1455802,
+          "rss_kib": 95884,
+          "threads": 74,
+          "fds": 10,
+          "cpu_s": 728.18
+        }
+      },
+      "same_processes": true,
+      "browser": {
+        "heap_bytes": 79794875,
+        "points": 31973,
+        "voxels": 31973,
+        "position_capacity": 360000,
+        "geometries": 8,
+        "textures": 3,
+        "mode": "map"
+      }
+    }
+  ],
+  "raw_sensor_data_saved": false,
+  "robot_motion_commands": 0,
+  "acceptance_duration_s": 600,
+  "original_requested_duration_s": 1800,
+  "operator_change": "User explicitly selected a 10-minute acceptance and deferred the 30-minute regression. The unchanged original runner reported interruption of its 1800-second target; no HTTP/resource error occurred. All other original acceptance checks passed.",
+  "original_runner_result": {
+    "passed": false,
+    "failure_reasons": [
+      "HTTP/resource sampling errors"
+    ],
+    "http_errors": [
+      {
+        "error": "acceptance interrupted before requested duration"
+      }
+    ]
+  },
+  "thirty_minute_acceptance_completed": false
+}

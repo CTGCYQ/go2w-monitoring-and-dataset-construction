@@ -61,7 +61,8 @@ def read_state() -> dict:
     if not STATE_FILE.exists():
         return {"online": False, "reason": "collector not running"}
     try:
-        return json.loads(STATE_FILE.read_text("utf-8"))
+        from recovery_policy import telemetry_status
+        return telemetry_status(json.loads(STATE_FILE.read_text("utf-8")))
     except Exception:
         return {"online": False, "reason": "state unreadable"}
 
@@ -702,24 +703,24 @@ def api_depth_raw():
                     headers={"Cache-Control": "no-store"})
 
 
-def _pull_dock_image(filename: str) -> Optional[bytes]:
-    """从机器狗扩展坞拉取一张最新的 RealSense 图像（SFTP）。
+from camera_health import FrameProgress
+_dock_image_progress=FrameProgress()
 
-    失败返回 None（机器人离线或采集程序未运行）。
-    """
+def _pull_dock_image(filename: str) -> Optional[bytes]:
+    """Return advancing camera frames only, close transports on every failure."""
+    summary,_=_metric_depth.snapshot()
+    if not summary.get('online'):return None
     import paramiko
+    cli=paramiko.SSHClient();cli.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     try:
-        cli = paramiko.SSHClient()
-        cli.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        cli.connect(DOCK_HOST, username=DOCK_USER, password=DOCK_PASS, timeout=8)
-        sftp = cli.open_sftp()
-        with sftp.open(f"{DOCK_RS_DIR}/{filename}", "rb") as f:
-            data = f.read()
-        sftp.close()
-        cli.close()
-        return data
-    except Exception:
-        return None
+        cli.connect(DOCK_HOST,username=DOCK_USER,password=DOCK_PASS,timeout=2,banner_timeout=2,auth_timeout=2)
+        with cli.open_sftp() as sftp:
+            sftp.get_channel().settimeout(2)
+            path=f"{DOCK_RS_DIR}/{filename}";stat=sftp.stat(path)
+            if not _dock_image_progress.fresh(filename,(stat.st_mtime,stat.st_size)):return None
+            with sftp.open(path,'rb') as stream:return stream.read()
+    except Exception:return None
+    finally:cli.close()
 
 
 @app.get("/api/depth/color")
@@ -742,53 +743,21 @@ def api_depth_image():
 
 @app.get("/api/depth/status")
 def api_depth_status():
-    """返回深度相机状态（是否在线 + 最近帧时间）。"""
-    color = _pull_dock_image("latest_color.jpg")
-    return {
-        "camera": "Intel RealSense D435I",
-        "online": color is not None,
-        "resolution": "640x480",
-        "fps": 15,
-        "mode": "rs_capture (librealsense)",
-    }
+    """Use fresh RAM sensor data, rather than successful reads of old JPEG files."""
+    summary,_=_metric_depth.snapshot()
+    return {"camera":"Intel RealSense D435I","online":summary.get('online',False),
+            "resolution":"640x480","fps":15,"mode":"rs_capture (librealsense)",
+            "reason":summary.get('reason'),"arrival_age_s":summary.get('arrival_age_s')}
 
 
 @app.get("/api/image/latest")
 def api_image_latest():
-    """返回最近一帧前置相机 JPEG（供相机展示区域刷新）。
+    """Live front camera only; recording history has separate session endpoints."""
+    from camera_health import live_front
+    data=live_front(BASE_DIR/'latest_front.jpg',read_state())
+    if data is None:raise HTTPException(503,"live front camera missing or stale")
+    return Response(data,media_type="image/jpeg",headers={"Cache-Control":"no-store"})
 
-    优先返回 video_worker 实时写入的 latest_front.jpg（始终更新，不依赖录制）；
-    回退到当前录制会话或最近会话的最新帧。
-    """
-    # 1) 优先：实时前置相机帧（video_worker 持续写入，不依赖录制会话）
-    latest_front = BASE_DIR / "latest_front.jpg"
-    if latest_front.exists():
-        return Response(latest_front.read_bytes(), media_type="image/jpeg")
-    # 2) 回退：当前录制中的最新帧
-    st = read_state()
-    rec = st.get("recording") or {}
-    if rec.get("active") and rec.get("session_id"):
-        img_dir = Path(DATASET_ROOT) / "sessions" / rec["session_id"] / "images"
-        if img_dir.exists():
-            frames = sorted(img_dir.glob("frame_*.jpg"))
-            if frames:
-                return Response(frames[-1].read_bytes(), media_type="image/jpeg")
-    # 3) 再回退：最近一个会话的最新帧
-    sessions_dir = Path(DATASET_ROOT) / "sessions"
-    if sessions_dir.exists():
-        latest = None
-        for d in sorted(sessions_dir.iterdir(), reverse=True):
-            if not d.is_dir():
-                continue
-            img_dir = d / "images"
-            if img_dir.exists():
-                frames = sorted(img_dir.glob("frame_*.jpg"))
-                if frames:
-                    latest = frames[-1]
-                    break
-        if latest:
-            return Response(latest.read_bytes(), media_type="image/jpeg")
-    raise HTTPException(404, "no camera image available")
 
 
 # ---------------------------------------------------------------------------
@@ -832,6 +801,12 @@ def api_map(max_points: int = 60000):
 
 from cloud_model import cloud_response, map_snapshot_response
 from display_alignment import metadata as display_metadata
+
+@app.get("/api/system/health")
+def api_system_health():
+    from recovery_policy import supervisor_health
+    return JSONResponse(supervisor_health(BASE_DIR/'supervisor_status.json'),headers={"Cache-Control":"no-store"})
+
 
 @app.get("/api/lidar/cloud")
 def api_lidar_cloud(max_points: int = 8000):

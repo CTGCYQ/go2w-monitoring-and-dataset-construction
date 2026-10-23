@@ -1,0 +1,70 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "service": "go2wweb",
+      "passed": true,
+      "recovery_seconds": 1.601,
+      "old_pid": 1454034,
+      "new_pid": 1454295,
+      "page_reload_required": false
+    },
+    {
+      "service": "pcworker",
+      "passed": true,
+      "recovery_seconds": 2.156,
+      "old_pid": 1005041,
+      "new_pid": 1454384,
+      "page_reload_required": false
+    },
+    {
+      "service": "mapworker",
+      "passed": true,
+      "recovery_seconds": 2.112,
+      "old_pid": 1452736,
+      "new_pid": 1454499,
+      "page_reload_required": false
+    },
+    {
+      "service": "pointlio",
+      "passed": true,
+      "recovery_seconds": 4.738,
+      "old_pid": 1452716,
+      "new_pid": 1454674,
+      "page_reload_required": false
+    },
+    {
+      "service": "imuadapter",
+      "passed": true,
+      "recovery_seconds": 6.907,
+      "old_pid": 1005494,
+      "new_pid": 1454837,
+      "page_reload_required": false
+    },
+    {
+      "service": "frontcam",
+      "passed": true,
+      "recovery_seconds": 0.586,
+      "old_pid": 1452831,
+      "new_pid": 1455147,
+      "page_reload_required": false
+    },
+    {
+      "service": "go2wcol",
+      "passed": true,
+      "recovery_seconds": 2.132,
+      "old_pid": 1006336,
+      "new_pid": 1455178,
+      "page_reload_required": false
+    },
+    {
+      "service": "supervisor",
+      "passed": true,
+      "recovery_seconds": 3.76,
+      "healthy_workers_adopted": true
+    }
+  ],
+  "browser_errors": [],
+  "robot_motion_commands": 0,
+  "raw_sensor_data_saved": false
+}

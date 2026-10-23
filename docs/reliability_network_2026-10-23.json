@@ -1,0 +1,27 @@
+{
+  "passed": true,
+  "events": [
+    {
+      "phase": "offline_verified",
+      "elapsed_s": 39.97,
+      "front_http_status": 503,
+      "stale_points_hidden": true,
+      "old_localization_stopped": true,
+      "depth_online": false
+    },
+    {
+      "phase": "recovered",
+      "elapsed_s": 61.31,
+      "recovery_from_first_cloud_s": 5.84,
+      "new_estimator_pid": 1455783,
+      "front_online": true,
+      "depth_online": true,
+      "map_online": true,
+      "page_reload_required": false
+    }
+  ],
+  "browser_errors": [],
+  "robot_motion_commands": 0,
+  "raw_sensor_data_saved": false,
+  "method": "15-second IPv4 packet isolation of robot 192.168.123.161 and dock 192.168.123.18; management network unchanged; all temporary rules removed. This is not a physical cable or server reboot test."
+}

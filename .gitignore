@@ -35,3 +35,8 @@ Thumbs.db
 GO2W_SYSTEM_HANDOVER.md
 docs/交接文档.md
 docs/启动教程与接口清单.md
+
+# Supervisor runtime metadata
+.supervisor.lock
+supervisor_status.json
+logs/

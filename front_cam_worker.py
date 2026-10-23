@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import time
 from pathlib import Path
 
@@ -38,7 +39,9 @@ def run(interface: str, out_path: str, fps: int = 10) -> None:
         try:
             code, data = client.GetImageSample()
             if code == 0 and data:
-                out.write_bytes(bytes(data))
+                temporary=out.with_suffix('.jpg.tmp')
+                temporary.write_bytes(bytes(data))
+                os.replace(temporary,out)
                 frame += 1
                 fail_count = 0
                 if frame % (fps * 30) == 0:
@@ -50,6 +53,8 @@ def run(interface: str, out_path: str, fps: int = 10) -> None:
         except Exception as e:
             fail_count += 1
             print(f"[front_cam] sample error: {e}", flush=True)
+        if fail_count >= 10:
+            raise RuntimeError('front camera unavailable after 10 samples; restart DDS client')
         dt = time.time() - t0
         if dt < frame_interval:
             time.sleep(frame_interval - dt)

@@ -1,0 +1,70 @@
+{
+  "duration_s": 20,
+  "topics": {
+    "/go2w/lidar_imu_specific_force": {
+      "samples": 5017,
+      "first_source_s": 1792742650.95136,
+      "last_source_s": 1792742670.971829,
+      "source_span_s": 20.020468950271606,
+      "wall_minus_source_s_median": -0.00541996955871582,
+      "wall_minus_source_s_range": [
+        -0.011026620864868164,
+        0.058609962463378906
+      ],
+      "backward_jumps": 0,
+      "estimated_hz": 251.2983116360222
+    },
+    "/odom_corrected": {
+      "samples": 64023,
+      "first_source_s": 1792742650.8807182,
+      "last_source_s": 1792742670.9243958,
+      "source_span_s": 20.04367756843567,
+      "wall_minus_source_s_median": 0.0813133716583252,
+      "wall_minus_source_s_range": [
+        0.04731607437133789,
+        0.15358185768127441
+      ],
+      "backward_jumps": 0,
+      "estimated_hz": 3203.597073978764
+    },
+    "/utlidar/cloud": {
+      "samples": 305,
+      "first_source_s": 1792742650.9879134,
+      "last_source_s": 1792742670.8763168,
+      "source_span_s": 19.88840341567993,
+      "wall_minus_source_s_median": 0.06510162353515625,
+      "wall_minus_source_s_range": [
+        0.03244638442993164,
+        0.11676263809204102
+      ],
+      "backward_jumps": 0,
+      "estimated_hz": 15.272476890671243
+    },
+    "/utlidar/imu": {
+      "samples": 5001,
+      "first_source_s": 1792742651.0254014,
+      "last_source_s": 1792742670.971829,
+      "source_span_s": 19.946427583694458,
+      "wall_minus_source_s_median": -0.007831096649169922,
+      "wall_minus_source_s_range": [
+        -0.011780500411987305,
+        0.05674457550048828
+      ],
+      "backward_jumps": 0,
+      "estimated_hz": 250.79567047601327
+    }
+  },
+  "raw_sensor_data_saved": false,
+  "/utlidar/imu_nearest_cloud_error_ms": {
+    "median": 3.145933151245117,
+    "max": 37.48798370361328
+  },
+  "/go2w/lidar_imu_specific_force_nearest_cloud_error_ms": {
+    "median": 3.145933151245117,
+    "max": 5.300045013427734
+  },
+  "/odom_corrected_nearest_cloud_error_ms": {
+    "median": 0.026941299438476562,
+    "max": 4.1065216064453125
+  }
+}
