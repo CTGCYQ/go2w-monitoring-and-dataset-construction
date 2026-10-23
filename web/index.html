@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GO2-W 机器人遥测中心</title>
+<title>具身智能机器人综合管理平台</title>
+<script src="/static/fleet-context.js?v=20261023-1"></script>
+<link rel="stylesheet" href="/static/fleet.css?v=20261023-1">
 <!-- ECharts 图表库 -->
 <script src="/static/lib/echarts.min.js"></script>
 <!-- Three.js 3D 渲染库 + 轨道控制器 -->
@@ -267,7 +269,7 @@
 
 <!-- ============ 顶部导航 ============ -->
 <nav class="nav">
-  <div class="logo"><img src="/static/logo.png" alt="logo"><span>GO2-W 遥测中心</span></div>
+  <div class="logo"><img src="/static/logo.png" alt="logo"><span>具身智能机器人综合管理平台</span></div>
   <div class="tabs">
     <div class="tab active" data-tab="monitor" onclick="switchTab('monitor')">实时监控</div>
     <div class="tab" data-tab="record" onclick="switchTab('record')">数据录制</div>
@@ -275,7 +277,8 @@
     <div class="tab" data-tab="annotate" onclick="switchTab('annotate')">标注工作台</div>
     <div class="tab" data-tab="agent" onclick="switchTab('agent')">文字交互</div>
     <div class="tab" data-tab="slam" onclick="switchTab('slam')">SLAM 探索</div>
-    <div class="tab" data-tab="robots" onclick="switchTab('robots')">群体管理</div>
+    <div class="tab" data-tab="robots" onclick="switchTab('robots')">机器人管理</div>
+    <div class="tab" data-tab="jobs" onclick="switchTab('jobs')">作业工作台</div>
   </div>
   <div class="spacer"></div>
   <div class="conn">
@@ -285,6 +288,7 @@
     <span class="badge" id="navRec">未录制</span>
   </div>
 </nav>
+<div class="robot-context"><label for="robotSelector">当前机器人</label><select id="robotSelector" aria-label="选择机器人"><option>正在加载机器人…</option></select><span class="context-note"><strong id="robotContextName">—</strong> · <span id="robotContextState">连接中</span></span><span class="context-note">各功能页面随所选机器人切换</span><span id="fleetGlobalError" class="fleet-error" role="status" aria-live="polite"></span></div>
 
 <div class="main">
 
@@ -432,10 +436,10 @@
           <span class="badge" id="camStatus">加载中…</span>
         </div>
         <div class="cam-wrap">
-          <img id="camImg" src="/api/image/latest?t=0" alt="相机画面" onerror="this.style.opacity='0.3'">
+          <img id="camImg" data-robot-src="/api/image/latest?t=0" alt="相机画面" onerror="this.style.opacity='0.3'">
           <div class="cam-overlay" id="camOverlay">CAMERA · 前置</div>
         </div>
-        <p class="pc-status" style="margin-top:6px;">图像来自前置相机，机器人离线或未录制时显示历史帧。</p>
+        <p class="pc-status" style="margin-top:6px;">图像来自前置相机，机器人离线或图像过期时停止显示实时画面。</p>
       </div>
       <div class="card">
         <h2>深度相机 RGB <span class="hint">RealSense D435I Color</span></h2>
@@ -450,7 +454,7 @@
           <span class="badge" id="dcColorStatus">加载中…</span>
         </div>
         <div class="cam-wrap">
-          <img id="dcColorImg" src="/api/depth/color?t=0" alt="深度相机彩色图" onerror="this.style.opacity='0.3'">
+          <img id="dcColorImg" data-robot-src="/api/depth/color?t=0" alt="深度相机彩色图" onerror="this.style.opacity='0.3'">
           <div class="cam-overlay">DEPTH CAM · RGB</div>
         </div>
       </div>
@@ -467,7 +471,7 @@
           <span class="badge" id="dcDepthStatus">加载中…</span>
         </div>
         <div class="cam-wrap">
-          <img id="dcDepthImg" src="/api/depth/image?t=0" alt="深度图" onerror="this.style.opacity='0.3'">
+          <img id="dcDepthImg" data-robot-src="/api/depth/image?t=0" alt="深度图" onerror="this.style.opacity='0.3'">
           <div class="cam-overlay">DEPTH · 近红远蓝</div>
         </div>
         <p class="pc-status" style="margin-top:6px;">深度图伪彩色：近处偏红(暖)，远处偏蓝(冷)。数据来自扩展坞 RealSense，独立采集程序 rs_capture。</p>
@@ -557,7 +561,7 @@
         <div class="card" style="margin-bottom:12px;">
           <h2>第一人称视角 <span class="hint">Front Camera</span></h2>
           <div class="cam-wrap">
-            <img id="agentCamImg" src="/api/image/latest?t=0" alt="前置相机" style="width:100%;max-height:300px;object-fit:contain;background:#000;border-radius:8px;border:1px solid var(--border);">
+            <img id="agentCamImg" data-robot-src="/api/image/latest?t=0" alt="前置相机" style="width:100%;max-height:300px;object-fit:contain;background:#000;border-radius:8px;border:1px solid var(--border);">
             <div class="cam-overlay" id="agentCamOverlay">CAMERA · 前置</div>
           </div>
         </div>
@@ -604,20 +608,13 @@
     </div>
   </div>
 
-  <!-- ============ TAB7 群体管理 ============ -->
   <div class="tabview" id="tv-robots">
-    <div class="card">
-      <h2>机器狗群体管理 <span class="hint">Robot Fleet</span></h2>
-      <div class="ctrl-row">
-        <span class="badge" id="robotsStatus">加载中…</span>
-        <button class="sm" onclick="loadRobots()">🔄 刷新</button>
-      </div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">💡 机器清单来自 <code>robot.yaml</code> 的 <code>robot_addresses</code>。当前主机器狗（index 0）状态来自 collector 实时采集；其余为待接入节点（在线状态为信令端口探测）。多机运动实例化需 VLA 侧支持，本页先做清单+状态聚合。</div>
-      <table>
-        <thead><tr><th>序号</th><th>IP</th><th>状态</th><th>电量</th><th>运动模式</th><th>最后更新</th></tr></thead>
-        <tbody id="robotsBody"></tbody>
-      </table>
-    </div>
+    <header class="fleet-page-head"><div><div class="fleet-eyebrow">ROBOT FLEET / 机器人资产</div><h1>机器人管理</h1><p>接入独立采集节点，统一查看机器人状态与当前作业。</p></div><div class="fleet-actions"><span class="badge" id="fleetCount">连接中</span><button id="fleetRefreshBtn">刷新状态</button><button id="addRobotBtn" class="fleet-btn-primary">＋ 接入机器人</button></div></header>
+    <div class="fleet-grid" id="fleetCards"><div class="fleet-empty">正在读取机器人清单…</div></div>
+  </div>
+  <div class="tabview" id="tv-jobs">
+    <header class="fleet-page-head"><div><div class="fleet-eyebrow">OPERATIONS / 作业调度</div><h1>作业工作台</h1><p>从指派到结果核验，跟踪每台机器人的执行环节。</p></div><div class="fleet-actions"><label class="job-filter">统计范围<select id="jobScope"><option value="selected">当前机器人</option><option value="all">全部机器人</option></select></label><button id="createJobBtn" class="fleet-btn-primary">＋ 指派作业</button></div></header>
+    <div class="fleet-stats" id="jobStats"></div><div class="job-layout"><section class="job-list"><header class="job-section-head"><span>作业队列</span><span id="jobListCount">—</span></header><div class="fleet-scroll" id="jobRows"></div></section><section class="job-detail" id="jobDetail"></section></div>
   </div>
 
 </div>
@@ -674,7 +671,7 @@
   <div class="item">数据源：<b>rt/lowstate @ 500Hz</b></div>
   <div class="item">存储 Storage：<b>InfluxDB + Arrow + LeRobot</b></div>
   <div class="spacer"></div>
-  <div class="item">GO2-W TELEMETRY · v2.1</div>
+  <div class="item">具身智能机器人综合管理平台 · v3.0</div>
 </div>
 
 <!-- ============ VLA 流程节点详情弹框 ============ -->
@@ -734,35 +731,11 @@ function switchTab(name) {
   if(name!=='vision') pcStudio?.suspend();
   if (name==='agent') { startAgentView(); } else { stopAgentView(); }
   if (name==='slam') { startSlamView(); } else { stopSlamView(); }
-  if (name==='robots') { loadRobots(); }
+  if (name==='robots' || name==='jobs') { loadRobots(); }
 }
 
 // ---- 群体管理：机器狗清单 + 状态聚合 ----
-async function loadRobots(){
-  const d = await fetchJSON('/api/robots');
-  const st = $('robotsStatus'), tb = $('robotsBody');
-  if(!st || !tb) return;
-  if(!d || !d.robots || !d.robots.length){
-    st.textContent = '● 无机器清单（robot.yaml robot_addresses 为空）';
-    st.className = 'badge amber';
-    tb.innerHTML = '<tr><td colspan="6" style="color:var(--muted)">无机器狗</td></tr>';
-    return;
-  }
-  st.textContent = '● ' + d.count + ' 台机器狗 · 主机器狗 ' + (d.primary_online ? '在线' : '离线');
-  st.className = 'badge ' + (d.primary_online ? 'green' : 'red');
-  tb.innerHTML = d.robots.map(r=>{
-    const badge = r.online ? '<span class="badge green">● 在线</span>' : '<span class="badge red">○ 离线</span>';
-    const primary = r.is_primary ? ' 👑主' : '';
-    return `<tr>
-      <td class="num">${r.index}${primary}</td>
-      <td class="num">${r.ip}</td>
-      <td>${badge}</td>
-      <td class="num">${r.battery!==null && r.battery!==undefined ? r.battery+' %' : '-'}</td>
-      <td class="num">${r.mode!==null && r.mode!==undefined ? r.mode : '-'}</td>
-      <td class="num">${fmtTime(r.last_seen_s)}</td>
-    </tr>`;
-  }).join('');
-}
+async function loadRobots(){ window.FleetUI?.refresh(); }
 
 // ---- SLAM 探索：2D 栅格地图 + 机器人位姿 canvas 可视化 ----
 let slamTimer = null;
@@ -1440,7 +1413,7 @@ async function loadSessions(){
 // 用 location.href 而非 a.click()：async/await 之后 a.click() 属于非用户手势，
 // 会被浏览器下载保护拦截；location.href 对 attachment 响应不跳转页面且不受此限制。
 function downloadZip(id, fmt){
-  window.location.href = '/api/dataset/download/' + id + '?format=' + fmt;
+  window.location.href = FleetContext.url('/api/dataset/download/' + id + '?format=' + fmt);
   $('recMsg').textContent = '⬇ 已触发 ' + (fmt === 'lerobot' ? 'LeRobot' : 'HF') + ' 下载，请查看浏览器下载列表…';
 }
 // 导出：只把数据集生成到服务器 exports/ 目录（不下载），成功后自动触发下载
@@ -1487,7 +1460,7 @@ async function loadFramePage(dir){
   $('annFrameInfo').textContent=' · '+annSession.slice(0,8)+' · 帧 '+(annPage*ANN_PAGE+1)+'-'+(annPage*ANN_PAGE+annFrames.length)+' / '+annTotal;
   const grid=$('framesGrid');
   grid.innerHTML=annFrames.map(f=>{
-    const img=f.image?`<img src="/api/session/${annSession}/image/${f.image}" loading="lazy">`
+    const img=f.image?`<img src="${FleetContext.url(`/api/session/${annSession}/image/${f.image}`)}" loading="lazy">`
       :`<div class="noimg">无图像</div>`;
     const rpy=f.imu_rpy?`R${fmt(f.imu_rpy[0],1)} P${fmt(f.imu_rpy[1],1)} Y${fmt(f.imu_rpy[2],1)}`:'';
     const ann = annFrameMap[f.index];
@@ -1604,11 +1577,13 @@ async function loadAnnList(){
   </div>`).join('');
 }
 async function delAnnotation(id){
-  await postJSON(`/api/session/${annSession}/annotations/${id}`,null);
+  const response=await fetch(`/api/session/${annSession}/annotations/${id}`,{method:'DELETE'});
+  if(!response.ok){$('annMsg').textContent='删除标注失败，请重试';return;}
   await refreshAnnData(); await loadFramePage(0);
 }
 
 // ================= 初始化 =================
+document.querySelectorAll("img[data-robot-src]").forEach(img=>{img.src=img.dataset.robotSrc;});
 initChart('chartRPY', {'横滚Roll':'#dc2626','俯仰Pitch':'#16a34a','偏航Yaw':'#2563eb'});
 initChart('chartSoc', {'电量SOC':'#16a34a'});
 initChart('chartVoltage', {'电压V':'#d97706'});
@@ -1631,5 +1606,8 @@ window.addEventListener('resize', ()=>{
   }
 });
 </script>
+<dialog class="fleet-dialog" id="robotDialog"><form id="robotForm"><h2 id="robotDialogTitle">接入机器人</h2><p class="intro">每台机器人使用独立采集节点。填入该节点的监控服务地址后，各页面将按机器人独立读取和操作。</p><label class="fleet-field">机器人编号<input id="robotId" required maxlength="48" pattern="[a-zA-Z0-9][a-zA-Z0-9_-]*" placeholder="例如 robot-02"></label><label class="fleet-field">机器人名称<input id="robotName" required maxlength="80" placeholder="例如 二号巡检机器人"></label><label class="fleet-field">型号<input id="robotModel" required maxlength="80" placeholder="例如 Unitree Go2-W"></label><label class="fleet-field">采集节点地址<input id="robotEndpoint" type="url" required placeholder="https://节点地址:8000"></label><label class="fleet-field" style="flex-direction:row"><input id="robotTls" type="checkbox" checked style="width:auto">校验节点 HTTPS 证书</label><label class="fleet-field" style="flex-direction:row"><input id="robotEnabled" type="checkbox" checked style="width:auto">启用机器人</label><p id="robotFormError" class="fleet-error" role="alert"></p><footer><button type="button" data-close-dialog="robotDialog">取消</button><button type="submit" class="fleet-btn-primary">保存机器人</button></footer></form></dialog>
+<dialog class="fleet-dialog" id="jobDialog"><form id="jobForm"><h2>指派作业</h2><p class="intro">选定机器人与作业类型。每台机器人依次执行队列中的作业，进度由后端实时核验。</p><label class="fleet-field">作业名称<input id="jobTitle" required maxlength="120" placeholder="例如 实验区传感器巡检"></label><label class="fleet-field">执行机器人<select id="jobRobot" required></select></label><label class="fleet-field">作业类型<select id="jobKind"><option value="sensor_check">传感器巡检 · 状态 / 雷达 / 深度</option><option value="capture">定时数据采集 · 自动录制与核验</option></select></label><label class="fleet-field" id="captureDurationField" hidden>采集时长（秒）<input id="jobDuration" type="number" min="5" max="3600" value="60" required></label><p id="jobFormError" class="fleet-error" role="alert"></p><footer><button type="button" data-close-dialog="jobDialog">取消</button><button type="submit" class="fleet-btn-primary">确认指派</button></footer></form></dialog>
+<script src="/static/fleet.js?v=20261023-1"></script>
 </body>
 </html>

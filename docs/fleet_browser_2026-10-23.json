@@ -1,0 +1,18 @@
+{
+  "passed": true,
+  "checks": [
+    "platform_name",
+    "robot_switch_resets_document_and_preserves_tab",
+    "all_eight_pages_keep_robot_context",
+    "all_robot_requests_scoped_including_images",
+    "register_node_and_display_offline",
+    "inventory_updates_across_tabs_with_independent_robot_context",
+    "dispatch_real_backend_state_machine_and_timeline",
+    "verified_step_status_and_metrics",
+    "mobile_no_horizontal_overflow",
+    "invalid_saved_robot_can_be_recovered_without_fallback"
+  ],
+  "browser_errors": [],
+  "fixture_only": true,
+  "real_robot_motion_commands": 0
+}

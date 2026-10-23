@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "runtime": "server Python 3.10 / FastAPI 0.121.3",
+  "test_count": 75,
+  "existing_regressions": 57,
+  "new_fleet_regressions": 18,
+  "raw_sensor_data_saved": false
+}

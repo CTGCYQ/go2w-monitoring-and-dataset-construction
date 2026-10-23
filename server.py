@@ -52,7 +52,7 @@ AGENT_CMD_URL = "http://127.0.0.1:8787"
 # 机器狗清单（群体管理）：robot.yaml 的 robot_addresses 是权威源
 ROBOT_CONFIG_FILE = "/home/dell/go2w_vla/config/robot.yaml"
 
-app = FastAPI(title="Go2-W Monitor", version="2.0.0")
+app = FastAPI(title="具身智能机器人综合管理平台", version="3.0.0")
 _scheduler = ScheduleManager(str(SCHEDULE_FILE))
 
 
@@ -1109,6 +1109,9 @@ def favicon():
 
 
 # serve static assets (css/js) from web dir
+from fleet_api import install_fleet
+install_fleet(app, BASE_DIR, read_state)
+
 app.mount("/static", StaticFiles(directory=str(WEB_DIR)), name="static")
 
 

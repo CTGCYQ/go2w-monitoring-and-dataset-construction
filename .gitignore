@@ -40,3 +40,6 @@ docs/启动教程与接口清单.md
 .supervisor.lock
 supervisor_status.json
 logs/
+
+# Platform registry and job history
+fleet.sqlite3*

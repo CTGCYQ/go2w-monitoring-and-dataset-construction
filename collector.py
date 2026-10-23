@@ -402,7 +402,9 @@ def run(interface: str, influx_url: str, database: str, interval: float,
                 "size_bytes": rec_status["size_bytes"],
             }
             snapshot = json.dumps(_jsonable(LATEST), ensure_ascii=False)
-        STATE_PATH.write_text(snapshot, encoding="utf-8")
+        temporary = STATE_PATH.with_suffix(".json.tmp")
+        temporary.write_text(snapshot, encoding="utf-8")
+        os.replace(temporary, STATE_PATH)
 
     # 优雅退出：收到信号后跳出主循环并停掉录制
     stop = threading.Event()
