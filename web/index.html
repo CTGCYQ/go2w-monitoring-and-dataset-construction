@@ -179,6 +179,8 @@
   #pointcloud3d { width: 100%; height: 480px; border-radius: 8px; background: radial-gradient(circle at 30% 20%, #0e1f36, #05070d); }
   .pc-status { font-size: 11px; color: var(--muted); margin-top: 6px; font-family: var(--mono); }
   .ctrl-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+  /* SLAM 探索围栏工具按钮态（复用 .sm） */
+  #slam-tools button.is-active { color: var(--green); border-color: rgba(22,163,74,0.5); background: rgba(22,163,74,0.08); }
   /* ---------- 标注工作台 ---------- */
   .workbench { display: grid; grid-template-columns: 260px 1fr; gap: 14px; align-items: start; }
   .frames-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px,1fr)); gap: 8px; max-height: 440px; overflow-y: auto; padding-right: 4px; }
@@ -598,14 +600,28 @@
   <!-- ============ TAB6 SLAM 探索 ============ -->
   <div class="tabview" id="tv-slam">
     <div class="card" style="margin-bottom:12px;">
-      <h2>SLAM 建图可视化 <span class="hint">LiDAR 栅格地图 + 机器人位姿</span></h2>
+      <h2>SLAM 自主探索 <span class="hint">LiDAR 栅格地图 + 围栏/frontier/目标规划（阶段 0 · dry-run）</span></h2>
       <div class="ctrl-row">
         <span class="badge" id="slamStatus">加载中…</span>
         <span class="badge accent" id="slamPose">位姿: -</span>
+        <span class="badge accent" id="exploreStatus">状态: -</span>
         <button class="sm" onclick="refreshSlam()">🔄 刷新</button>
       </div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">💡 展示机器狗 LiDAR 固件建图结果（/utlidar/grid_map 栅格地图 + /utlidar/robot_pose 位姿）。建图开关由部署侧 LiDAR 命令控制；未开启建图时无地图数据。</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">💡 展示机器狗 LiDAR 建图结果（/utlidar/grid_map + /utlidar/robot_pose）。下方为 <b>阶段 0 仿真/规划可视化</b>：围栏绘制仅做几何校验与存储，<b>绝不下发运动指令</b>（安全灯恒「未放行」）。</div>
       <canvas id="slamCanvas" style="width:100%;height:520px;background:#0e1f36;border-radius:8px;border:1px solid var(--border);"></canvas>
+      <div class="ctrl-row" id="slam-tools" style="margin-top:8px;">
+        <span style="font-size:12px;color:var(--muted);">围栏工具：</span>
+        <button class="sm" data-tool="polygon" onclick="window.ExplorePanel.setTool('polygon')">多边形（单击落点 / 双击闭合）</button>
+        <button class="sm" data-tool="rect" onclick="window.ExplorePanel.setTool('rect')">矩形（拖对角）</button>
+        <button class="sm" data-tool="circle" onclick="window.ExplorePanel.setTool('circle')">圆形（拖圆心+半径）</button>
+        <button class="sm" onclick="window.ExplorePanel.clearFence()">清除当前</button>
+        <button class="sm green" onclick="window.ExplorePanel.saveFence()">保存围栏</button>
+      </div>
+      <div class="ctrl-row" style="margin-top:4px;">
+        <span id="exploreSafety"></span>
+        <span id="exploreProgress" style="font-size:12px;color:var(--muted);">前沿: -</span>
+        <span class="msg" id="exploreMsg"></span>
+      </div>
     </div>
   </div>
 
@@ -1612,5 +1628,6 @@ window.addEventListener('resize', ()=>{
 <dialog class="fleet-dialog" id="jobDialog"><form id="jobForm"><h2>指派作业</h2><p class="intro">选定机器人与作业类型。每台机器人依次执行队列中的作业，进度由后端实时核验。</p><label class="fleet-field">作业名称<input id="jobTitle" required maxlength="120" placeholder="例如 实验区传感器巡检"></label><label class="fleet-field">执行机器人<select id="jobRobot" required></select></label><label class="fleet-field">作业类型<select id="jobKind"><option value="sensor_check">传感器巡检 · 状态 / 雷达 / 深度</option><option value="capture">定时数据采集 · 自动录制与核验</option></select></label><label class="fleet-field" id="captureDurationField" hidden>采集时长（秒）<input id="jobDuration" type="number" min="5" max="3600" value="60" required></label><p id="jobFormError" class="fleet-error" role="alert"></p><footer><button type="button" data-close-dialog="jobDialog">取消</button><button type="submit" class="fleet-btn-primary">确认指派</button></footer></form></dialog>
 <script src="/static/fleet.js?v=20261023-1"></script>
 <script src="/static/scenes.js?v=20261025-2"></script>
+<script src="/static/explore-panel.js?v=20261025-1"></script>
 </body>
 </html>
