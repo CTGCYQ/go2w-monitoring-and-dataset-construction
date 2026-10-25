@@ -49,6 +49,12 @@ class JobRunner:
   j=active or self.store.claim(rid)
   if not j or j['status']=='needs_attention':return
   i=j['step_index'];kind=j['kind']
+  if kind in {'scene_capture','scene_build'}:
+   if getattr(self,'scene_handler',None):self.scene_handler(j)
+   else:
+    def unavailable(v):v.update(status='failed',error='场景执行器未启动',finished_at=time.time())
+    self.store.mutate(j['id'],unavailable)
+   return
   try:
    if j['cancel_requested']:
     self.cleanup(j)

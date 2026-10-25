@@ -1,0 +1,13 @@
+﻿import assert from 'node:assert/strict';
+import {test} from 'node:test';
+import {ResourceBudget,planTiles,distanceToBox,estimatedBytes} from './web/gaussian/stream-core.mjs';
+const level={level:0,decoded_bytes:3200,gaussians:100,geometric_error_m:0};
+const tile={id:'near',bounds:[[0,0,0],[1,1,1]],levels:[level]};
+const settings={loadRadius:12,renderRadius:10,cacheBytes:1048576,gaussianBudget:1000};
+test('distance handles inside and outside bounds',()=>{assert.equal(distanceToBox([.5,.5,.5],tile.bounds),0);assert.equal(distanceToBox([4,5,1],tile.bounds),5);});
+test('far tiles are excluded from loading',()=>{assert.equal(planTiles({tiles:[tile]},[30,0,0],settings).items.length,0);});
+test('render range and frustum control visibility',()=>{assert.equal(planTiles({tiles:[tile]},[11.5,0,0],settings).items[0].visible,false);assert.equal(planTiles({tiles:[tile]},[0,0,0],settings,()=>false).items[0].visible,false);});
+test('planner honors Gaussian and memory ceilings',()=>{assert.equal(planTiles({tiles:[tile]},[0,0,0],{...settings,gaussianBudget:99}).items.length,0);assert.equal(planTiles({tiles:[tile]},[0,0,0],{...settings,cacheBytes:estimatedBytes(level)-1}).items.length,0);});
+test('pending reservations count toward memory ceiling',()=>{const b=new ResourceBudget(100);assert.ok(b.reserve('a',60));assert.equal(b.reserve('b',60),false);assert.equal(b.bytes,60);b.cancel('a');assert.equal(b.bytes,0);});
+test('eviction disposes resources and clear drops pending',()=>{const b=new ResourceBudget(100);let disposed=0;b.reserve('a',60);b.commit('a',{dispose(){disposed++;}});assert.ok(b.reserve('b',60));assert.equal(disposed,1);b.clear();assert.equal(b.bytes,0);assert.equal(b.resident.size,0);assert.equal(b.pending.size,0);});
+test('budget reduction evicts resident GPU resources',()=>{const b=new ResourceBudget(100);let disposed=0;b.reserve('a',80);b.commit('a',{dispose(){disposed++;}});b.limit=10;b.evict();assert.equal(b.bytes,0);assert.equal(disposed,1);});

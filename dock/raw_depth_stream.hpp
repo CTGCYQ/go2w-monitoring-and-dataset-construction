@@ -14,9 +14,10 @@
 #include <stdexcept>
 #include <thread>
 #include <vector>
+#include <opencv2/imgcodecs.hpp>
 
 class RawDepthStream {
-    struct Frame { std::string fields; std::vector<char> pixels;
+    struct Frame { std::string fields; std::vector<char> pixels; std::vector<unsigned char> rgb_jpeg;
         std::chrono::steady_clock::time_point captured; };
     int listener=-1;
     std::atomic<bool> running{true};
@@ -29,27 +30,39 @@ class RawDepthStream {
         return true;
     }
     void serve() {
+        std::vector<int> clients;
         while(running) {
-            fd_set set;FD_ZERO(&set);FD_SET(listener,&set);timeval wait{0,200000};
-            if(select(listener+1,&set,nullptr,nullptr,&wait)<=0)continue;
-            int client=accept(listener,nullptr,nullptr);if(client<0)continue;
-            timeval timeout{0,500000};
-            setsockopt(client,SOL_SOCKET,SO_RCVTIMEO,&timeout,sizeof(timeout));
-            setsockopt(client,SOL_SOCKET,SO_SNDTIMEO,&timeout,sizeof(timeout));
-            char request;
-            while(running && recv(client,&request,1,0)==1) {
+            fd_set set; FD_ZERO(&set); FD_SET(listener,&set); int highest=listener;
+            for(int fd:clients){FD_SET(fd,&set);if(fd>highest)highest=fd;}
+            timeval wait{0,200000};
+            if(select(highest+1,&set,nullptr,nullptr,&wait)<=0)continue;
+            if(FD_ISSET(listener,&set)) {
+                int fd=accept(listener,nullptr,nullptr);
+                if(fd>=0) {
+                    if(clients.size()>=4 || fd>=FD_SETSIZE)close(fd);
+                    else {timeval timeout{0,500000};setsockopt(fd,SOL_SOCKET,SO_SNDTIMEO,&timeout,sizeof(timeout));clients.push_back(fd);}
+                }
+            }
+            for(size_t i=0;i<clients.size();) {
+                int client=clients[i];if(!FD_ISSET(client,&set)){++i;continue;}
+                char request;bool ok=recv(client,&request,1,0)==1;
                 std::shared_ptr<Frame> frame;
                 {std::lock_guard<std::mutex> guard(lock);frame=latest;}
-                if(!frame) { uint32_t zero=0;if(!send_all(client,&zero,4))break;continue; }
-                double age=std::chrono::duration<double,std::milli>(std::chrono::steady_clock::now()-frame->captured).count();
-                std::ostringstream h;h<<std::setprecision(16)<<"{\"source_age_ms\":"<<age<<','<<frame->fields<<'}';
-                auto header=h.str();uint32_t length=htonl(static_cast<uint32_t>(header.size()));
-                if(!send_all(client,&length,4)||!send_all(client,header.data(),header.size())||
-                   !send_all(client,frame->pixels.data(),frame->pixels.size()))break;
+                if(ok && !frame){uint32_t zero=0;ok=send_all(client,&zero,4);}
+                else if(ok) {
+                    double age=std::chrono::duration<double,std::milli>(std::chrono::steady_clock::now()-frame->captured).count();
+                    std::ostringstream h;h<<std::setprecision(16)<<"{\"source_age_ms\":"<<age<<',';
+                    if(request=='R')h<<"\"rgbd_version\":1,\"rgb_format\":\"jpeg\",\"rgb_jpeg_bytes\":"<<frame->rgb_jpeg.size()<<',';
+                    h<<frame->fields<<'}';auto header=h.str();uint32_t length=htonl(static_cast<uint32_t>(header.size()));
+                    ok=send_all(client,&length,4)&&send_all(client,header.data(),header.size())&&send_all(client,frame->pixels.data(),frame->pixels.size());
+                    if(ok && request=='R')ok=send_all(client,frame->rgb_jpeg.data(),frame->rgb_jpeg.size());
+                }
+                if(!ok){close(client);clients.erase(clients.begin()+i);}else ++i;
             }
-            close(client);
         }
+        for(int fd:clients)close(fd);
     }
+
 public:
     explicit RawDepthStream(int port=8766) {
         listener=socket(AF_INET,SOCK_STREAM,0);
@@ -70,6 +83,8 @@ public:
         const auto* bytes=static_cast<const char*>(depth.get_data());
         frame->pixels.resize(w*h*2);
         for(int y=0;y<h;++y)std::memcpy(frame->pixels.data()+y*w*2,bytes+y*depth.get_stride_in_bytes(),w*2);
+        cv::Mat bgr(color.get_height(),color.get_width(),CV_8UC3,const_cast<void*>(color.get_data()),color.get_stride_in_bytes());
+        if(!cv::imencode(".jpg",bgr,frame->rgb_jpeg,{cv::IMWRITE_JPEG_QUALITY,92}))return;
         auto in=depth.get_profile().as<rs2::video_stream_profile>().get_intrinsics();
         std::ostringstream s;s<<std::setprecision(16)
           <<"\"version\":1,\"format\":\"Z16_LE\",\"alignment\":\"color\",\"frame_id\":\"realsense_color_optical_frame\""

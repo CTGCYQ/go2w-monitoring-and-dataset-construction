@@ -53,6 +53,32 @@ def read_frame(channel):
     return h, pixels, struct.pack("!I", length) + header_bytes + pixels
 
 
+def read_rgbd_frame(channel):
+    header, pixels, packet = read_frame(channel)
+    size = header.get("rgb_jpeg_bytes")
+    if header.get("rgbd_version") != 1 or header.get("rgb_format") != "jpeg" or type(size) is not int or not 4 <= size <= 2*1024*1024:
+        raise ValueError("invalid paired RGB payload")
+    if abs(header["device_timestamp_ms"]-header["color_timestamp_ms"]) > 50:
+        raise ValueError("RGB/depth capture times differ by more than 50ms")
+    if header.get("color_timestamp_domain",header.get("timestamp_domain")) != header.get("timestamp_domain"):
+        raise ValueError("RGB/depth clock domains differ")
+    rgb = recv_exact(channel, size)
+    if not rgb.startswith(b"\xff\xd8") or not rgb.endswith(b"\xff\xd9"):
+        raise ValueError("invalid RGB JPEG")
+    return header, pixels, packet + rgb
+
+
+def split_rgbd_packet(packet):
+    import io
+    class Buffer:
+        def __init__(self): self.data = io.BytesIO(packet)
+        def recv(self, size): return self.data.read(size)
+    stream = Buffer()
+    header, depth, canonical = read_rgbd_frame(stream)
+    if stream.recv(1): raise ValueError("unexpected RGB-D trailing bytes")
+    return header, depth, canonical[-header["rgb_jpeg_bytes"]:]
+
+
 def summarize(header, pixels):
     w, h = header["width"], header["height"]
     values = []
@@ -76,8 +102,9 @@ def packet_with_age(packet, arrival_age_s):
 
 
 class DepthReceiver:
-    def __init__(self, host, username, password):
+    def __init__(self, host, username, password, request=b"D"):
         self.host, self.username, self.password = host, username, password
+        self.request = request
         self.lock = threading.Lock()
         self.stopping = threading.Event()
         self.frame = None
@@ -119,8 +146,8 @@ class DepthReceiver:
                 last = None
                 while not self.stopping.is_set():
                     started = time.monotonic()
-                    channel.sendall(b"D")
-                    header, pixels, packet = read_frame(channel)
+                    channel.sendall(self.request)
+                    header, pixels, packet = (read_rgbd_frame(channel) if self.request == b"R" else read_frame(channel))
                     key = (header["frame_number"], header["captured_host_time_s"])
                     # Re-reading one frame never refreshes its receiver age.
                     if key != last:

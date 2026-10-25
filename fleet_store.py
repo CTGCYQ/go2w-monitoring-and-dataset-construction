@@ -8,6 +8,8 @@ class Conflict(ValueError): pass
 class Missing(ValueError): pass
 TERMINAL={'succeeded','failed','canceled'}
 TEMPLATES={
+ 'scene_capture': {'name':'同步场景采集','steps':['准备采集','同步 RGB-D 采集','保存与核验']},
+ 'scene_build': {'name':'高斯地图构建','steps':['数据检查','几何与位姿','高斯训练','分块与压缩','质量检查','发布地图']},
  'sensor_check': {'name':'传感器巡检','steps':['连接与状态检查','激光雷达检查','深度相机检查','生成巡检结果']},
  'capture': {'name':'定时数据采集','steps':['采集前检查','启动数据录制','持续采集','停止录制并核验']},
 }
@@ -86,7 +88,10 @@ class FleetStore:
   if not isinstance(title,str) or not 1<=len(title.strip())<=120:raise ValueError('作业名称须为 1～120 个字符')
   duration=value.get('duration_s',60)
   if isinstance(duration,bool) or not isinstance(duration,int) or not 5<=duration<=3600:raise ValueError('采集时长须为 5～3600 秒的整数')
+  scene_id=value.get('scene_id')
+  if kind.startswith('scene_') and (not isinstance(scene_id,str) or not re.fullmatch(r'[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}',scene_id)):raise ValueError('场景作业需要有效 scene_id')
   now=time.time();j={'id':uuid.uuid4().hex,'title':title.strip(),'robot_id':r['id'],'kind':kind,'duration_s':duration,'status':'queued','step_index':0,'progress':0,'created_at':now,'started_at':None,'finished_at':None,'session_id':None,'cancel_requested':False,'revision':0,'steps':[{'name':n,'status':'pending'} for n in TEMPLATES[kind]['steps']],'events':[{'at':now,'type':'created','message':'作业已指派，等待执行'}]}
+  if scene_id:j['scene_id']=scene_id
   with self.db() as c:c.execute('INSERT INTO jobs VALUES(?,?,?,?)',(j['id'],j['robot_id'],j['status'],json.dumps(j)))
   return j
  def mutate(self,jid,fn):

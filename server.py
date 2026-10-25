@@ -1111,6 +1111,9 @@ def favicon():
 # serve static assets (css/js) from web dir
 from fleet_api import install_fleet
 install_fleet(app, BASE_DIR, read_state)
+from scene_api import install_scenes
+_rgbd_receiver = DepthReceiver(DOCK_HOST, DOCK_USER, DOCK_PASS, request=b"R")
+install_scenes(app, Path(DATASET_ROOT).parent / "go2w-scene-assets", app.state.fleet_store, _rgbd_receiver)
 
 app.mount("/static", StaticFiles(directory=str(WEB_DIR)), name="static")
 

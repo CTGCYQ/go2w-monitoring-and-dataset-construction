@@ -9,7 +9,7 @@ from starlette.background import BackgroundTask
 from fleet_store import FleetStore,Conflict,Missing,TEMPLATES,job_metrics
 from fleet_jobs import JobRunner
 
-ROUTES={'state','health','history','checkpoints','record','sessions','dataset','schedule','session','depth','image','map','system','lidar','slam','agent'}
+ROUTES={'state','health','history','checkpoints','record','sessions','dataset','schedule','session','depth','image','map','system','lidar','slam','agent','rgbd'}
 
 def install_fleet(app,root,read_state):
  store=FleetStore(root/'fleet.sqlite3');local_url=os.environ.get('FLEET_LOCAL_URL','https://127.0.0.1:8000').rstrip('/')
