@@ -50,3 +50,6 @@ scene_assets/
 # 临时探测/验收脚本（含 SSH 凭据，严禁提交）
 tmp/
 tmp_acceptance/
+
+# 测试智能体临时产物
+_e2e_tmp/
