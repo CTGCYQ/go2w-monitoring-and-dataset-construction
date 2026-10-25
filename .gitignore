@@ -43,3 +43,10 @@ logs/
 
 # Platform registry and job history
 fleet.sqlite3*
+
+# Private scene captures, models and runtime indexes
+scene_assets/
+
+# 临时探测/验收脚本（含 SSH 凭据，严禁提交）
+tmp/
+tmp_acceptance/

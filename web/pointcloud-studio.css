@@ -4,3 +4,6 @@
 
 /* Scope native header rules and stretch the canvas to the settings column. */
 .pc-studio .pc-head{position:relative;top:auto;z-index:auto;backdrop-filter:none;font-family:"Bahnschrift","Microsoft YaHei UI",sans-serif}.pc-studio .pc-stage{height:auto;min-height:clamp(520px,65vh,740px)}.pc-studio .pc-field,.pc-studio .pc-toggle{font-size:12px}.pc-studio:fullscreen{overflow:auto}.pc-studio:fullscreen .pc-side{overflow:auto}@media(max-width:800px){.pc-studio .pc-stage{height:480px;min-height:360px}.pc-studio .pc-view-grid button,.pc-studio .pc-mode button{min-height:40px}.pc-studio .pc-window button{min-height:34px}}
+
+/* 世界地图子类型切换（体素里程计 / 高斯真实场景） */
+.pc-map-sub{display:flex;align-items:center;gap:8px;padding:10px 24px;border-bottom:1px solid var(--pc-line);background:#f4f8f9}.pc-map-sub-label{font:10px Consolas,monospace;letter-spacing:1.5px;color:#7d919e;font-weight:600}.pc-map-sub button{background:transparent;border:1px solid #cddce4;border-radius:6px;color:#6a7b89;padding:6px 14px;font-size:12px;font-weight:600;min-height:30px}.pc-map-sub button.is-active{background:#174853;color:#fff;border-color:#174853}.pc-map-sub[hidden]{display:none}#gaussLayer{position:absolute!important;inset:0;z-index:2;background:#152336}#gaussLayer>iframe{border:0;width:100%;height:100%;display:block}@media(max-width:800px){.pc-map-sub{padding:10px 16px;flex-wrap:wrap}}

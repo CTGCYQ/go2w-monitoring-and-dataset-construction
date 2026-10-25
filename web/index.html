@@ -261,9 +261,9 @@
     #pointcloud3d { height: 340px; }
   }
 </style>
-<link rel="stylesheet" href="/static/pointcloud-studio.css?v=20261022-5">
+<link rel="stylesheet" href="/static/pointcloud-studio.css?v=20261025-2">
 <script src="/static/pointcloud-core.js?v=20261022-5"></script>
-<script src="/static/pointcloud-studio.js?v=20261022-5"></script>
+<script src="/static/pointcloud-studio.js?v=20261025-2"></script>
 </head>
 <body>
 
@@ -410,7 +410,8 @@
   <div class="tabview" id="tv-vision">
 <section class="card pc-studio" id="pcStudio" aria-label="激光雷达空间观测台">
 <header class="pc-head"><div><div class="pc-eyebrow"><i class="pc-radar-icon"></i>LIDAR / SPATIAL OBSERVATORY</div><h2>激光雷达<span>·</span>空间重建</h2><p class="pc-subtitle" id="pcSourceNote">雷达源坐标 · 机身方向待标定</p></div><div class="pc-mode" role="group" aria-label="点云显示模式"><button class="is-active" data-pc-mode="frame">实时帧</button><button data-pc-mode="aggregate">静态聚合</button><button data-pc-mode="map">世界地图</button></div></header>
-<div class="pc-body"><div class="pc-stage"><div id="pointcloud3d"></div><div class="pc-hud"><div><span class="pc-live" id="pcLive" data-state="offline"><i></i><span id="pcLiveText">等待连接</span></span><div class="pc-frame-label" id="pcFrameLabel">SOURCE / —</div></div></div><canvas class="pc-axis" id="pcAxisCanvas" width="104" height="104" aria-label="XYZ方向导航"></canvas>
+<div class="pc-map-sub" id="pcMapSub" hidden role="group" aria-label="世界地图类型"><span class="pc-map-sub-label">地图类型</span><button class="is-active" data-map-kind="voxel">体素里程计</button><button data-map-kind="gaussian">高斯真实场景</button></div>
+<div class="pc-body"><div class="pc-stage"><div id="pointcloud3d"></div><div id="gaussLayer" hidden style="position:absolute;inset:0;z-index:2;background:#152336"></div><div class="pc-hud"><div><span class="pc-live" id="pcLive" data-state="offline"><i></i><span id="pcLiveText">等待连接</span></span><div class="pc-frame-label" id="pcFrameLabel">SOURCE / —</div></div></div><canvas class="pc-axis" id="pcAxisCanvas" width="104" height="104" aria-label="XYZ方向导航"></canvas>
 <div class="pc-actionbar"><button id="pcPause" aria-pressed="false" title="只暂停当前画面，不控制机器狗">暂停</button><button id="pcFit" title="F · 聚焦点云范围">聚焦</button><button id="pcClear" title="清除当前显示缓存，保留后端地图">清空显示</button><button id="pcFullscreen">全屏</button></div>
 <div class="pc-empty" id="pcEmpty"><svg viewBox="0 0 80 80" fill="none" aria-hidden="true"><circle cx="40" cy="40" r="33" stroke="#547688"/><circle cx="40" cy="40" r="22" stroke="#547688"/><circle cx="40" cy="40" r="11" stroke="#547688"/><path d="M40 7V73M7 40H73M40 40L64 17" stroke="#76c9bd"/><circle cx="40" cy="40" r="3" fill="#76c9bd"/></svg><b id="pcEmptyTitle">正在连接雷达</b><p id="pcEmptyDetail">有效点云到达后自动显示，可先调整视角和外观。</p></div>
 <div class="pc-floor-caption" id="pcFloorCaption">0.5 m 网格 / Z = 0 雷达参考面</div><div class="pc-stage-footer"><span>左键旋转 · 右键平移 · 滚轮缩放</span><span><strong id="pcRenderCount">0 点</strong> / <span id="pcFps">— Hz 更新</span></span></div></div>
@@ -712,6 +713,7 @@ async function postJSON(url, body) {
 
 // ================= TAB 切换 =================
 function switchTab(name) {
+  if (name==='vision') { window.SceneUI?.activate(true); } else { window.SceneUI?.activate(false); }
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
   document.querySelectorAll('.tabview').forEach(v=>v.classList.toggle('active', v.id==='tv-'+name));
   if (name==='annotate') { loadAnnSessions(); }
@@ -1609,5 +1611,6 @@ window.addEventListener('resize', ()=>{
 <dialog class="fleet-dialog" id="robotDialog"><form id="robotForm"><h2 id="robotDialogTitle">接入机器人</h2><p class="intro">每台机器人使用独立采集节点。填入该节点的监控服务地址后，各页面将按机器人独立读取和操作。</p><label class="fleet-field">机器人编号<input id="robotId" required maxlength="48" pattern="[a-zA-Z0-9][a-zA-Z0-9_-]*" placeholder="例如 robot-02"></label><label class="fleet-field">机器人名称<input id="robotName" required maxlength="80" placeholder="例如 二号巡检机器人"></label><label class="fleet-field">型号<input id="robotModel" required maxlength="80" placeholder="例如 Unitree Go2-W"></label><label class="fleet-field">采集节点地址<input id="robotEndpoint" type="url" required placeholder="https://节点地址:8000"></label><label class="fleet-field" style="flex-direction:row"><input id="robotTls" type="checkbox" checked style="width:auto">校验节点 HTTPS 证书</label><label class="fleet-field" style="flex-direction:row"><input id="robotEnabled" type="checkbox" checked style="width:auto">启用机器人</label><p id="robotFormError" class="fleet-error" role="alert"></p><footer><button type="button" data-close-dialog="robotDialog">取消</button><button type="submit" class="fleet-btn-primary">保存机器人</button></footer></form></dialog>
 <dialog class="fleet-dialog" id="jobDialog"><form id="jobForm"><h2>指派作业</h2><p class="intro">选定机器人与作业类型。每台机器人依次执行队列中的作业，进度由后端实时核验。</p><label class="fleet-field">作业名称<input id="jobTitle" required maxlength="120" placeholder="例如 实验区传感器巡检"></label><label class="fleet-field">执行机器人<select id="jobRobot" required></select></label><label class="fleet-field">作业类型<select id="jobKind"><option value="sensor_check">传感器巡检 · 状态 / 雷达 / 深度</option><option value="capture">定时数据采集 · 自动录制与核验</option></select></label><label class="fleet-field" id="captureDurationField" hidden>采集时长（秒）<input id="jobDuration" type="number" min="5" max="3600" value="60" required></label><p id="jobFormError" class="fleet-error" role="alert"></p><footer><button type="button" data-close-dialog="jobDialog">取消</button><button type="submit" class="fleet-btn-primary">确认指派</button></footer></form></dialog>
 <script src="/static/fleet.js?v=20261023-1"></script>
+<script src="/static/scenes.js?v=20261025-2"></script>
 </body>
 </html>
