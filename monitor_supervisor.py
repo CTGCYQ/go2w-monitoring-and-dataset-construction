@@ -121,6 +121,16 @@ def main():
                 shell=f'exec bash {shlex.quote(str(root/"run_map_worker.sh"))} >> {shlex.quote(str(logs/"mapworker.log"))} 2>&1'
                 run(['tmux','kill-session','-t','mapworker']);result=run(['tmux','new-session','-d','-s','mapworker',shell]);map_retry.fail(now);logger.info('map process restarted rc=%s',result.returncode)
             if map_pid and pid and mapping_expected and not needs_epoch:map_retry.success()
+            # Position/rotation jumps are explained localization events (Point-LIO
+            # realign or physical robot re-seat on power-up). Reset the map epoch so
+            # the world map re-anchors instead of latching "unavailable" forever.
+            _recoverable={'pose_position_jump','pose_rotation_jump'}
+            if (map_pid and pid and mapping_expected and not needs_epoch
+                    and map_cache.get('fault') and map_cache.get('reason_code') in _recoverable
+                    and map_retry.ready(now)):
+                shell=f'exec bash {shlex.quote(str(root/"run_map_worker.sh"))} >> {shlex.quote(str(logs/"mapworker.log"))} 2>&1'
+                run(['tmux','kill-session','-t','mapworker']);result=run(['tmux','new-session','-d','-s','mapworker',shell])
+                map_retry.fail(now);logger.info('map epoch reset after recoverable pose-jump fault rc=%s',result.returncode)
             last_adapter=pids['imuadapter'];last_lio=pid
             # Bounded existing external logs; copy only the last 1MiB before truncating
             # in place, so processes with an open descriptor continue on the same file.
